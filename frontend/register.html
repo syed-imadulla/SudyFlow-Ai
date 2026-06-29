@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Sign Up – StudyFlow AI</title>
+  <link rel="stylesheet" href="src/css/base.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' };</script>
+  <script src="router.js"></script>
+</head>
+<body class="bg-background text-text-primary min-h-screen flex items-center justify-center p-6 antialiased selection:bg-primary selection:text-white relative">
+  <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom,_var(--tw-gradient-stops))] from-primary/10 via-background to-background pointer-events-none"></div>
+
+  <div class="card bg-surface border-border p-8 md:p-10 w-full max-w-md shadow-saas relative z-10 rounded-[20px]">
+    <div class="flex flex-col items-center text-center mb-6 cursor-pointer group" onclick="window.location.href='index.html'">
+      <div class="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/30 flex items-center justify-center text-primary mb-4 group-hover:scale-105 transition shadow-glow">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+      </div>
+      <h2 class="text-2xl font-bold tracking-tight text-white font-sans">Create student account</h2>
+      <p class="text-xs text-text-secondary mt-1">Start optimizing your study blocks with AI</p>
+    </div>
+
+    <form class="space-y-4" onsubmit="event.preventDefault(); alert('✨ Registered successfully!'); window.location.href='dashboard.html';">
+      <div>
+        <label class="block text-xs font-semibold text-text-secondary uppercase mb-1.5">Full Name</label>
+        <input type="text" placeholder="Imadulla" class="input bg-background-sec border-border focus:border-primary py-2.5 text-xs" required />
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-text-secondary uppercase mb-1.5">Academic Email</label>
+        <input type="email" placeholder="imadulla@university.edu" class="input bg-background-sec border-border focus:border-primary py-2.5 text-xs" required />
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-text-secondary uppercase mb-1.5">Create Password</label>
+        <input type="password" placeholder="••••••••" class="input bg-background-sec border-border focus:border-primary py-2.5 text-xs" required />
+      </div>
+
+      <button type="submit" class="btn btn-primary w-full py-3 text-xs font-bold shadow-glow mt-3 flex items-center justify-center gap-2">
+        <svg class="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24"><path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/></svg>
+        <span>Create Free Workspace</span>
+      </button>
+    </form>
+
+    <div class="mt-6 pt-5 border-t border-border text-center">
+      <p class="text-xs text-text-muted">
+        Already registered? <a href="login.html" class="text-white font-semibold hover:underline ml-1">Sign in</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Workspace & Goals – StudyFlow AI</title>
+  <link rel="stylesheet" href="src/css/base.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' };</script>
+  <!-- Services Layer -->
+  <script src="src/js/config.js"></script>
+  <script src="src/js/http.js"></script>
+  <script src="src/js/services/userService.js"></script>
+  <script src="src/js/services/goalsService.js"></script>
+  <script src="src/js/store.js"></script>
+  <script src="src/js/components.js"></script>
+  <script src="router.js"></script>
+</head>
+<body class="bg-background text-text-primary min-h-screen flex antialiased selection:bg-primary selection:text-white">
+  <!-- Linear Sidebar -->
+  <include src="components/sidebar.html"></include>
+
+  <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+    <!-- Rounded Floating Topbar -->
+    <include src="components/navbar.html"></include>
+
+    <main class="flex-1 p-6 md:p-10 max-w-[1200px] mx-auto w-full space-y-8">
+      <!-- Header -->
+      <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#1C1C1C]">
+        <div>
+          <h1 class="text-3xl font-extrabold tracking-tight text-[#FAFAFA] font-sans">Workspace & Active Goals</h1>
+          <p class="text-[#A1A1AA] text-sm mt-1">Manage hierarchical AI deliverables, subtasks, and assigned intermediate deadlines.</p>
+        </div>
+        <div class="flex items-center space-x-3">
+          <div class="flex items-center space-x-1 bg-[#0A0A0A] p-1 rounded-xl border border-[#202020]">
+            <button class="ws-tab px-4 py-2 rounded-lg bg-[#A855F7] text-[#FAFAFA] font-bold text-xs shadow-[0_0_20px_rgba(168,85,247,0.25)] transition" data-target="tasks">Hierarchical Tasks</button>
+            <button class="ws-tab px-4 py-2 rounded-lg text-[#A1A1AA] hover:text-[#FAFAFA] font-semibold text-xs transition" data-target="goals">Goal Summary</button>
+            <button class="ws-tab px-4 py-2 rounded-lg text-[#A1A1AA] hover:text-[#FAFAFA] font-semibold text-xs transition" data-target="resources">AI Resources</button>
+          </div>
+          <button onclick="window.openAddItemModal('goalsDynamicContainer', false)" class="btn btn-primary px-5 py-2.5 text-xs font-bold shadow-[0_0_20px_rgba(168,85,247,0.25)] flex items-center space-x-1">
+            <span>+ Create AI Goal</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- Tab 1: Hierarchical Tasks View -->
+      <section id="tasksView" class="ws-panel space-y-6">
+        <div id="goalsDynamicContainer" class="space-y-6">
+          <!-- Populated via renderWorkspaceGoals() -->
+        </div>
+      </section>
+
+      <!-- Tab 2: Goal Boards Grid View -->
+      <section id="goalsView" class="ws-panel hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="goalsCardsContainer">
+        <!-- Populated via renderWorkspaceGoals() -->
+      </section>
+
+      <!-- Tab 3: AI Resources -->
+      <section id="resourcesView" class="ws-panel hidden card bg-[#0E0E0E] border border-[#202020] p-8 space-y-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-bold text-[#FAFAFA]">AI Generated Study Summaries</h3>
+            <p class="text-xs text-[#6B7280]">Curated by StudyFlow AI from your uploaded syllabi and lecture notes.</p>
+          </div>
+          <button onclick="alert('✨ Generating new Flashcard deck...')" class="btn btn-secondary text-xs">Generate Flashcards</button>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="p-4 rounded-xl bg-[#0A0A0A] border border-[#202020] flex items-center justify-between hover:border-[#A855F7]/50 transition cursor-pointer">
+            <div class="flex items-center space-x-3"><div class="w-9 h-9 rounded-xl bg-[#38BDF8]/15 border border-[#38BDF8]/30 flex items-center justify-center text-[#38BDF8] shrink-0"><svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M14 2H6C4.9 2 4.01 2.9 4.01 4L4 20C4 21.1 4.89 22 5.99 22H18C19.1 22 20 21.1 20 20V8L14 2ZM16 18H8V16H16V18ZM16 14H8V12H16V14ZM13 9V3.5L18.5 9H13Z"/></svg></div><div><h4 class="text-sm font-semibold text-[#FAFAFA]">B-Tree & Indexing Cheat Sheet</h4><p class="text-xs text-[#6B7280]">PDF • 4.2 MB</p></div></div>
+            <span class="text-xs text-[#A855F7] font-semibold">Download ↓</span>
+          </div>
+          <div class="p-4 rounded-xl bg-[#0A0A0A] border border-[#202020] flex items-center justify-between hover:border-[#A855F7]/50 transition cursor-pointer">
+            <div class="flex items-center space-x-3"><div class="w-9 h-9 rounded-xl bg-[#22C55E]/15 border border-[#22C55E]/30 flex items-center justify-center text-[#22C55E] shrink-0"><svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM9 17H7V10H9V17ZM13 17H11V7H13V17ZM17 17H15V13H17V17Z"/></svg></div><div><h4 class="text-sm font-semibold text-[#FAFAFA]">Virtual Memory Page Replacement</h4><p class="text-xs text-[#6B7280]">Interactive Notes</p></div></div>
+            <span class="text-xs text-[#A855F7] font-semibold">Open →</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    function renderWorkspaceGoals() {
+      const goalsSlice = window.SF_STORE.getSlice('goals');
+      const goals = goalsSlice.items || [];
+      const container = document.getElementById('goalsDynamicContainer');
+      const cardsContainer = document.getElementById('goalsView');
+      if (!container) return;
+
+      if (goals.length === 0) {
+        const emptyHtml = window.SF_COMPONENTS.renderEmptyState({
+          title: 'No Active Workspace Goals',
+          message: 'Get started by creating your first AI Goal Breakdown or structuring blueprints in IdeaLab.',
+          actionHtml: '<button onclick="window.openAddItemModal(\'goalsDynamicContainer\')" class="btn btn-primary px-5 py-2.5 text-xs font-bold shadow-[0_0_20px_rgba(168,85,247,0.3)]">+ Create AI Goal</button>'
+        });
+        container.innerHTML = emptyHtml;
+        if (cardsContainer) cardsContainer.innerHTML = emptyHtml;
+        return;
+      }
+
+      container.innerHTML = goals.map(goal => window.SF_COMPONENTS.renderGoalCard(goal, 'expanded')).join('');
+
+      if (cardsContainer) {
+        cardsContainer.innerHTML = goals.map(goal => window.SF_COMPONENTS.renderGoalCard(goal, 'grid')).join('');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const container = document.getElementById('goalsDynamicContainer');
+      const cardsContainer = document.getElementById('goalsView');
+      if (container && window.SF_COMPONENTS) container.innerHTML = window.SF_COMPONENTS.renderSkeleton('compact', 2);
+      if (cardsContainer && window.SF_COMPONENTS) cardsContainer.innerHTML = window.SF_COMPONENTS.renderSkeleton('grid', 2);
+
+      await window.SF_STORE.bootstrap(['user', 'goals']);
+
+      // Re-render when goals slice changes (e.g. after subtask toggle)
+      window.SF_STORE.subscribe('goals', () => renderWorkspaceGoals());
+
+      renderWorkspaceGoals();
+
+      const tabs = document.querySelectorAll('.ws-tab');
+      const panels = document.querySelectorAll('.ws-panel');
+      tabs.forEach(tab => {
+        tab.onclick = () => {
+          const target = tab.dataset.target;
+          panels.forEach(p => {
+            if (p.id === target + 'View') p.classList.remove('hidden');
+            else p.classList.add('hidden');
+          });
+          tabs.forEach(t => {
+            if (t === tab) t.className = 'ws-tab px-4 py-2 rounded-lg bg-[#A855F7] text-[#FAFAFA] font-bold text-xs shadow-[0_0_20px_rgba(168,85,247,0.25)] transition';
+            else t.className = 'ws-tab px-4 py-2 rounded-lg text-[#A1A1AA] hover:text-[#FAFAFA] font-semibold text-xs transition';
+          });
+        };
+      });
+    });
+  </script>
+</body>
+</html>

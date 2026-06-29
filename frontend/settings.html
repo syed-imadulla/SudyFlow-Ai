@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Settings – StudyFlow AI</title>
+  <link rel="stylesheet" href="src/css/base.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' };</script>
+  <!-- Services Layer -->
+  <script src="src/js/config.js"></script>
+  <script src="src/js/http.js"></script>
+  <script src="src/js/services/userService.js"></script>
+  <script src="src/js/services/goalsService.js"></script>
+  <script src="src/js/store.js"></script>
+  <script src="router.js"></script>
+</head>
+<body class="bg-background text-text-primary min-h-screen flex antialiased selection:bg-primary selection:text-white">
+  <!-- Linear Sidebar -->
+  <include src="components/sidebar.html"></include>
+
+  <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+    <!-- Topbar -->
+    <include src="components/navbar.html"></include>
+
+    <main class="flex-1 p-8 md:p-12 max-w-6xl mx-auto w-full space-y-10">
+      <header class="flex items-center justify-between pb-6 border-b border-[#1C1C1C]">
+        <div>
+          <h1 class="text-3xl font-extrabold tracking-tight text-[#FAFAFA] font-sans">Platform Settings</h1>
+          <p class="text-[#A1A1AA] text-sm mt-1">Manage your AI study persona, Pomodoro intervals, and SaaS account preferences.</p>
+        </div>
+        <button onclick="savePlatformSettings()" class="btn btn-primary px-6 py-2.5 text-xs font-bold shadow-[0_0_20px_rgba(168,85,247,0.25)] flex items-center space-x-1.5">
+          <span class="flex items-center gap-1.5"><svg class="w-3.5 h-3.5 fill-current shrink-0" viewBox="0 0 24 24"><path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/></svg> <span>Commit Changes</span></span>
+        </button>
+      </header>
+
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-10">
+        <!-- Settings Left Sub-Nav -->
+        <nav class="space-y-1.5 text-xs font-semibold text-[#A1A1AA]">
+          <a href="#profile" class="block px-4 py-3 rounded-xl bg-[#0E0E0E] text-[#FAFAFA] font-bold border border-[#202020] shadow-sm flex items-center gap-2"><svg class="w-4 h-4 text-[#A855F7] fill-current" viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg> Profile</a>
+          <a href="#study-prefs" class="block px-4 py-3 rounded-xl hover:text-[#FAFAFA] hover:bg-[#0A0A0A] transition flex items-center gap-2"><svg class="w-4 h-4 text-[#FACC15] fill-current" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> Study Preferences</a>
+          <a href="#ai-prefs" class="block px-4 py-3 rounded-xl hover:text-[#FAFAFA] hover:bg-[#0A0A0A] transition flex items-center gap-2"><svg class="w-4 h-4 text-[#A855F7] fill-current" viewBox="0 0 24 24"><path d="M12 2A2 2 0 0 1 14 4C14 4.74 13.6 5.39 13 5.73V7H14A7 7 0 0 1 21 14H22A1 1 0 0 1 23 15V18A1 1 0 0 1 22 19H21V20A2 2 0 0 1 19 22H5A2 2 0 0 1 3 20V19H2A1 1 0 0 1 1 18V15A1 1 0 0 1 2 14H3A7 7 0 0 1 10 7H11V5.73C10.4 5.39 10 4.74 10 4A2 2 0 0 1 12 2M7.5 13A2.5 2.5 0 0 0 5 15.5A2.5 2.5 0 0 0 7.5 18A2.5 2.5 0 0 0 10 15.5A2.5 2.5 0 0 0 7.5 13M16.5 13A2.5 2.5 0 0 0 14 15.5A2.5 2.5 0 0 0 16.5 18A2.5 2.5 0 0 0 19 15.5A2.5 2.5 0 0 0 16.5 13Z"/></svg> AI Preferences</a>
+          <a href="#notifications" class="block px-4 py-3 rounded-xl hover:text-[#FAFAFA] hover:bg-[#0A0A0A] transition flex items-center gap-2" onclick="alert('✨ Push notification channels active.')"><svg class="w-4 h-4 text-[#38BDF8] fill-current" viewBox="0 0 24 24"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg> Notifications</a>
+          <a href="#account" class="block px-4 py-3 rounded-xl hover:text-[#FAFAFA] hover:bg-[#0A0A0A] transition flex items-center gap-2" onclick="alert('✨ SSO & 2FA security active.')"><svg class="w-4 h-4 text-[#22C55E] fill-current" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg> Security & Auth</a>
+          <a href="#danger" class="block px-4 py-3 rounded-xl text-[#EF4444] hover:bg-[#EF4444]/10 transition mt-6 flex items-center gap-2"><svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg> Danger Zone</a>
+        </nav>
+
+        <!-- Settings Cards Column -->
+        <div class="md:col-span-3 space-y-8">
+          <!-- Profile Section -->
+          <section id="profile" class="card bg-[#0E0E0E] border border-[#202020] p-8 rounded-[20px]">
+            <h3 class="text-base font-bold text-[#FAFAFA] mb-6">Profile Details</h3>
+            <div class="flex items-center space-x-6 mb-8">
+              <img id="settingAvatarDisplay" src="https://ui-avatars.com/api/?name=Imadulla&background=A855F7&color=fff&rounded=true" class="w-16 h-16 rounded-full ring-2 ring-[#A855F7]/40 shadow-[0_0_15px_rgba(168,85,247,0.2)]" />
+              <div>
+                <button onclick="const newName = prompt('Enter custom Avatar initial or URL:', 'IM'); if(newName) { document.getElementById('settingAvatarDisplay').src = newName.startsWith('http') ? newName : `https://ui-avatars.com/api/?name=${encodeURIComponent(newName)}&background=A855F7&color=fff&rounded=true`; }" class="btn btn-secondary px-4 py-2 text-xs border-[#2A2A2A] hover:border-[#A855F7]">Upload New Avatar</button>
+                <p class="text-[11px] text-[#6B7280] mt-1.5">JPG, GIF or PNG. Max size 2MB.</p>
+              </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-xs font-bold text-[#A1A1AA] uppercase mb-2">Full Name</label>
+                <input id="settingName" type="text" value="Imadulla" class="input text-xs bg-[#0A0A0A] border-[#202020] focus:border-[#A855F7]" />
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-[#A1A1AA] uppercase mb-2">Academic Email</label>
+                <input id="settingEmail" type="email" value="imadulla@university.edu" class="input text-xs bg-[#0A0A0A] border-[#202020] focus:border-[#A855F7]" />
+              </div>
+            </div>
+          </section>
+
+          <!-- Study Preferences -->
+          <section id="study-prefs" class="card bg-[#0E0E0E] border border-[#202020] p-8 rounded-[20px]">
+            <h3 class="text-base font-bold text-[#FAFAFA] mb-6 flex items-center gap-2"><svg class="w-4 h-4 text-[#A855F7] fill-current shrink-0" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg> <span>Pomodoro Sprint Durations (Minutes)</span></h3>
+            <div class="grid md:grid-cols-3 gap-6 font-mono text-xs">
+              <div>
+                <label class="block font-sans font-bold text-[#A1A1AA] uppercase mb-2">Focus Block</label>
+                <input id="settingFocus" type="number" value="25" class="input bg-[#0A0A0A] border-[#202020] font-bold text-[#A855F7] text-sm" />
+              </div>
+              <div>
+                <label class="block font-sans font-bold text-[#A1A1AA] uppercase mb-2">Short Break</label>
+                <input id="settingShort" type="number" value="5" class="input bg-[#0A0A0A] border-[#202020] font-bold text-[#FACC15] text-sm" />
+              </div>
+              <div>
+                <label class="block font-sans font-bold text-[#A1A1AA] uppercase mb-2">Long Break</label>
+                <input id="settingLong" type="number" value="15" class="input bg-[#0A0A0A] border-[#202020] font-bold text-[#FAFAFA] text-sm" />
+              </div>
+            </div>
+          </section>
+
+          <!-- AI Preferences -->
+          <section id="ai-prefs" class="card bg-[#0E0E0E] border border-[#202020] p-8 rounded-[20px] flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h3 class="text-base font-bold text-[#FAFAFA] mb-1 flex items-center gap-2"><svg class="w-4 h-4 text-[#A855F7] fill-current shrink-0" viewBox="0 0 24 24"><path d="M12 2A2 2 0 0 1 14 4C14 4.74 13.6 5.39 13 5.73V7H14A7 7 0 0 1 21 14H22A1 1 0 0 1 23 15V18A1 1 0 0 1 22 19H21V20A2 2 0 0 1 19 22H5A2 2 0 0 1 3 20V19H2A1 1 0 0 1 1 18V15A1 1 0 0 1 2 14H3A7 7 0 0 1 10 7H11V5.73C10.4 5.39 10 4.74 10 4A2 2 0 0 1 12 2M7.5 13A2.5 2.5 0 0 0 5 15.5A2.5 2.5 0 0 0 7.5 18A2.5 2.5 0 0 0 10 15.5A2.5 2.5 0 0 0 7.5 13M16.5 13A2.5 2.5 0 0 0 14 15.5A2.5 2.5 0 0 0 16.5 18A2.5 2.5 0 0 0 19 15.5A2.5 2.5 0 0 0 16.5 13Z"/></svg> <span>AI Study Persona</span></h3>
+              <p class="text-xs text-[#A1A1AA]">Select your assistant's coaching tone across IdeaLab & Copilot.</p>
+            </div>
+            <select id="settingPersona" class="input w-52 bg-[#0A0A0A] border-[#202020] focus:border-[#A855F7] text-xs py-2.5">
+              <option value="Socratic Mentor">Socratic Mentor</option>
+              <option value="Direct & Analytical" selected>Direct & Analytical</option>
+              <option value="Encouraging Coach">Encouraging Coach</option>
+            </select>
+          </section>
+
+          <!-- Danger Zone -->
+          <section id="danger" class="card bg-[#0E0E0E] border border-[#EF4444]/40 p-8 rounded-[20px] flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h3 class="text-base font-bold text-[#EF4444] mb-1">Archive Student Workspace</h3>
+              <p class="text-xs text-[#6B7280]">Permanently delete all Kanban sprints, active Pomodoro logs, and AI chats.</p>
+            </div>
+            <button onclick="if(confirm('Are you sure you want to delete your student workspace data?')) { localStorage.removeItem('studyflow_goals'); localStorage.removeItem('studyflow_settings'); alert('Workspace reset successfully.'); window.location.href='login.html'; }" class="btn px-5 py-2.5 text-xs font-bold bg-[#EF4444]/10 text-[#EF4444] border border-[#EF4444]/40 hover:bg-[#EF4444] hover:text-white transition shrink-0">
+              Delete Workspace Data
+            </button>
+          </section>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Bootstrap loads user + settings slice from userService through the store
+      await window.SF_STORE.bootstrap(['user', 'settings']);
+
+      const s = window.SF_STORE.getSlice('settings');
+      if (s.name)    document.getElementById('settingName').value    = s.name;
+      if (s.email)   document.getElementById('settingEmail').value   = s.email;
+      if (s.focus)   document.getElementById('settingFocus').value   = s.focus;
+      if (s.short)   document.getElementById('settingShort').value   = s.short;
+      if (s.long)    document.getElementById('settingLong').value    = s.long;
+      if (s.persona) document.getElementById('settingPersona').value = s.persona;
+      if (s.avatar)  document.getElementById('settingAvatarDisplay').src = s.avatar;
+    });
+
+    async function savePlatformSettings() {
+      const name    = document.getElementById('settingName').value.trim();
+      const email   = document.getElementById('settingEmail').value.trim();
+      const focus   = parseInt(document.getElementById('settingFocus').value, 10)  || window.SF_CONFIG.POMODORO_DEFAULTS.focus;
+      const short   = parseInt(document.getElementById('settingShort').value, 10)  || window.SF_CONFIG.POMODORO_DEFAULTS.shortBreak;
+      const long    = parseInt(document.getElementById('settingLong').value, 10)   || window.SF_CONFIG.POMODORO_DEFAULTS.longBreak;
+      const persona = document.getElementById('settingPersona').value;
+      const avatar  = document.getElementById('settingAvatarDisplay').src;
+
+      // Persist through store action (which calls userService.saveSettings internally)
+      await window.SF_STORE.dispatch('settings/SAVE', { name, email, focus, short, long, persona, avatar });
+
+      document.querySelectorAll('aside h4, header img + span').forEach(el => { if (el) el.textContent = name; });
+      document.querySelectorAll('aside img, header img').forEach(img => { if (img) img.src = avatar; });
+
+      alert('\u2728 Preferences Committed & Synchronized Successfully!');
+    }
+  </script>
+</body>
+</html>

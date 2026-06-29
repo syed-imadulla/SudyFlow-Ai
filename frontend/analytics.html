@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Analytics – StudyFlow AI</title>
+  <link rel="stylesheet" href="src/css/base.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' };</script>
+  <!-- Services Layer -->
+  <script src="src/js/config.js"></script>
+  <script src="src/js/http.js"></script>
+  <script src="src/js/services/userService.js"></script>
+  <script src="src/js/services/goalsService.js"></script>
+  <script src="src/js/services/analyticsService.js"></script>
+  <script src="src/js/store.js"></script>
+  <script src="router.js"></script>
+</head>
+<body class="bg-background text-text-primary min-h-screen flex antialiased selection:bg-primary selection:text-white">
+  <!-- Linear Sidebar -->
+  <include src="components/sidebar.html"></include>
+
+  <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+    <!-- Rounded Floating Topbar -->
+    <include src="components/navbar.html"></include>
+
+    <main class="flex-1 p-6 md:p-10 max-w-[1200px] mx-auto w-full space-y-8">
+      <header class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-[#1C1C1C]">
+        <div>
+          <h1 class="text-3xl font-extrabold tracking-tight text-[#FAFAFA] font-sans">Productivity & Focus Analytics</h1>
+          <p class="text-[#A1A1AA] text-sm mt-1">AI-curated metrics on your deep work sessions, study habits, and goal velocity.</p>
+        </div>
+        <div class="flex items-center space-x-3">
+          <div class="relative inline-block text-left custom-dropdown-container">
+            <button type="button" onclick="window.toggleCustomDropdown('analyticsPeriodMenu', 'analyticsPeriodArrow')" class="bg-[#0A0A0A] hover:bg-[#151515] border border-[#202020] hover:border-[#A855F7]/50 text-[#FAFAFA] rounded-xl text-xs font-semibold px-3.5 py-2 flex items-center justify-between gap-2 w-36 transition shadow-[0_0_15px_rgba(168,85,247,0.15)] focus:outline-none">
+              <span id="analyticsPeriodSelectedText">Last 7 Days</span>
+              <svg class="w-3.5 h-3.5 text-[#A855F7] transition-transform duration-200 custom-dropdown-arrow shrink-0" id="analyticsPeriodArrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div id="analyticsPeriodMenu" class="hidden custom-dropdown-menu absolute right-0 mt-2 w-36 rounded-xl bg-[#0E0E0E] border border-[#2A2A2A] shadow-[0_10px_30px_rgba(0,0,0,0.9),0_0_20px_rgba(168,85,247,0.25)] py-1.5 z-50 backdrop-blur-xl overflow-hidden">
+              <button type="button" onclick="window.selectCustomDropdownItem('analyticsPeriodMenu', 'analyticsPeriodArrow', 'analyticsPeriodSelectedText', 'Last 7 Days')" class="w-full text-left px-3.5 py-2 text-xs font-semibold text-[#FAFAFA] hover:bg-[#A855F7] hover:text-white transition flex items-center justify-between group">
+                <span>Last 7 Days</span>
+              </button>
+              <button type="button" onclick="window.selectCustomDropdownItem('analyticsPeriodMenu', 'analyticsPeriodArrow', 'analyticsPeriodSelectedText', 'Last 30 Days')" class="w-full text-left px-3.5 py-2 text-xs font-semibold text-[#A1A1AA] hover:bg-[#A855F7] hover:text-white transition flex items-center justify-between group">
+                <span>Last 30 Days</span>
+              </button>
+              <button type="button" onclick="window.selectCustomDropdownItem('analyticsPeriodMenu', 'analyticsPeriodArrow', 'analyticsPeriodSelectedText', 'This Semester')" class="w-full text-left px-3.5 py-2 text-xs font-semibold text-[#A1A1AA] hover:bg-[#A855F7] hover:text-white transition flex items-center justify-between group">
+                <span>This Semester</span>
+              </button>
+            </div>
+          </div>
+          <button onclick="alert('✨ Generating comprehensive study performance PDF report...')" class="btn btn-primary text-xs px-4 py-2 font-bold shadow-[0_0_15px_rgba(168,85,247,0.25)] flex items-center space-x-1.5">
+            <svg class="w-4 h-4 fill-current shrink-0" viewBox="0 0 24 24"><path d="M14 2H6C4.9 2 4.01 2.9 4.01 4L4 20C4 21.1 4.89 22 5.99 22H18C19.1 22 20 21.1 20 20V8L14 2ZM16 18H8V16H16V18ZM16 14H8V12H16V14ZM13 9V3.5L18.5 9H13Z"/></svg>
+            <span>Export Report</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- KPI Overview Cards Matching Screenshot Exactly -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- Card 1: Total Focus Time -->
+        <div class="bg-[#0A0A0E] border border-[#1C1C24] p-6 rounded-[24px] flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition duration-200 hover:border-[#A855F7]/40">
+          <div>
+            <!-- Header Row -->
+            <div class="flex items-center space-x-3.5">
+              <div class="w-11 h-11 rounded-2xl bg-[#1E1035] border border-[#A855F7]/30 flex items-center justify-center text-[#A855F7] shrink-0 shadow-[0_0_15px_rgba(168,85,247,0.25)]">
+                <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+              </div>
+              <span class="text-sm font-semibold text-[#D4D4D8] tracking-tight">Total Focus Time</span>
+            </div>
+            <!-- Value Section -->
+            <div class="mt-4 flex items-center gap-3.5">
+              <h3 class="text-3xl font-extrabold text-white tracking-tight">28.4h</h3>
+              <div class="flex flex-col text-[11px] leading-tight">
+                <span class="text-[#4ade80] font-bold">↑ 14%</span>
+                <span class="text-[#6B7280]">vs last 7 days</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <!-- Dotted Divider -->
+            <div class="my-4 border-t border-dashed border-[#1C1C24]"></div>
+            <!-- Footer Row -->
+            <div class="flex items-end justify-between text-xs text-[#A1A1AA]">
+              <span class="text-xs text-[#A1A1AA]">56 Pomodoro blocks</span>
+              <div class="flex flex-col items-end gap-1.5">
+                <span class="text-xs font-semibold text-white">71% of goal</span>
+                <div class="w-16 h-1.5 bg-[#1C1C24] rounded-full overflow-hidden">
+                  <div class="w-[71%] h-full bg-[#A855F7] rounded-full"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Task Completion -->
+        <div class="bg-[#0A0A0E] border border-[#1C1C24] p-6 rounded-[24px] flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition duration-200 hover:border-[#4ade80]/40">
+          <div>
+            <!-- Header Row -->
+            <div class="flex items-center space-x-3.5">
+              <div class="w-11 h-11 rounded-2xl bg-[#052e16] border border-[#14532d] flex items-center justify-center text-[#4ade80] shrink-0 shadow-[0_0_15px_rgba(74,222,128,0.2)]">
+                <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+              </div>
+              <span class="text-sm font-semibold text-[#D4D4D8] tracking-tight">Task Completion</span>
+            </div>
+            <!-- Value Section -->
+            <div class="mt-4 flex items-center gap-3.5">
+              <h3 class="text-3xl font-extrabold text-white tracking-tight">92%</h3>
+              <div class="flex flex-col text-[11px] leading-tight">
+                <span class="text-[#4ade80] font-bold">↑ 5%</span>
+                <span class="text-[#6B7280]">vs last 7 days</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <!-- Dotted Divider -->
+            <div class="my-4 border-t border-dashed border-[#1C1C24]"></div>
+            <!-- Footer Row -->
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-xs text-[#A1A1AA]">34 / 37 tasks finished</span>
+              <span class="text-xs font-bold text-[#4ade80]">Excellent</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 3: Peak Velocity -->
+        <div class="bg-[#0A0A0E] border border-[#1C1C24] p-6 rounded-[24px] flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition duration-200 hover:border-[#facc15]/40">
+          <div>
+            <!-- Header Row -->
+            <div class="flex items-center space-x-3.5">
+              <div class="w-11 h-11 rounded-2xl bg-[#312205] border border-[#eab308]/30 flex items-center justify-center text-[#facc15] shrink-0 shadow-[0_0_15px_rgba(250,204,21,0.2)]">
+                <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
+              </div>
+              <span class="text-sm font-semibold text-[#D4D4D8] tracking-tight">Peak Velocity</span>
+            </div>
+            <!-- Value Section -->
+            <div class="mt-4">
+              <h3 class="text-2xl sm:text-[28px] font-extrabold text-[#facc15] tracking-tight leading-none">10 AM - 1 PM</h3>
+            </div>
+          </div>
+          <div>
+            <!-- Dotted Divider -->
+            <div class="my-4 border-t border-dashed border-[#1C1C24]"></div>
+            <!-- Footer Row -->
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-xs text-[#A1A1AA]">Highest cognitive flow</span>
+              <span class="text-xs font-bold text-white">4.2h avg</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 4: Distraction Score -->
+        <div class="bg-[#0A0A0E] border border-[#1C1C24] p-6 rounded-[24px] flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.5)] transition duration-200 hover:border-[#3b82f6]/40">
+          <div>
+            <!-- Header Row -->
+            <div class="flex items-center space-x-3.5">
+              <div class="w-11 h-11 rounded-2xl bg-[#0f172a] border border-[#3b82f6]/30 flex items-center justify-center text-[#60a5fa] shrink-0 shadow-[0_0_15px_rgba(96,165,250,0.2)]">
+                <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 1L3 5V11C3 16.55 6.84 21.74 12 23C17.16 21.74 21 16.55 21 11V5L12 1ZM12 11.99H19C18.47 16.11 15.72 19.78 12 20.93V12H5V6.3L12 3.19V11.99Z"/></svg>
+              </div>
+              <span class="text-sm font-semibold text-[#D4D4D8] tracking-tight">Distraction Score</span>
+            </div>
+            <!-- Value Section -->
+            <div class="mt-4 flex items-center gap-3">
+              <h3 class="text-3xl font-extrabold text-[#4ade80] tracking-tight">Low</h3>
+              <span class="text-xs font-bold text-[#4ade80]">↓ 12% interruptions</span>
+            </div>
+          </div>
+          <div>
+            <!-- Dotted Divider -->
+            <div class="my-4 border-t border-dashed border-[#1C1C24]"></div>
+            <!-- Footer Row -->
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-xs text-[#A1A1AA]">Focus discipline</span>
+              <span class="text-xs font-bold text-white">Top 15%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Charts Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <include src="components/analytics-card.html" id="chartCard1"></include>
+        <include src="components/analytics-card.html" id="chartCard2"></include>
+      </div>
+
+      <!-- Heatmap & Goal Distribution Row -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Weekly Target vs Actual Hours Bar Graph (Takes 2 Columns) -->
+        <div class="lg:col-span-2 card bg-[#0E0E0E] border border-[#202020] p-6 rounded-[20px] space-y-4 flex flex-col justify-between">
+          <div class="flex items-center justify-between pb-3 border-b border-[#1C1C1C]">
+            <div>
+              <h3 class="text-base font-bold text-[#FAFAFA]">Weekly Focus Hours vs Target Goal</h3>
+              <p class="text-xs text-[#6B7280]">Daily comparison of actual study duration against scheduled targets.</p>
+            </div>
+            <div class="flex items-center space-x-3 text-xs font-mono">
+              <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded-sm bg-[#A855F7]"></span><span class="text-[#FAFAFA]">Actual (28.4h)</span></div>
+              <div class="flex items-center space-x-1.5"><span class="w-3 h-3 rounded-sm bg-[#222222] border border-[#3E3E3E]"></span><span class="text-[#A1A1AA]">Target Goal (30h)</span></div>
+            </div>
+          </div>
+
+          <div class="h-48 w-full">
+            <canvas id="weeklyComparisonChart"></canvas>
+          </div>
+
+          <div class="flex items-center justify-between text-xs text-[#A1A1AA] pt-2 border-t border-[#1C1C1C] font-mono">
+            <span class="flex items-center gap-1.5"><svg class="w-4 h-4 inline fill-current text-[#A855F7]" viewBox="0 0 24 24"><path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3ZM9 17H7V10H9V17ZM13 17H11V7H13V17ZM17 17H15V13H17V17Z"/></svg> Weekly Completion: <strong class="text-[#FAFAFA]">94.6% of goal</strong></span>
+            <span class="flex items-center gap-1.5"><svg class="w-4 h-4 inline fill-current text-[#22C55E]" viewBox="0 0 24 24"><path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/></svg> Consistency Discipline: <strong class="text-[#22C55E]">Top 10% Student</strong></span>
+          </div>
+        </div>
+
+        <!-- Doughnut Card (Takes 1 Column) -->
+        <div class="card bg-[#0E0E0E] border border-[#202020] p-6 rounded-[20px] space-y-4 flex flex-col justify-between">
+          <div class="pb-3 border-b border-[#1C1C1C]">
+            <h3 class="text-base font-bold text-[#FAFAFA]">Subject Time Allocation</h3>
+            <p class="text-xs text-[#6B7280]">Share of focus blocks by goal.</p>
+          </div>
+          <div class="h-44 w-full flex items-center justify-center relative">
+            <canvas id="goalAllocationChart"></canvas>
+          </div>
+          <div class="grid grid-cols-2 gap-2 text-[11px] pt-2 border-t border-[#1C1C1C]">
+            <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#A855F7]"></span><span class="text-[#FAFAFA] truncate">DBMS (45%)</span></div>
+            <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#FACC15]"></span><span class="text-[#FAFAFA] truncate">OS Assign (25%)</span></div>
+            <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#22C55E]"></span><span class="text-[#FAFAFA] truncate">DSA Practice (20%)</span></div>
+            <div class="flex items-center space-x-1.5"><span class="w-2.5 h-2.5 rounded-full bg-[#6B7280]"></span><span class="text-[#FAFAFA] truncate">CN Lab (10%)</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Section Grid Matching Screenshot Exactly -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-6">
+        <!-- Left Card: AI Study Recommendations -->
+        <div class="lg:col-span-7 bg-[#0A0A0E] border border-[#1C1C24] p-6 sm:p-7 rounded-[24px] flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+          <!-- Header -->
+          <div class="flex items-center justify-between pb-2">
+            <div class="flex items-center space-x-3.5">
+              <div class="w-12 h-12 rounded-2xl bg-[#1E1035] border border-[#A855F7]/30 flex items-center justify-center text-[#A855F7] font-extrabold text-base shadow-[0_0_20px_rgba(168,85,247,0.3)]">
+                AI
+              </div>
+              <div>
+                <h3 class="text-base sm:text-lg font-bold text-white tracking-tight">AI Study Recommendations</h3>
+                <p class="text-xs text-[#A1A1AA] mt-0.5">Personalized insights to optimize your study routine</p>
+              </div>
+            </div>
+            <span class="px-3 py-1 rounded-full bg-[#052e16] border border-[#14532d] text-[#4ade80] text-xs font-semibold flex items-center gap-1.5 shrink-0">
+              <span class="w-2 h-2 rounded-full bg-[#4ade80] animate-pulse"></span>
+              Live Sync
+            </span>
+          </div>
+
+          <!-- 3 Recommendations Grid -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+            <!-- Box 1 -->
+            <div class="bg-[#0A0A0E] border border-[#20202E] hover:border-[#A855F7]/40 rounded-2xl p-4 sm:p-5 flex flex-col justify-between transition duration-200 group">
+              <div>
+                <div class="w-10 h-10 rounded-xl bg-[#A855F7]/15 border border-[#A855F7]/30 flex items-center justify-center text-[#A855F7] mb-3 group-hover:scale-110 transition">
+                  <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/><path d="M5 2L5.8 4.2L8 5L5.8 5.8L5 8L4.2 5.8L2 5L4.2 4.2L5 2Z" opacity="0.7"/></svg>
+                </div>
+                <h4 class="text-xs sm:text-sm font-bold text-[#A855F7] mb-2 tracking-wide">Optimize Schedule</h4>
+                <p class="text-xs text-[#D4D4D8] leading-relaxed mb-6">You tend to experience fatigue around 3 PM. Try scheduling analytical tasks before 1 PM.</p>
+              </div>
+              <div class="text-[11px] font-mono text-[#6B7280]">Confidence: 94%</div>
+            </div>
+
+            <!-- Box 2 -->
+            <div class="bg-[#0A0A0E] border border-[#20202E] hover:border-[#A855F7]/40 rounded-2xl p-4 sm:p-5 flex flex-col justify-between transition duration-200 group">
+              <div>
+                <div class="w-10 h-10 rounded-xl bg-[#A855F7]/15 border border-[#A855F7]/30 flex items-center justify-center text-[#A855F7] mb-3 group-hover:scale-110 transition">
+                  <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4 20l2.5-.96C8.01 20.27 9.94 21 12 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 16c-1.68 0-3.23-.56-4.48-1.51l-.34-.26-1.57.6.61-1.52-.26-.35C4.94 14.65 4.33 13.1 4.33 12c0-4.23 3.44-7.67 7.67-7.67s7.67 3.44 7.67 7.67-3.44 7.67-7.67 7.67zm1.33-11.83h-2.66v2.66h2.66V7.17zm0 4h-2.66v5.33h2.66v-5.33z"/></svg>
+                </div>
+                <h4 class="text-xs sm:text-sm font-bold text-[#A855F7] mb-2 tracking-wide">Focus Opportunity</h4>
+                <p class="text-xs text-[#D4D4D8] leading-relaxed mb-6">Your deep work sessions are most effective in the morning. Protect this time window.</p>
+              </div>
+              <div class="text-[11px] font-mono text-[#6B7280]">Confidence: 92%</div>
+            </div>
+
+            <!-- Box 3 -->
+            <div class="bg-[#0A0A0E] border border-[#20202E] hover:border-[#A855F7]/40 rounded-2xl p-4 sm:p-5 flex flex-col justify-between transition duration-200 group">
+              <div>
+                <div class="w-10 h-10 rounded-xl bg-[#A855F7]/15 border border-[#A855F7]/30 flex items-center justify-center text-[#A855F7] mb-3 group-hover:scale-110 transition">
+                  <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg>
+                </div>
+                <h4 class="text-xs sm:text-sm font-bold text-[#A855F7] mb-2 tracking-wide">Improve Consistency</h4>
+                <p class="text-xs text-[#D4D4D8] leading-relaxed mb-6">You were 18% more consistent this week. Keep maintaining your streak!</p>
+              </div>
+              <div class="text-[11px] font-mono text-[#6B7280]">Confidence: 91%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Card: Insights at a Glance -->
+        <div class="lg:col-span-5 bg-[#0A0A0E] border border-[#1C1C24] p-6 sm:p-7 rounded-[24px] flex flex-col justify-between shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+          <h3 class="text-base sm:text-lg font-bold text-white tracking-tight mb-6">Insights at a Glance</h3>
+
+          <div class="space-y-4 flex-1 flex flex-col justify-around">
+            <!-- Row 1: Longest Focus Session -->
+            <div class="flex items-center justify-between pb-3.5 border-b border-[#1C1C24]/60">
+              <div class="flex items-center space-x-3.5 min-w-0 flex-1">
+                <div class="w-10 h-10 rounded-xl bg-[#1E1035] border border-[#A855F7]/30 flex items-center justify-center text-[#A855F7] shrink-0 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
+                  <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                </div>
+                <span class="text-xs font-medium text-[#D4D4D8] truncate">Longest Focus Session</span>
+              </div>
+              <div class="flex items-center space-x-3 shrink-0 ml-2">
+                <span class="text-sm font-bold text-[#D8B4FE]">2h 45m</span>
+                <span class="text-[11px] text-[#6B7280] w-28 text-right">Yesterday, 9:00 AM</span>
+              </div>
+            </div>
+
+            <!-- Row 2: Tasks Completed -->
+            <div class="flex items-center justify-between pb-3.5 border-b border-[#1C1C24]/60">
+              <div class="flex items-center space-x-3.5 min-w-0 flex-1">
+                <div class="w-10 h-10 rounded-xl bg-[#052e16] border border-[#14532d] flex items-center justify-center text-[#4ade80] shrink-0 shadow-[0_0_10px_rgba(74,222,128,0.2)]">
+                  <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                </div>
+                <span class="text-xs font-medium text-[#D4D4D8] truncate">Tasks Completed</span>
+              </div>
+              <div class="flex items-center space-x-2 shrink-0 ml-2">
+                <span class="text-sm font-bold text-[#D8B4FE]">34</span>
+                <span class="text-[11px] text-[#6B7280]">vs 28 last week</span>
+                <span class="px-2 py-0.5 rounded bg-[#052e16] text-[#4ade80] text-[10px] font-bold border border-[#14532d]">+ 21%</span>
+              </div>
+            </div>
+
+            <!-- Row 3: Average Daily Focus -->
+            <div class="flex items-center justify-between pb-3.5 border-b border-[#1C1C24]/60">
+              <div class="flex items-center space-x-3.5 min-w-0 flex-1">
+                <div class="w-10 h-10 rounded-xl bg-[#1E1035] border border-[#A855F7]/30 flex items-center justify-center text-[#A855F7] shrink-0 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
+                  <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/></svg>
+                </div>
+                <span class="text-xs font-medium text-[#D4D4D8] truncate">Average Daily Focus</span>
+              </div>
+              <div class="flex items-center space-x-2 shrink-0 ml-2">
+                <span class="text-sm font-bold text-[#D8B4FE]">4h 3m</span>
+                <span class="text-[11px] text-[#6B7280]">vs 3h 25m last week</span>
+                <span class="px-2 py-0.5 rounded bg-[#052e16] text-[#4ade80] text-[10px] font-bold border border-[#14532d]">+ 18%</span>
+              </div>
+            </div>
+
+            <!-- Row 4: Total Pomodoro -->
+            <div class="flex items-center justify-between pt-0.5">
+              <div class="flex items-center space-x-3.5 min-w-0 flex-1">
+                <div class="w-10 h-10 rounded-xl bg-[#1E1035] border border-[#A855F7]/30 flex items-center justify-center text-[#A855F7] shrink-0 shadow-[0_0_10px_rgba(168,85,247,0.2)]">
+                  <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M15 1H9v2h6V1zm-4 13h2V8h-2v6zm8.03-6.61l1.42-1.42c-.43-.51-.9-.99-1.41-1.41l-1.42 1.42C16.07 4.74 14.12 4 12 4c-4.97 0-9 4.03-9 9s4.02 9 9 9 9-4.03 9-9c0-2.12-.74-4.07-1.97-5.61zM12 20c-3.87 0-7-3.13-7-7s3.13-7 7-7 7 3.13 7 7-3.13 7-7 7z"/></svg>
+                </div>
+                <span class="text-xs font-medium text-[#D4D4D8] truncate">Total Pomodoro</span>
+              </div>
+              <div class="flex items-center space-x-2 shrink-0 ml-2">
+                <span class="text-sm font-bold text-[#D8B4FE]">56</span>
+                <span class="text-[11px] text-[#6B7280]">vs 47 last week</span>
+                <span class="px-2 py-0.5 rounded bg-[#052e16] text-[#4ade80] text-[10px] font-bold border border-[#14532d]">+ 19%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const cc1 = document.getElementById('chartCard1');
+      if (cc1) cc1.outerHTML = cc1.outerHTML.replace('[[TITLE]]', 'Daily Focus Distribution').replace('[[DESCRIPTION]]', 'Hours spent studying per day').replace('[[CHART_ID]]', 'focusDistChart');
+      const cc2 = document.getElementById('chartCard2');
+      if (cc2) cc2.outerHTML = cc2.outerHTML.replace('[[TITLE]]', 'Goal Completion Velocity').replace('[[DESCRIPTION]]', 'Tasks finished vs planned milestones').replace('[[CHART_ID]]', 'velocityChart');
+
+      // Bootstrap analytics slice through the store (covers KPIs + all chart data)
+      await window.SF_STORE.bootstrap(['user', 'analytics']);
+
+      const a = window.SF_STORE.getSlice('analytics');
+
+      const CHART_OPTIONS_BASE = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { grid: { color: '#1C1C1C' }, ticks: { color: '#6B7280', font: { family: 'Inter', size: 11 } } },
+          y: { grid: { color: '#1C1C1C' }, ticks: { color: '#6B7280', font: { family: 'Inter', size: 11 } } }
+        }
+      };
+
+      // Subscribe to analytics slice to re-render charts if period changes
+      window.SF_STORE.subscribe('analytics', (slice) => {
+        if (!slice.loading) renderAnalyticsCharts(slice);
+      });
+
+      setTimeout(() => renderAnalyticsCharts(a), 100);
+
+      function renderAnalyticsCharts(slice) {
+        const fEl = document.getElementById('focusDistChart');
+        if (fEl && slice.focusChartData) new Chart(fEl.getContext('2d'), { type: 'line', data: slice.focusChartData, options: CHART_OPTIONS_BASE });
+
+        const vEl = document.getElementById('velocityChart');
+        if (vEl && slice.velocityChartData) new Chart(vEl.getContext('2d'), {
+          type: 'bar',
+          data: slice.velocityChartData,
+          options: { ...CHART_OPTIONS_BASE, plugins: { legend: { labels: { color: '#FAFAFA', font: { family: 'Inter', size: 11 } } } } }
+        });
+
+        const wcEl = document.getElementById('weeklyComparisonChart');
+        if (wcEl && slice.weeklyComparison) new Chart(wcEl.getContext('2d'), {
+          type: 'bar',
+          data: slice.weeklyComparison,
+          options: { ...CHART_OPTIONS_BASE, scales: { x: { grid: { display: false }, ticks: { color: '#6B7280', font: { family: 'Inter', size: 11 } } }, y: { grid: { color: '#1C1C1C' }, ticks: { color: '#6B7280', font: { family: 'Inter', size: 11 } } } } }
+        });
+
+        const gaEl = document.getElementById('goalAllocationChart');
+        if (gaEl && slice.goalAllocation) new Chart(gaEl.getContext('2d'), {
+          type: 'doughnut',
+          data: slice.goalAllocation,
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, cutout: '74%' }
+        });
+      }
+    });
+  </script>
+</body>
+</html>

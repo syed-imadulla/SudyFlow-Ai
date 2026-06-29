@@ -1,0 +1,49 @@
+<div class="card bg-[#0E0E0E] border border-[#2A2A2A] p-6 rounded-[20px] w-full max-w-sm mx-auto flex flex-col items-center justify-center relative overflow-hidden group">
+  <div class="flex items-center space-x-2 mb-4">
+    <span class="w-2 h-2 rounded-full bg-[#A855F7] animate-pulse"></span>
+    <span class="text-xs font-semibold tracking-wider uppercase text-[#A1A1AA]">Focus Timer</span>
+  </div>
+  <div class="relative flex items-center justify-center my-4">
+    <svg class="w-44 h-44 transform -rotate-90" viewBox="0 0 100 100">
+      <circle cx="50" cy="50" r="44" fill="none" stroke="#202020" stroke-width="6" />
+      <circle cx="50" cy="50" r="44" fill="none" stroke="#A855F7" stroke-width="6" stroke-dasharray="276.46" stroke-dashoffset="50" stroke-linecap="round" class="transition-all duration-1000 shadow-[0_0_20px_rgba(168,85,247,0.25)]" />
+    </svg>
+    <div id="timerDisplay" class="absolute text-4xl font-mono font-bold text-[#FAFAFA] tracking-wider">25:00</div>
+  </div>
+  <div class="flex space-x-3 w-full mt-4">
+    <button id="startBtn" class="btn btn-primary flex-1 py-3 text-sm rounded-xl font-bold tracking-wide">Start</button>
+    <button id="pauseBtn" class="btn btn-secondary hidden flex-1 py-3 text-sm rounded-xl font-bold">Pause</button>
+    <button id="resetBtn" class="btn btn-ghost hidden px-4 py-3 text-sm rounded-xl">Reset</button>
+  </div>
+</div>
+<script>
+  let total = 1500, remaining = total, interval;
+  const display = document.getElementById('timerDisplay');
+  const startBtn = document.getElementById('startBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const resetBtn = document.getElementById('resetBtn');
+  function update(){
+    const m = String(Math.floor(remaining/60)).padStart(2,'0');
+    const s = String(remaining%60).padStart(2,'0');
+    if(display) display.textContent = `${m}:${s}`;
+  }
+  function tick(){
+    if(remaining>0){remaining--; update();}
+    else {clearInterval(interval); alert('✨ Focus Block Complete!');}
+  }
+  if(startBtn) {
+    startBtn.onclick = () => {
+      interval = setInterval(tick,1000);
+      startBtn.classList.add('hidden');
+      pauseBtn.classList.remove('hidden');
+      resetBtn.classList.remove('hidden');
+    };
+  }
+  if(pauseBtn) {
+    pauseBtn.onclick = () => {clearInterval(interval); pauseBtn.classList.add('hidden'); startBtn.classList.remove('hidden'); startBtn.textContent = 'Resume';};
+  }
+  if(resetBtn) {
+    resetBtn.onclick = () => {clearInterval(interval); remaining = total; update(); startBtn.classList.remove('hidden'); startBtn.textContent = 'Start'; pauseBtn.classList.add('hidden'); resetBtn.classList.add('hidden');};
+  }
+  update();
+</script>

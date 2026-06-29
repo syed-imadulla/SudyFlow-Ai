@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Dashboard – StudyFlow AI</title>
+  <link rel="stylesheet" href="src/css/base.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' };</script>
+  <!-- Services Layer -->
+  <script src="src/js/config.js"></script>
+  <script src="src/js/http.js"></script>
+  <script src="src/js/services/userService.js"></script>
+  <script src="src/js/services/goalsService.js"></script>
+  <script src="src/js/store.js"></script>
+  <script src="src/js/components.js"></script>
+  <script src="router.js"></script>
+</head>
+
+<body class="bg-background text-text-primary min-h-screen flex antialiased selection:bg-primary selection:text-white">
+  <!-- Linear Sidebar -->
+  <include src="components/sidebar.html"></include>
+
+  <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+    <!-- Rounded Floating Topbar -->
+    <include src="components/navbar.html"></include>
+
+    <main class="flex-1 p-6 md:p-10 max-w-[1200px] mx-auto w-full space-y-8">
+      <!-- Top Greeting -->
+      <div>
+        <h1 class="text-3xl font-extrabold tracking-tight text-[#FAFAFA] flex items-center gap-3 font-sans">
+          Good evening, Imadulla <svg class="w-7 h-7 inline text-[#A855F7] fill-current drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]" viewBox="0 0 24 24"><path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/></svg>
+        </h1>
+        <p class="text-[#A1A1AA] text-sm mt-1">Let's make today productive.</p>
+      </div>
+
+      <!-- Hero Recommendation & Schedule Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- AI Recommendation Main Card -->
+        <!-- AI Recommendation / Active Goal Main Card -->
+        <div id="heroRecommendationCard"
+          class="lg:col-span-2 card bg-[#0A0A0E] border border-[#20202A] p-8 rounded-[24px] flex flex-col justify-between gap-6 relative overflow-hidden group shadow-[0_0_50px_rgba(168,85,247,0.12)]">
+          <!-- Subtle Glow Background -->
+          <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-[#A855F7]/15 rounded-full blur-[80px] pointer-events-none z-0"></div>
+
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10 w-full my-auto">
+            <!-- Left Info Column -->
+            <div class="space-y-5 flex-1 min-w-0 pr-2">
+              <div class="flex items-center space-x-2 text-xs font-bold text-[#A855F7] tracking-wider uppercase">
+                <svg class="w-4 h-4 text-[#A855F7] fill-current drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" viewBox="0 0 24 24"><path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/><path d="M5 2L5.8 4.2L8 5L5.8 5.8L5 8L4.2 5.8L2 5L4.2 4.2L5 2Z" opacity="0.7"/><path d="M19 16L19.8 18.2L22 19L19.8 19.8L19 22L18.2 19.8L16 19L18.2 18.2L19 16Z" opacity="0.7"/></svg>
+                <span>AI RECOMMENDATION</span>
+              </div>
+
+              <h2 id="heroGoalTitle" class="text-3xl sm:text-4xl font-extrabold text-[#FAFAFA] tracking-tight">DBMS Mini Project</h2>
+
+              <!-- Progress Bar & Text -->
+              <div class="flex items-center space-x-3 max-w-md pt-1">
+                <div class="flex-1 bg-[#151520] h-3 rounded-full overflow-hidden border border-[#252535]">
+                  <div id="heroGoalProgressBar" class="bg-[#A855F7] h-full rounded-full shadow-[0_0_15px_rgba(168,85,247,0.5)] transition-all duration-1000" style="width: 68%;"></div>
+                </div>
+                <span id="heroGoalProgressText" class="text-base font-bold text-[#FAFAFA] font-mono">68%</span>
+              </div>
+
+              <!-- Metadata Row -->
+              <div class="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs pt-2 text-[#A1A1AA]">
+                <div class="flex items-center space-x-1.5">
+                  <svg class="w-3.5 h-3.5 text-[#A855F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                  <span id="heroGoalDeadline" class="text-[#FAFAFA] font-medium">Due in 3 days</span>
+                </div>
+                <span class="text-[#2A2A3A]">|</span>
+                <div class="flex items-center space-x-1.5">
+                  <span class="w-2.5 h-2.5 rounded-full bg-[#FACC15]"></span>
+                  <span id="heroGoalUrgency" class="text-[#FAFAFA] font-medium">High Priority</span>
+                </div>
+                <span class="text-[#2A2A3A]">|</span>
+                <div class="flex items-center space-x-1.5 text-[#6B7280]">
+                  <svg class="w-3.5 h-3.5 text-[#A855F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <span id="heroGoalSubCount">2 / 4 Subtasks</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Circular Progress Ring (Enlarged) -->
+            <div class="flex items-center justify-center shrink-0 pt-4 sm:pt-0 relative z-20">
+              <div class="relative w-40 h-40 sm:w-44 sm:h-44 flex items-center justify-center">
+                <!-- SVG Ring -->
+                <svg class="w-full h-full transform -rotate-90 overflow-visible" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="42" stroke="#252535" stroke-width="10" fill="transparent"></circle>
+                  <circle id="heroRingCircle" cx="50" cy="50" r="42" stroke="#A855F7" stroke-width="10" stroke-dasharray="263.89" stroke-dashoffset="84.44" stroke-linecap="round" fill="transparent" class="transition-all duration-1000 shadow-[0_0_25px_rgba(168,85,247,0.6)]"></circle>
+                </svg>
+                <span id="heroRingText" class="absolute text-2xl sm:text-3xl font-extrabold text-[#FAFAFA] font-mono">68%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Actions Row -->
+          <div class="flex items-center justify-between pt-6 mt-2 border-t border-[#1C1C28]/60 z-10">
+            <button onclick="window.location.href='workspace.html'" class="px-7 py-3 rounded-xl bg-[#A855F7] hover:bg-[#9333EA] text-white font-bold text-xs sm:text-sm shadow-[0_0_20px_rgba(168,85,247,0.3)] transition flex items-center space-x-2">
+              <span>Open Workspace</span>
+              <span>→</span>
+            </button>
+
+            <div class="flex items-center space-x-3">
+              <button onclick="window.location.href='idealab.html'" class="relative group/btn p-3 rounded-xl bg-[#151520] hover:bg-[#202030] border border-[#252535] text-[#A855F7] hover:text-[#C084FC] hover:border-[#A855F7]/50 transition flex items-center justify-center shadow-[0_0_15px_rgba(168,85,247,0.15)]">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                </svg>
+                <span class="absolute -top-11 right-0 px-3 py-1.5 bg-[#0A0A0E] border border-[#A855F7]/50 text-[#FAFAFA] text-xs font-bold rounded-lg shadow-[0_0_20px_rgba(168,85,247,0.4)] opacity-0 group-hover/btn:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 tracking-wide font-sans">
+                  AI Recommendation
+                </span>
+              </button>
+              <button onclick="window.location.href='focus.html'" class="relative group/btn p-3 rounded-xl bg-[#151520] hover:bg-[#202030] border border-[#252535] text-[#FACC15] hover:text-[#FDE047] hover:border-[#FACC15]/50 transition flex items-center justify-center shadow-[0_0_15px_rgba(250,204,21,0.15)]">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                <span class="absolute -top-11 right-0 px-3 py-1.5 bg-[#0A0A0E] border border-[#FACC15]/50 text-[#FAFAFA] text-xs font-bold rounded-lg shadow-[0_0_20px_rgba(250,204,21,0.4)] opacity-0 group-hover/btn:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50 tracking-wide font-sans">
+                  Start Focus Session
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Today's Schedule Timeline -->
+        <div class="card bg-[#0E0E0E] border border-[#202020] p-6 rounded-[20px] flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-6">
+              <h3 class="text-base font-bold text-[#FAFAFA] tracking-tight">Today's Schedule</h3>
+              <a href="planner.html" class="text-xs text-[#A855F7] font-semibold hover:underline">View all</a>
+            </div>
+
+            <div id="dashScheduleList"
+              class="space-y-4 relative before:absolute before:inset-0 before:left-2 before:w-0.5 before:bg-[#1C1C1C]">
+              <!-- Focus Pill -->
+              <div class="relative pl-6 flex items-center justify-between group">
+                <span class="absolute left-1 top-2 w-2.5 h-2.5 rounded-full bg-[#A855F7] ring-4 ring-[#0E0E0E]"></span>
+                <div>
+                  <span class="text-[11px] font-mono text-[#6B7280] block">09:00 - 10:30</span>
+                  <h4 class="text-xs font-semibold text-[#FAFAFA] mt-0.5">DBMS Mini Project</h4>
+                </div>
+                <span
+                  class="px-2.5 py-1 rounded text-[10px] font-semibold bg-[#A855F7]/15 border border-[#A855F7]/40 text-[#A855F7] shadow-[0_0_12px_rgba(168,85,247,0.2)]">Focus</span>
+              </div>
+
+              <!-- Review Yellow Pill -->
+              <div class="relative pl-6 flex items-center justify-between group">
+                <span class="absolute left-1 top-2 w-2.5 h-2.5 rounded-full bg-[#FACC15] ring-4 ring-[#0E0E0E]"></span>
+                <div>
+                  <span class="text-[11px] font-mono text-[#6B7280] block">11:00 - 12:00</span>
+                  <h4 class="text-xs font-semibold text-[#FAFAFA] mt-0.5">OS Assignment</h4>
+                </div>
+                <span
+                  class="px-2.5 py-1 rounded text-[10px] font-bold bg-[#FACC15]/15 border border-[#FACC15]/40 text-[#FACC15] shadow-[0_0_12px_rgba(250,204,21,0.2)]">Review</span>
+              </div>
+
+              <!-- Focus Pill -->
+              <div class="relative pl-6 flex items-center justify-between group">
+                <span class="absolute left-1 top-2 w-2.5 h-2.5 rounded-full bg-[#A855F7] ring-4 ring-[#0E0E0E]"></span>
+                <div>
+                  <span class="text-[11px] font-mono text-[#6B7280] block">14:00 - 15:30</span>
+                  <h4 class="text-xs font-semibold text-[#FAFAFA] mt-0.5">CN Lab Report</h4>
+                </div>
+                <span
+                  class="px-2.5 py-1 rounded text-[10px] font-semibold bg-[#A855F7]/15 border border-[#A855F7]/40 text-[#A855F7] shadow-[0_0_12px_rgba(168,85,247,0.2)]">Focus</span>
+              </div>
+
+              <!-- Study Pill -->
+              <div class="relative pl-6 flex items-center justify-between group">
+                <span class="absolute left-1 top-2 w-2.5 h-2.5 rounded-full bg-[#6B7280] ring-4 ring-[#0E0E0E]"></span>
+                <div>
+                  <span class="text-[11px] font-mono text-[#6B7280] block">16:00 - 17:00</span>
+                  <h4 class="text-xs font-semibold text-[#FAFAFA] mt-0.5">DSA Practice</h4>
+                </div>
+                <span
+                  class="px-2.5 py-1 rounded text-[10px] font-semibold bg-[#151515] border border-[#2A2A2A] text-[#A1A1AA]">Study</span>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="window.openAddItemModal('dashScheduleList', true)"
+            class="mt-6 w-full py-2.5 text-xs font-semibold text-[#A855F7] hover:text-[#FAFAFA] transition rounded-xl border border-dashed border-[#2A2A2A] hover:border-[#A855F7] flex items-center justify-center space-x-1">
+            <span>+ Add Time Block</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Second Row: Today's Tasks & Compact Coaching/Stats Column -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
+        <!-- Left Column (Takes 2 Columns): Main Goals Priority Hub & Actionable Subtasks -->
+        <div class="lg:col-span-2 flex flex-col gap-6 h-full">
+          <!-- Card 1: Priority Main Goals & Progress -->
+          <div class="card bg-[#0E0E0E] border border-[#202020] p-6 rounded-[20px] space-y-4">
+            <div class="flex items-center justify-between pb-3 border-b border-[#1C1C1C]">
+              <div class="flex items-center space-x-3">
+                <span class="p-1.5 rounded-lg bg-[#A855F7]/15 text-[#A855F7] text-sm">🎯</span>
+                <h3 class="text-base font-bold text-[#FAFAFA] tracking-tight">Active Main Goals & Priorities</h3>
+              </div>
+              <button onclick="window.openAddItemModal('dashMainGoalsList', false)"
+                class="text-xs bg-[#A855F7]/15 border border-[#A855F7]/40 text-[#A855F7] px-3 py-1 rounded-lg hover:bg-[#A855F7] hover:text-white transition font-bold">+ Create Main Goal</button>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="dashMainGoalsList">
+              <!-- Populated dynamically via renderDashboardTasks() -->
+            </div>
+          </div>
+
+          <!-- Card 2: Today's Actionable Subtasks -->
+          <div class="card bg-[#0E0E0E] border border-[#202020] p-6 rounded-[20px] space-y-4 flex-1 flex flex-col justify-between">
+            <div>
+              <div class="flex items-center justify-between pb-3 border-b border-[#1C1C1C] mb-4">
+                <div class="flex items-center space-x-3">
+                  <span class="p-1.5 rounded-lg bg-[#FACC15]/15 text-[#FACC15] text-sm">⚡</span>
+                  <h3 class="text-base font-bold text-[#FAFAFA] tracking-tight">Today's Actionable Subtasks</h3>
+                </div>
+                <a href="workspace.html" class="text-xs text-[#A855F7] font-semibold hover:underline">View workspace →</a>
+              </div>
+
+              <div class="space-y-3" id="dashTasksList">
+                <!-- Populated dynamically via renderDashboardTasks() -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column (Takes 1 Column): Compact AI Coach + Smaller Stats Stack -->
+        <div class="flex flex-col gap-6 h-full">
+          <!-- Enhanced AI Study Coach Card (Slightly Enlarged for Clean Symmetry) -->
+          <div class="card bg-[#0E0E0E] border border-[#202020] p-6 rounded-[20px] relative overflow-hidden space-y-4 shadow-sm shrink-0">
+            <div class="flex items-center justify-between pb-3 border-b border-[#1C1C1C]">
+              <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 rounded-lg bg-[#A855F7]/20 border border-[#A855F7]/40 flex items-center justify-center text-[#A855F7] shadow-[0_0_12px_rgba(168,85,247,0.2)]">
+                  <svg class="w-4 h-4 text-[#A855F7] fill-current drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" viewBox="0 0 24 24"><path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/><path d="M5 2L5.8 4.2L8 5L5.8 5.8L5 8L4.2 5.8L2 5L4.2 4.2L5 2Z" opacity="0.7"/><path d="M19 16L19.8 18.2L22 19L19.8 19.8L19 22L18.2 19.8L16 19L18.2 18.2L19 16Z" opacity="0.7"/></svg>
+                </div>
+                <div>
+                  <h4 class="font-extrabold text-sm text-[#FAFAFA] tracking-tight uppercase">AI Study Coach</h4>
+                </div>
+              </div>
+              <span class="px-2.5 py-1 rounded-full bg-[#22C55E]/10 border border-[#22C55E]/30 text-[#22C55E] text-[10px] font-bold font-mono flex items-center gap-1.5">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#22C55E] animate-pulse"></span> Active
+              </span>
+            </div>
+
+            <p id="aiCoachText" class="text-sm text-[#FAFAFA] leading-relaxed bg-[#0A0A0A] p-4 rounded-xl border border-[#1C1C1C] shadow-inner font-medium">
+              You have active deadlines scheduled. Complete your top priority subtask today to stay ahead! 🚀
+            </p>
+
+            <div class="space-y-2 pt-1">
+              <button onclick="window.location.href='idealab.html'" class="w-full py-2.5 bg-[#A855F7] hover:bg-[#9333EA] text-white rounded-xl text-sm font-bold transition flex items-center justify-center space-x-2 shadow-[0_0_15px_rgba(168,85,247,0.3)]">
+                <span>Launch IdeaLab Architect</span>
+                <span>→</span>
+              </button>
+              <button onclick="window.location.href='focus.html'" class="w-full py-2 bg-[#151515] hover:bg-[#202020] text-[#FAFAFA] rounded-xl text-xs font-semibold transition border border-[#2A2A2A] flex items-center justify-center space-x-1.5">
+                <svg class="w-3.5 h-3.5 text-[#FACC15] fill-current" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span>Deep Focus Session</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Compact Stats Box Below AI Coach -->
+          <div class="card bg-[#0E0E0E] border border-[#202020] p-6 rounded-[20px] space-y-6 shadow-sm flex flex-col">
+            <div class="flex items-center justify-between pb-3 border-b border-[#1C1C1C]">
+              <span class="text-xs font-bold text-[#FAFAFA] uppercase tracking-wider font-mono flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-[#A855F7] fill-current" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                <span>Focus & Velocity</span>
+              </span>
+              <a href="analytics.html" class="text-xs text-[#A855F7] font-bold hover:underline">Analytics →</a>
+            </div>
+
+            <!-- Focus Streak with 1 Week Check Stacked Below Heading -->
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2.5">
+                  <div class="w-8 h-8 rounded-lg bg-[#A855F7]/15 border border-[#A855F7]/30 flex items-center justify-center text-[#A855F7] shadow-[0_0_12px_rgba(168,85,247,0.15)] shrink-0">
+                    <svg class="w-4 h-4 text-[#A855F7] fill-current drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" viewBox="0 0 24 24"><path d="M12 23C7.58 23 4 19.42 4 15C4 11.5 6 9 8 7C8.67 8.33 9.67 9.67 11 11C10.5 7.5 12 4.5 14 2C15.5 4 17 6.5 17 9C18.5 10.5 20 12.5 20 15C20 19.42 16.42 23 12 23ZM12 19C14.21 19 16 17.21 16 15C16 13.5 15.2 12.2 14 11.5C14.2 12.8 13.7 14.2 12.5 15C12.5 13.8 12 12.8 11.2 12C10.5 12.8 10 13.8 10 15C10 17.21 11.79 19 12 19Z"/><path d="M4.5 2L5.2 3.8L7 4.5L5.2 5.2L4.5 7L3.8 5.2L2 4.5L3.8 3.8L4.5 2Z"/></svg>
+                  </div>
+                  <span class="text-xs font-bold text-[#FAFAFA] font-mono tracking-wide">FOCUS STREAK</span>
+                </div>
+                <span class="text-sm font-extrabold text-[#A855F7] font-mono">7 <span class="text-[10px] font-normal text-[#A1A1AA]">days</span></span>
+              </div>
+              <!-- 7 Days Circle Checkmarks Below Heading -->
+              <div class="grid grid-cols-7 gap-1 pt-1 font-mono text-[10px]">
+                <div class="flex flex-col items-center gap-1"><span class="text-[9px] text-[#6B7280]">M</span><span class="w-6 h-6 rounded-full bg-[#A855F7]/20 border border-[#A855F7]/50 text-[#A855F7] flex items-center justify-center font-bold text-xs">✓</span></div>
+                <div class="flex flex-col items-center gap-1"><span class="text-[9px] text-[#6B7280]">T</span><span class="w-6 h-6 rounded-full bg-[#A855F7]/20 border border-[#A855F7]/50 text-[#A855F7] flex items-center justify-center font-bold text-xs">✓</span></div>
+                <div class="flex flex-col items-center gap-1"><span class="text-[9px] text-[#6B7280]">W</span><span class="w-6 h-6 rounded-full bg-[#A855F7]/20 border border-[#A855F7]/50 text-[#A855F7] flex items-center justify-center font-bold text-xs">✓</span></div>
+                <div class="flex flex-col items-center gap-1"><span class="text-[9px] text-[#6B7280]">T</span><span class="w-6 h-6 rounded-full bg-[#A855F7]/20 border border-[#A855F7]/50 text-[#A855F7] flex items-center justify-center font-bold text-xs">✓</span></div>
+                <div class="flex flex-col items-center gap-1"><span class="text-[9px] text-[#6B7280]">F</span><span class="w-6 h-6 rounded-full bg-[#A855F7]/20 border border-[#A855F7]/50 text-[#A855F7] flex items-center justify-center font-bold text-xs">✓</span></div>
+                <div class="flex flex-col items-center gap-1"><span class="text-[9px] text-[#6B7280]">S</span><span class="w-6 h-6 rounded-full bg-[#A855F7]/20 border border-[#A855F7]/50 text-[#A855F7] flex items-center justify-center font-bold text-xs">✓</span></div>
+                <div class="flex flex-col items-center gap-1"><span class="text-[9px] text-[#A855F7] font-bold">S</span><span class="w-6 h-6 rounded-full bg-[#A855F7] text-white flex items-center justify-center font-bold text-xs shadow-[0_0_12px_rgba(168,85,247,0.6)]">✓</span></div>
+              </div>
+            </div>
+
+            <!-- Weekly Progress Chart -->
+            <div class="space-y-3 pt-4 border-t border-[#1C1C1C]">
+              <div class="flex items-center justify-between">
+                <span class="text-sm font-bold text-[#FAFAFA] tracking-tight">Weekly Progress</span>
+                <div class="relative inline-block text-left custom-dropdown-container">
+                  <button type="button" onclick="window.toggleCustomDropdown('weeklyProgressMenu', 'weeklyProgressArrow')" class="bg-[#151520] hover:bg-[#202030] border border-[#252535] hover:border-[#A855F7]/50 text-[#FAFAFA] rounded-xl text-xs font-semibold px-3 py-1.5 flex items-center gap-2 transition shadow-[0_0_15px_rgba(168,85,247,0.15)] focus:outline-none">
+                    <span id="weeklyProgressSelectedText">This Week</span>
+                    <svg class="w-3.5 h-3.5 text-[#A855F7] transition-transform duration-200 custom-dropdown-arrow" id="weeklyProgressArrow" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/></svg>
+                  </button>
+                  <div id="weeklyProgressMenu" class="hidden custom-dropdown-menu absolute right-0 mt-2 w-36 rounded-xl bg-[#0E0E0E] border border-[#2A2A2A] shadow-[0_10px_30px_rgba(0,0,0,0.9),0_0_20px_rgba(168,85,247,0.25)] py-1.5 z-50 backdrop-blur-xl overflow-hidden">
+                    <button type="button" onclick="window.selectCustomDropdownItem('weeklyProgressMenu', 'weeklyProgressArrow', 'weeklyProgressSelectedText', 'This Week', () => window.updateProgressChart('week'))" class="w-full text-left px-3.5 py-2 text-xs font-semibold text-[#FAFAFA] hover:bg-[#A855F7] hover:text-white transition flex items-center justify-between group">
+                      <span>This Week</span>
+                    </button>
+                    <button type="button" onclick="window.selectCustomDropdownItem('weeklyProgressMenu', 'weeklyProgressArrow', 'weeklyProgressSelectedText', 'This Month', () => window.updateProgressChart('month'))" class="w-full text-left px-3.5 py-2 text-xs font-semibold text-[#A1A1AA] hover:bg-[#A855F7] hover:text-white transition flex items-center justify-between group">
+                      <span>This Month</span>
+                    </button>
+                    <button type="button" onclick="window.selectCustomDropdownItem('weeklyProgressMenu', 'weeklyProgressArrow', 'weeklyProgressSelectedText', 'Today', () => window.updateProgressChart('today'))" class="w-full text-left px-3.5 py-2 text-xs font-semibold text-[#A1A1AA] hover:bg-[#A855F7] hover:text-white transition flex items-center justify-between group">
+                      <span>Today</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="relative h-24 w-full pt-2">
+                <canvas id="weeklyBarChart"></canvas>
+              </div>
+            </div>
+
+            <!-- Productivity Score -->
+            <div class="pt-4 border-t border-[#1C1C1C] space-y-4">
+              <span class="text-sm font-bold text-[#FAFAFA] tracking-tight block">Productivity Score</span>
+              <div class="flex items-center gap-5 pb-2">
+                <div class="relative w-24 h-24 flex items-center justify-center shrink-0">
+                  <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                    <path class="text-[#1A1A24]" stroke-width="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
+                    <path class="text-[#A855F7]" stroke-dasharray="87, 100" stroke-width="3" stroke-linecap="round" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" class="drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]"></path>
+                  </svg>
+                  <div class="absolute flex flex-col items-center justify-center text-center leading-none">
+                    <span class="text-xl font-extrabold text-[#FAFAFA] font-mono">87</span>
+                    <span class="text-[10px] text-[#6B7280] font-mono mt-0.5">/100</span>
+                  </div>
+                </div>
+                <div class="space-y-1 flex-1">
+                  <div class="flex items-center gap-1.5 text-sm font-bold text-[#FAFAFA]">
+                    <span>Excellent</span>
+                    <svg class="w-4 h-4 text-[#A855F7] fill-current drop-shadow-[0_0_8px_rgba(168,85,247,0.8)] shrink-0" viewBox="0 0 24 24"><path d="M12 23C7.58 23 4 19.42 4 15C4 11.5 6 9 8 7C8.67 8.33 9.67 9.67 11 11C10.5 7.5 12 4.5 14 2C15.5 4 17 6.5 17 9C18.5 10.5 20 12.5 20 15C20 19.42 16.42 23 12 23ZM12 19C14.21 19 16 17.21 16 15C16 13.5 15.2 12.2 14 11.5C14.2 12.8 13.7 14.2 12.5 15C12.5 13.8 12 12.8 11.2 12C10.5 12.8 10 13.8 10 15C10 17.21 11.79 19 12 19Z"/><path d="M4.5 2L5.2 3.8L7 4.5L5.2 5.2L4.5 7L3.8 5.2L2 4.5L3.8 3.8L4.5 2Z"/></svg>
+                  </div>
+                  <p class="text-xs text-[#A1A1AA] leading-relaxed">You're in the top 20% of students this week.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // ── Render helpers (unchanged UI logic) ──────────────────────────────────
+    function renderDashboardTasks() {
+      const goalsSlice = window.SF_STORE.getSlice('goals');
+      const goals = goalsSlice.items || [];
+      const tasksContainer = document.getElementById('dashTasksList');
+      const mainGoalsContainer = document.getElementById('dashMainGoalsList');
+
+      if (goals.length === 0) {
+        if (mainGoalsContainer) {
+          mainGoalsContainer.innerHTML = window.SF_COMPONENTS.renderEmptyState({
+            title: 'No Active Goals',
+            message: 'Create your first AI Goal Breakdown to start tracking your study productivity.',
+            actionHtml: '<button onclick="window.openAddItemModal(\'dashMainGoalsList\')" class="btn btn-primary px-4 py-2 text-xs font-bold shadow-[0_0_15px_rgba(168,85,247,0.3)]">Create Goal →</button>'
+          });
+        }
+        if (tasksContainer) {
+          tasksContainer.innerHTML = window.SF_COMPONENTS.renderEmptyState({
+            title: 'No Tasks Assigned',
+            message: 'You have no immediate subtasks assigned for today.',
+            iconHtml: '✨'
+          });
+        }
+        return;
+      }
+
+      const topGoal = goals[0];
+      const hTitle = document.getElementById('heroGoalTitle');
+      const hDesc = document.getElementById('heroGoalDesc');
+      const hProgText = document.getElementById('heroGoalProgressText');
+      const hProgBar = document.getElementById('heroGoalProgressBar');
+      const hDeadline = document.getElementById('heroGoalDeadline');
+      const hSubCount = document.getElementById('heroGoalSubCount');
+      const hUrgency = document.getElementById('heroGoalUrgency');
+      const aiCoachText = document.getElementById('aiCoachText');
+      const btn1 = document.getElementById('heroIdeaLabBtn');
+      const btn2 = document.getElementById('heroIdeaLabBtnSecondary');
+      const ringText = document.getElementById('heroRingText');
+      const ringCircle = document.getElementById('heroRingCircle');
+
+      if (hTitle) hTitle.textContent = topGoal.title;
+      if (hDesc) hDesc.textContent = topGoal.description || 'AI active project plan.';
+      if (hProgText) hProgText.textContent = `${topGoal.progress || 0}%`;
+      if (hProgBar) hProgBar.style.width = `${topGoal.progress || 0}%`;
+      if (ringText) ringText.textContent = `${topGoal.progress || 0}%`;
+      if (ringCircle) {
+        const p = topGoal.progress || 0;
+        ringCircle.style.strokeDashoffset = `${263.89 - (263.89 * p / 100)}`;
+      }
+      if (hDeadline) hDeadline.textContent = topGoal.finalDeadlineDisplay;
+      if (hUrgency) {
+        const u = topGoal.urgency || 'ACTIVE';
+        hUrgency.textContent = u;
+        if (u === 'URGENT' || u.includes('High') || u.includes('Urgent')) {
+          hUrgency.className = 'text-red-400 font-bold';
+        } else {
+          hUrgency.className = 'text-[#FAFAFA] font-medium';
+        }
+      }
+      const doneSubs = topGoal.subtasks.filter(s => s.completed).length;
+      if (hSubCount) hSubCount.textContent = `${doneSubs} / ${topGoal.subtasks.length} Subtasks`;
+      if (aiCoachText) aiCoachText.innerHTML = `You have <strong>${topGoal.subtasks.length - doneSubs} remaining subtasks</strong> for <em>${topGoal.title}</em>. Complete one today! ✨`;
+
+      if (btn1) btn1.onclick = () => window.location.href = `idealab.html?goalId=${topGoal.id}`;
+      if (btn2) btn2.onclick = () => window.location.href = `idealab.html?goalId=${topGoal.id}`;
+
+      if (mainGoalsContainer) {
+        mainGoalsContainer.innerHTML = goals.slice(0, 4).map(g => window.SF_COMPONENTS.renderGoalCard(g, 'compact')).join('');
+      }
+
+      if (tasksContainer) {
+        let allSubtasks = [];
+        goals.forEach(g => {
+          g.subtasks.forEach(s => {
+            if (!s.completed) {
+              if (s.deadlineDisplay === 'Tomorrow' || s.deadlineDisplay === 'In 2 days' || s.deadlineDisplay === 'In 3 days') {
+                s.deadlineDisplay = 'Today';
+              }
+            }
+            if (s.deadlineDisplay === 'Today' || s.deadlineDisplay === 'Overdue') {
+              allSubtasks.push({ ...s, goalTitle: g.title, goalId: g.id });
+            }
+          });
+        });
+        allSubtasks = allSubtasks.slice(0, 4);
+
+        if (allSubtasks.length === 0) {
+          tasksContainer.innerHTML = window.SF_COMPONENTS.renderEmptyState({
+            title: 'All Caught Up!',
+            message: 'No subtasks scheduled for today or overdue. Excellent progress!',
+            iconHtml: '🎉'
+          });
+        } else {
+          tasksContainer.innerHTML = allSubtasks.map(sub => window.SF_COMPONENTS.renderTaskCard(sub, { mode: 'workspace' })).join('');
+        }
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      const mainGoalsContainer = document.getElementById('dashMainGoalsList');
+      const tasksContainer = document.getElementById('dashTasksList');
+      if (mainGoalsContainer && window.SF_COMPONENTS) mainGoalsContainer.innerHTML = window.SF_COMPONENTS.renderSkeleton('compact', 3);
+      if (tasksContainer && window.SF_COMPONENTS) tasksContainer.innerHTML = window.SF_COMPONENTS.renderSkeleton('row', 3);
+
+      // Bootstrap the store – loads goals slice from goalsService
+      await window.SF_STORE.bootstrap(['user', 'goals']);
+
+      // Subscribe to goals slice – re-renders whenever goals change
+      window.SF_STORE.subscribe('goals', () => renderDashboardTasks());
+
+      // Initial render (data already in store after bootstrap)
+      renderDashboardTasks();
+
+      setTimeout(() => {
+        const cEl = document.getElementById('weeklyBarChart');
+        if (cEl) {
+          window.progressChartInstance = new Chart(cEl.getContext('2d'), {
+            type: 'bar',
+            data: {
+              labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+              datasets: [{ data: [1.8, 3.2, 2.5, 4.8, 4.2, 5.0, 1.2], backgroundColor: '#A855F7', borderRadius: 4, maxBarThickness: 14 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false }, ticks: { color: '#6B7280', font: { size: 10, family: 'sans-serif' } } }, y: { display: false } } }
+          });
+        }
+      }, 100);
+    });
+
+    window.updateProgressChart = function(period) {
+      if (!window.progressChartInstance) return;
+      const chart = window.progressChartInstance;
+      if (period === 'today') {
+        chart.data.labels = ['9am', '11am', '1pm', '3pm', '5pm', '7pm', '9pm'];
+        chart.data.datasets[0].data = [0.5, 1.0, 0.8, 1.5, 1.2, 0.4, 0.0];
+      } else if (period === 'month') {
+        chart.data.labels = ['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4'];
+        chart.data.datasets[0].data = [18.5, 22.0, 19.2, 15.8];
+      } else {
+        chart.data.labels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+        chart.data.datasets[0].data = [1.8, 3.2, 2.5, 4.8, 4.2, 5.0, 1.2];
+      }
+      chart.update();
+    };
+  </script>
+</body>
+</html>

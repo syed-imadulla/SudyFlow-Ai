@@ -1,0 +1,69 @@
+/**
+ * StudyFlow AI – Core Constants
+ */
+
+export const API_VERSION = 'v1';
+export const API_PREFIX = `/api/${API_VERSION}`;
+
+export const ENVIRONMENTS = {
+  DEVELOPMENT: 'development',
+  PRODUCTION: 'production',
+  TEST: 'test'
+};
+
+export const HTTP_STATUS = {
+  OK: 200,
+  CREATED: 201,
+  NO_CONTENT: 204,
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  TOO_MANY_REQUESTS: 429,
+  INTERNAL_SERVER_ERROR: 500
+};
+
+export const TASK_PRIORITY = {
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH',
+  URGENT: 'URGENT'
+};
+
+export const TASK_STATUS = {
+  TODO: 'TODO',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED'
+};
+
+export const PLANNER_EVENT_TYPE = {
+  STUDY: 'STUDY',
+  REVIEW: 'REVIEW',
+  DEEP_WORK: 'DEEP_WORK',
+  CLASS: 'CLASS',
+  PERSONAL: 'PERSONAL',
+  OTHER: 'OTHER'
+};
+
+export const FOCUS_SESSION_TYPE = {
+  POMODORO: 'POMODORO',
+  SHORT_BREAK: 'SHORT_BREAK',
+  LONG_BREAK: 'LONG_BREAK'
+};
+
+export const FOCUS_SESSION_STATUS = {
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  ABORTED: 'ABORTED'
+};
+
+export const GOAL_STATUS = {
+  ACTIVE: 'ACTIVE',
+  COMPLETED: 'COMPLETED'
+};
+
+
+
+
+

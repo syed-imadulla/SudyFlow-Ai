@@ -1,0 +1,258 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg-main: #050505;
+  --surface: #0A0A0A;
+  --card: #0E0E0E;
+  --hover: #151515;
+  --border: #202020;
+  --border-elevated: #2A2A2A;
+  --divider: #1C1C1C;
+  --navbar: #080808;
+  --modal: #0D0D0D;
+  --primary: #A855F7;
+  --primary-hover: #9333EA;
+  --primary-glow: rgba(168, 85, 247, 0.25);
+  --secondary: #FACC15;
+  --success: #22C55E;
+  --danger: #EF4444;
+  --text-primary: #FAFAFA;
+  --text-secondary: #A1A1AA;
+  --text-muted: #6B7280;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Universal Divider & Border Color Overrides (Prevents Tailwind CDN defaulting to white currentColor) */
+.border-t, .border-b, .border-l, .border-r, [class*="divide-"] > * + * {
+  border-color: var(--divider) !important;
+}
+
+.border, [class*="border-border"] {
+  border-color: var(--border) !important;
+}
+
+[class*="border-elevated"], [class*="border-[#2A2A2A]"] {
+  border-color: var(--border-elevated) !important;
+}
+
+[class*="border-primary"], [class*="border-[#A855F7]"] {
+  border-color: rgba(168, 85, 247, 0.4) !important;
+}
+
+[class*="border-secondary"], [class*="border-[#FACC15]"] {
+  border-color: rgba(250, 204, 21, 0.4) !important;
+}
+
+hr {
+  border-color: var(--divider) !important;
+}
+
+/* Premium Subtle Border Cards */
+.card {
+  background-color: var(--card);
+  border: 1px solid var(--border) !important;
+  border-radius: 20px;
+  padding: 24px;
+  transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  border-color: #343434 !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.8);
+}
+
+.card-elevated {
+  background-color: var(--card);
+  border: 1px solid var(--border-elevated) !important;
+  border-radius: 20px;
+  padding: 24px;
+}
+
+/* Custom Checkboxes (Sleek High-Visibility Theme) */
+input[type="checkbox"] {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  background-color: #161224 !important;
+  border: 1.5px solid rgba(168, 85, 247, 0.5) !important;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.15) !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 150ms ease;
+  flex-shrink: 0;
+}
+
+input[type="checkbox"]:hover {
+  background-color: #201836 !important;
+  border-color: #A855F7 !important;
+  box-shadow: 0 0 14px rgba(168, 85, 247, 0.35) !important;
+}
+
+input[type="checkbox"]:checked {
+  background-color: #A855F7;
+  border-color: #A855F7 !important;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+}
+
+input[type="checkbox"]:checked::after {
+  content: "✓";
+  color: white;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* Inputs */
+.input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background-color: var(--surface);
+  border: 1px solid var(--border-elevated) !important;
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  transition: all 200ms ease;
+}
+
+.input::placeholder {
+  color: var(--text-muted);
+}
+
+.input:focus {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.18);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  transition: all 200ms ease;
+}
+
+.btn-primary {
+  background-color: var(--primary);
+  color: #FFFFFF;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.25);
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 25px rgba(168, 85, 247, 0.35);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  border: 1px solid var(--border) !important;
+  color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+  background-color: var(--hover);
+  border-color: var(--text-secondary) !important;
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--text-secondary);
+}
+
+.btn-ghost:hover {
+  color: var(--text-primary);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Custom Dropdown / Select Menus (Sleek Pure Black AMOLED Theme) */
+select, .select {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  background-color: #0E0E0E !important;
+  color: #FAFAFA !important;
+  border: 1px solid #202020 !important;
+  border-radius: 12px !important;
+  padding: 8px 32px 8px 14px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  outline: none !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23A855F7'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2.5' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  background-size: 14px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  transition: all 200ms ease;
+}
+
+select:hover, .select:hover {
+  border-color: #A855F7 !important;
+  box-shadow: 0 0 15px rgba(168, 85, 247, 0.25);
+}
+
+select:focus, .select:focus {
+  border-color: #A855F7 !important;
+  box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.25);
+}
+
+select option {
+  background-color: #0E0E0E !important;
+  color: #FAFAFA !important;
+  padding: 12px !important;
+  font-weight: 600 !important;
+}
+
+select option:checked, select option:hover {
+  background-color: #A855F7 !important;
+  color: #FFFFFF !important;
+}
+
+/* Tooltip & Interactive Hover Styling */
+[title], [data-tooltip] {
+  cursor: pointer;
+}

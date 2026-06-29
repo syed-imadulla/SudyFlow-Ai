@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>404 Not Found – StudyFlow AI</title>
+  <link rel="stylesheet" href="src/css/base.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' };</script>
+  <script src="src/js/config.js"></script>
+  <script src="src/js/store.js"></script>
+  <script src="src/js/components.js"></script>
+  <script src="router.js"></script>
+</head>
+<body class="bg-[#0A0A0A] text-[#FAFAFA] min-h-screen flex items-center justify-center antialiased selection:bg-[#A855F7] selection:text-white p-4">
+  <div class="max-w-md w-full p-8 rounded-[28px] bg-[#0E0E0E] border border-[#202020] text-center space-y-6 shadow-[0_0_50px_rgba(168,85,247,0.15)] animate-fadeIn relative overflow-hidden">
+    <!-- Glowing background blur -->
+    <div class="absolute -top-24 -left-24 w-48 h-48 bg-[#A855F7]/20 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-[#A855F7]/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="relative z-10 space-y-4">
+      <div class="w-20 h-20 rounded-2xl bg-[#151515] border border-[#2A2A2A] flex items-center justify-center text-4xl mx-auto text-[#A855F7] shadow-[0_0_25px_rgba(168,85,247,0.25)]">
+        🛸
+      </div>
+      <div class="space-y-1">
+        <span class="text-xs font-mono font-bold tracking-widest text-[#A855F7] uppercase">ERROR 404</span>
+        <h1 class="text-2xl md:text-3xl font-extrabold text-[#FAFAFA] tracking-tight">Page Not Found</h1>
+      </div>
+      <p class="text-xs text-[#A1A1AA] leading-relaxed max-w-sm mx-auto">
+        The workspace orbit you are trying to reach does not exist or has been relocated to another dimension.
+      </p>
+    </div>
+
+    <div class="pt-4 border-t border-[#1C1C1C] relative z-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+      <button onclick="window.history.back()" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#151515] hover:bg-[#202020] text-[#A1A1AA] hover:text-[#FAFAFA] text-xs font-bold border border-[#2A2A2A] transition">
+        ← Go Back
+      </button>
+      <button onclick="window.location.href='dashboard.html'" class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#A855F7] hover:bg-[#9333EA] text-white text-xs font-bold shadow-[0_0_20px_rgba(168,85,247,0.3)] transition flex items-center justify-center gap-1.5">
+        <span>Dashboard</span>
+        <span>🚀</span>
+      </button>
+    </div>
+  </div>
+</body>
+</html>

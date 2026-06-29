@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>IdeaLab – StudyFlow AI</title>
+  <link rel="stylesheet" href="src/css/base.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' };</script>
+  <!-- Services Layer -->
+  <script src="src/js/config.js"></script>
+  <script src="src/js/http.js"></script>
+  <script src="src/js/services/userService.js"></script>
+  <script src="src/js/services/goalsService.js"></script>
+  <script src="src/js/store.js"></script>
+  <script src="router.js"></script>
+</head>
+<body class="bg-[#050508] text-[#FAFAFA] min-h-screen flex antialiased selection:bg-[#A855F7] selection:text-white font-sans">
+  <!-- Linear Sidebar -->
+  <include src="components/sidebar.html"></include>
+
+  <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+    <!-- Rounded Floating Topbar -->
+    <include src="components/navbar.html"></include>
+
+    <main class="flex-1 p-6 md:p-8 max-w-[1200px] mx-auto w-full grid grid-cols-1 xl:grid-cols-3 gap-8 items-start">
+      <!-- Left / Center 2 Columns: Goal Architect Stage -->
+      <div class="xl:col-span-2 flex flex-col space-y-6">
+        <!-- Top Back Title & Subtitle -->
+        <div class="space-y-5">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer text-[#A1A1AA] hover:text-white transition group" onclick="window.location.href='workspace.html'">
+              <svg class="w-5 h-5 text-[#6B7280] group-hover:text-[#A855F7] group-hover:-translate-x-1 transition transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+              <div>
+                <h1 id="ideaLabHeaderTitle" class="text-xl md:text-2xl font-extrabold tracking-tight text-white font-sans">IdeaLab AI Goal Architect</h1>
+                <p class="text-xs text-[#A1A1AA] mt-0.5">Step by step, we'll turn your idea into a clear, actionable plan.</p>
+              </div>
+            </div>
+            <span id="editingGoalBadge" class="hidden px-3 py-1 rounded-full text-xs font-bold bg-[#A855F7]/20 border border-[#A855F7]/40 text-[#A855F7] animate-pulse flex items-center gap-1.5"><svg class="w-3.5 h-3.5 inline shrink-0 fill-current" viewBox="0 0 24 24"><path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/></svg> <span>Restructuring Goal</span></span>
+          </div>
+
+          <!-- 7-Step Horizontal Stepper Bar -->
+          <div class="relative pt-3 pb-1">
+            <div class="absolute left-8 right-8 top-[30px] h-0.5 bg-[#1C1C24] -z-0"></div>
+            
+            <div class="grid grid-cols-7 gap-2 relative z-10 text-center">
+              <div class="step-item flex flex-col items-center cursor-pointer group" onclick="goToStep(1)">
+                <div id="stepDot1" class="w-9 h-9 rounded-full bg-[#A855F7] text-white font-bold text-xs flex items-center justify-center ring-4 ring-[#050508] shadow-[0_0_20px_rgba(168,85,247,0.5)] scale-110 transition duration-200">1</div>
+                <span id="stepText1" class="text-[10px] font-bold text-[#A855F7] mt-2.5 uppercase tracking-widest">GOAL</span>
+              </div>
+
+              <div class="step-item flex flex-col items-center cursor-pointer group" onclick="goToStep(2)">
+                <div id="stepDot2" class="w-9 h-9 rounded-full bg-[#12121A] border border-[#20202E] text-[#6B7280] font-bold text-xs flex items-center justify-center ring-4 ring-[#050508] group-hover:border-[#A855F7]/50 transition duration-200">2</div>
+                <span id="stepText2" class="text-[10px] font-medium text-[#6B7280] mt-2.5 uppercase tracking-widest">WHY</span>
+              </div>
+
+              <div class="step-item flex flex-col items-center cursor-pointer group" onclick="goToStep(3)">
+                <div id="stepDot3" class="w-9 h-9 rounded-full bg-[#12121A] border border-[#20202E] text-[#6B7280] font-bold text-xs flex items-center justify-center ring-4 ring-[#050508] group-hover:border-[#A855F7]/50 transition duration-200">3</div>
+                <span id="stepText3" class="text-[10px] font-medium text-[#6B7280] mt-2.5 uppercase tracking-widest">DEADLINE</span>
+              </div>
+
+              <div class="step-item flex flex-col items-center cursor-pointer group" onclick="goToStep(4)">
+                <div id="stepDot4" class="w-9 h-9 rounded-full bg-[#12121A] border border-[#20202E] text-[#6B7280] font-bold text-xs flex items-center justify-center ring-4 ring-[#050508] group-hover:border-[#A855F7]/50 transition duration-200">4</div>
+                <span id="stepText4" class="text-[10px] font-medium text-[#6B7280] mt-2.5 uppercase tracking-widest">BRAIN DUMP</span>
+              </div>
+
+              <div class="step-item flex flex-col items-center cursor-pointer group" onclick="goToStep(5)">
+                <div id="stepDot5" class="w-9 h-9 rounded-full bg-[#12121A] border border-[#20202E] text-[#6B7280] font-bold text-xs flex items-center justify-center ring-4 ring-[#050508] group-hover:border-[#A855F7]/50 transition duration-200">5</div>
+                <span id="stepText5" class="text-[10px] font-medium text-[#6B7280] mt-2.5 uppercase tracking-widest">TIME</span>
+              </div>
+
+              <div class="step-item flex flex-col items-center cursor-pointer group" onclick="goToStep(6)">
+                <div id="stepDot6" class="w-9 h-9 rounded-full bg-[#12121A] border border-[#20202E] text-[#6B7280] font-bold text-xs flex items-center justify-center ring-4 ring-[#050508] group-hover:border-[#A855F7]/50 transition duration-200">6</div>
+                <span id="stepText6" class="text-[10px] font-medium text-[#6B7280] mt-2.5 uppercase tracking-widest">RESOURCES</span>
+              </div>
+
+              <div class="step-item flex flex-col items-center cursor-pointer group" onclick="goToStep(7)">
+                <div id="stepDot7" class="w-9 h-9 rounded-full bg-[#12121A] border border-[#20202E] text-[#6B7280] font-bold text-xs flex items-center justify-center ring-4 ring-[#050508] group-hover:border-[#A855F7]/50 transition duration-200">7</div>
+                <span id="stepText7" class="text-[10px] font-medium text-[#6B7280] mt-2.5 uppercase tracking-widest">OBSTACLES</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Center Stage Content Area -->
+        <div class="max-w-3xl mx-auto w-full py-2 flex flex-col items-center text-center">
+          <!-- Glowing Orbital Target Graphic Matching Screenshot Exactly -->
+          <div class="relative w-56 h-32 flex items-center justify-center mb-6">
+            <!-- Dashed Orbit Rings -->
+            <div class="absolute w-[230px] h-[70px] rounded-[50%] border border-dashed border-[#A855F7]/35 transform -rotate-[15deg] pointer-events-none animate-pulse"></div>
+            <div class="absolute w-[190px] h-[55px] rounded-[50%] border border-dashed border-[#A855F7]/25 transform rotate-[25deg] pointer-events-none"></div>
+            
+            <!-- Background Soft Glow -->
+            <div class="absolute w-24 h-24 bg-[#A855F7]/35 rounded-full blur-2xl pointer-events-none"></div>
+            
+            <!-- Center Sphere -->
+            <div class="relative z-10 w-20 h-20 rounded-full bg-gradient-to-b from-[#150A26] via-[#0B0614] to-[#050508] border-[1.5px] border-[#A855F7]/70 flex items-center justify-center shadow-[0_0_35px_rgba(168,85,247,0.65)]">
+              <!-- Exact Target Crosshair Icon -->
+              <svg class="w-8 h-8 text-[#D8B4FE] drop-shadow-[0_0_12px_rgba(168,85,247,0.9)]" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="6"></circle>
+                <circle cx="12" cy="12" r="1.5" fill="currentColor"></circle>
+                <path d="M12 2v4"></path>
+                <path d="M12 18v4"></path>
+                <path d="M2 12h4"></path>
+                <path d="M18 12h4"></path>
+              </svg>
+            </div>
+
+            <!-- Floating Sparkles (Top-Left, Top-Right, Bottom-Right) -->
+            <svg class="absolute top-3 left-4 w-4 h-4 text-[#E9D5FF] fill-current animate-pulse drop-shadow-[0_0_8px_rgba(233,213,255,0.8)]" viewBox="0 0 24 24"><path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/></svg>
+            <svg class="absolute top-4 right-8 w-3 h-3 text-[#A855F7] fill-current animate-bounce drop-shadow-[0_0_6px_rgba(168,85,247,0.8)]" viewBox="0 0 24 24"><path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/></svg>
+            <svg class="absolute bottom-2 right-12 w-3.5 h-3.5 text-[#C084FC] fill-current animate-pulse drop-shadow-[0_0_8px_rgba(192,132,252,0.8)]" viewBox="0 0 24 24"><path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/></svg>
+          </div>
+
+          <!-- Dynamic Question Heading -->
+          <h2 id="stepTitle" class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
+            What are you trying to <span class="text-[#A855F7] drop-shadow-[0_0_15px_rgba(168,85,247,0.4)]">accomplish?</span>
+          </h2>
+          <p id="stepSub" class="text-sm text-[#A1A1AA] mt-2">Define the core project or exam objective in one clear sentence.</p>
+
+          <!-- Input Textarea Card -->
+          <div class="w-full mt-5 relative group bg-[#0A0A0E] border border-[#20202A] focus-within:border-[#A855F7]/80 rounded-2xl p-5 shadow-[0_10px_30px_rgba(0,0,0,0.8)] transition duration-300 text-left">
+            <textarea id="stepInput" rows="3" class="w-full bg-transparent border-none focus:outline-none text-sm text-[#FAFAFA] placeholder:text-[#6B7280] resize-none leading-relaxed font-sans pb-10" placeholder="e.g. Build a DBMS Mini Project" onkeydown="if(event.key==='Enter' && !event.shiftKey){ event.preventDefault(); handleStepAdvance(); }"></textarea>
+            
+            <div class="absolute bottom-4 right-4 flex items-center space-x-3">
+              <button onclick="handleStepAdvance()" id="nextBtn" class="bg-[#A855F7] hover:bg-[#9333EA] text-white px-5 py-2 rounded-xl text-xs font-bold shadow-[0_0_15px_rgba(168,85,247,0.35)] flex items-center space-x-2 transition duration-200 transform hover:scale-[1.02]">
+                <span id="nextBtnText">Ask AI & Next</span>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Press Enter helper -->
+          <div class="w-full flex justify-between items-center mt-2 px-2 text-xs font-mono text-[#6B7280]">
+            <button onclick="prevStep()" id="prevBtn" class="hover:text-[#FAFAFA] transition invisible flex items-center gap-1">← Previous Step</button>
+            <span class="flex items-center gap-1.5">Press Enter to continue <kbd class="px-2 py-0.5 rounded bg-[#151520] border border-[#252535] text-[10px] text-[#A1A1AA]">Enter</kbd></span>
+          </div>
+        </div>
+
+        <!-- Bottom Feature Badges Card -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+          <div class="bg-[#0A0A0E] border border-[#1C1C24] p-4 rounded-2xl flex items-start space-x-3 hover:border-[#A855F7]/30 transition group">
+            <div class="w-9 h-9 rounded-xl bg-[#A855F7]/15 border border-[#A855F7]/30 flex items-center justify-center text-[#A855F7] shrink-0 group-hover:scale-110 transition">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M7 2v11h3v9l7-12h-4l4-8z"/></svg>
+            </div>
+            <div>
+              <h4 class="text-xs font-bold text-[#FAFAFA] tracking-wide">AI-Powered</h4>
+              <p class="text-[11px] text-[#A1A1AA] mt-0.5 leading-normal">Smart guidance at every step</p>
+            </div>
+          </div>
+
+          <div class="bg-[#0A0A0E] border border-[#1C1C24] p-4 rounded-2xl flex items-start space-x-3 hover:border-[#A855F7]/30 transition group">
+            <div class="w-9 h-9 rounded-xl bg-[#A855F7]/15 border border-[#A855F7]/30 flex items-center justify-center text-[#A855F7] shrink-0 group-hover:scale-110 transition">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4 20l2.5-.96C8.01 20.27 9.94 21 12 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 16c-1.68 0-3.23-.56-4.48-1.51l-.34-.26-1.57.6.61-1.52-.26-.35C4.94 14.65 4.33 13.1 4.33 12c0-4.23 3.44-7.67 7.67-7.67s7.67 3.44 7.67 7.67-3.44 7.67-7.67 7.67zm1.33-11.83h-2.66v2.66h2.66V7.17zm0 4h-2.66v5.33h2.66v-5.33z"/></svg>
+            </div>
+            <div>
+              <h4 class="text-xs font-bold text-[#FAFAFA] tracking-wide">Step-by-Step</h4>
+              <p class="text-[11px] text-[#A1A1AA] mt-0.5 leading-normal">We break it down so you can build it up</p>
+            </div>
+          </div>
+
+          <div class="bg-[#0A0A0E] border border-[#1C1C24] p-4 rounded-2xl flex items-start space-x-3 hover:border-[#A855F7]/30 transition group">
+            <div class="w-9 h-9 rounded-xl bg-[#A855F7]/15 border border-[#A855F7]/30 flex items-center justify-center text-[#A855F7] shrink-0 group-hover:scale-110 transition">
+              <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M19 5h-2V3H7v2H5c-1.1 0-2 .9-2 2v1c0 2.55 1.92 4.63 4.39 4.94.63 1.5 1.98 2.63 3.61 2.96V19H7v2h10v-2h-4v-3.1c1.63-.33 2.98-1.46 3.61-2.96C19.08 12.63 21 10.55 21 8V7c0-1.1-.9-2-2-2zM5 8V7h2v3.82C5.84 10.4 5 9.3 5 8zm14 0c0 1.3-.84 2.4-2 2.82V7h2v1z"/></svg>
+            </div>
+            <div>
+              <h4 class="text-xs font-bold text-[#FAFAFA] tracking-wide">Actionable Plan</h4>
+              <p class="text-[11px] text-[#A1A1AA] mt-0.5 leading-normal">Get a clear roadmap you can follow</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Column: StudyFlow AI Guided Assistant -->
+      <div class="xl:col-span-1 h-full">
+        <div class="bg-[#0A0A0E] border border-[#20202A] rounded-2xl p-5 flex flex-col justify-between h-full min-h-[580px] shadow-[0_0_30px_rgba(0,0,0,0.6)] sticky top-24">
+          <!-- Assistant Header -->
+          <div>
+            <div class="flex items-center justify-between pb-4 border-b border-[#1C1C24]">
+              <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-[#A855F7]/15 border border-[#A855F7]/30 flex items-center justify-center text-[#A855F7] shadow-[0_0_15px_rgba(168,85,247,0.3)]">
+                  <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/><path d="M5 2L5.8 4.2L8 5L5.8 5.8L5 8L4.2 5.8L2 5L4.2 4.2L5 2Z" opacity="0.7"/><path d="M19 16L19.8 18.2L22 19L19.8 19.8L19 22L18.2 19.8L16 19L18.2 18.2L19 16Z" opacity="0.7"/></svg>
+                </div>
+                <div>
+                  <h3 class="text-sm font-bold text-[#FAFAFA]">StudyFlow AI</h3>
+                  <p class="text-[11px] text-[#A1A1AA]">Guided Assistant</p>
+                </div>
+              </div>
+              <button onclick="alert('Assistant Options: Reset Conversation or Export Chat')" class="text-[#6B7280] hover:text-[#FAFAFA] p-1.5 rounded-lg hover:bg-[#151520] transition tracking-widest">•••</button>
+            </div>
+
+            <!-- Assistant Message Bubble -->
+            <div id="aiChatFeed" class="mt-6 space-y-4 max-h-[260px] overflow-y-auto pr-1">
+              <div class="flex items-start space-x-3 animate-fadeIn">
+                <div class="w-7 h-7 rounded-lg bg-[#A855F7]/20 border border-[#A855F7]/40 flex items-center justify-center text-[#A855F7] shrink-0 mt-0.5">
+                  <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/></svg>
+                </div>
+                <div class="bg-[#151520] border border-[#252535] p-4 rounded-2xl rounded-tl-sm text-xs leading-relaxed text-[#D4D4D8] shadow-sm">
+                  I am your AI goal architect. I'll analyze your inputs and help you build the perfect plan step by step.
+                </div>
+              </div>
+            </div>
+
+            <!-- Examples Section -->
+            <div class="mt-8 space-y-3">
+              <h4 class="text-xs font-semibold text-[#A1A1AA] tracking-wide">Examples you can try</h4>
+              <div class="space-y-2.5">
+                <div onclick="selectExample('I want to build a DBMS Mini Project')" class="bg-[#151520] hover:bg-[#202030] border border-[#252535] hover:border-[#A855F7]/50 p-2.5 px-3.5 rounded-lg text-xs font-medium text-[#FAFAFA] flex items-center justify-between cursor-pointer group transition duration-200">
+                  <span>I want to build a DBMS Mini Project</span>
+                  <span class="text-[#6B7280] group-hover:text-[#A855F7] group-hover:translate-x-1 transition transform">→</span>
+                </div>
+                <div onclick="selectExample('Prepare for Semester Exams')" class="bg-[#151520] hover:bg-[#202030] border border-[#252535] hover:border-[#A855F7]/50 p-2.5 px-3.5 rounded-lg text-xs font-medium text-[#FAFAFA] flex items-center justify-between cursor-pointer group transition duration-200">
+                  <span>Prepare for Semester Exams</span>
+                  <span class="text-[#6B7280] group-hover:text-[#A855F7] group-hover:translate-x-1 transition transform">→</span>
+                </div>
+                <div onclick="selectExample('Learn DSA and become consistent')" class="bg-[#151520] hover:bg-[#202030] border border-[#252535] hover:border-[#A855F7]/50 p-2.5 px-3.5 rounded-lg text-xs font-medium text-[#FAFAFA] flex items-center justify-between cursor-pointer group transition duration-200">
+                  <span>Learn DSA and become consistent</span>
+                  <span class="text-[#6B7280] group-hover:text-[#A855F7] group-hover:translate-x-1 transition transform">→</span>
+                </div>
+                <div onclick="selectExample('Build a personal finance tracker')" class="bg-[#151520] hover:bg-[#202030] border border-[#252535] hover:border-[#A855F7]/50 p-2.5 px-3.5 rounded-lg text-xs font-medium text-[#FAFAFA] flex items-center justify-between cursor-pointer group transition duration-200">
+                  <span>Build a personal finance tracker</span>
+                  <span class="text-[#6B7280] group-hover:text-[#A855F7] group-hover:translate-x-1 transition transform">→</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Input Bar & Disclaimer -->
+          <div class="mt-6 pt-4 border-t border-[#1C1C24]">
+            <form onsubmit="event.preventDefault(); handleAIChatSubmit();" class="relative flex items-center">
+              <input id="aiAssistantInput" type="text" placeholder="Ask AI anything..." class="w-full bg-[#151520] border border-[#252535] focus:border-[#A855F7] text-xs text-[#FAFAFA] placeholder:text-[#6B7280] rounded-xl py-3 pl-4 pr-11 focus:outline-none transition shadow-inner" />
+              <button type="submit" class="absolute right-2 p-2 rounded-lg bg-[#A855F7]/20 hover:bg-[#A855F7] text-[#A855F7] hover:text-white transition duration-200 flex items-center justify-center">
+                <svg class="w-4 h-4 fill-current transform rotate-45" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+              </button>
+            </form>
+            <p class="text-[10px] text-[#6B7280] text-center mt-3">AI can make mistakes. Verify important info.</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    let currentStep = 1;
+    let editingGoalId = null;
+    let goalData = {
+      title: "",
+      why: "",
+      deadline: "",
+      braindump: "",
+      time: "",
+      resources: "",
+      obstacles: ""
+    };
+
+    const questions = [
+      "",
+      { titleHtml: 'What are you trying to <span class="text-[#A855F7] drop-shadow-[0_0_15px_rgba(168,85,247,0.4)]">accomplish?</span>', sub: "Define the core project or exam objective in one clear sentence.", ph: "e.g. Build a DBMS Mini Project", key: "title" },
+      { titleHtml: 'Why is this <span class="text-[#A855F7] drop-shadow-[0_0_15px_rgba(168,85,247,0.4)]">important</span> to you?', sub: "Identify your motivation, target grade, or GPA impact.", ph: "e.g. I need 40/40 internal marks to boost my semester GPA...", key: "why" },
+      { titleHtml: 'What is your target <span class="text-[#A855F7] drop-shadow-[0_0_15px_rgba(168,85,247,0.4)]">deadline?</span>', sub: "When is final submission or exam day? How many days left?", ph: "e.g. 10 days left (or July 15th)...", key: "deadline" },
+      { titleHtml: 'Brain dump all rough <span class="text-[#A855F7] drop-shadow-[0_0_15px_rgba(168,85,247,0.4)]">milestones</span>', sub: "List out chapters, components, or rough deliverables. AI will break this down.", ph: "- ER Schema Design\n- REST API endpoint setup\n- Write final report...", key: "braindump" },
+      { titleHtml: 'How much daily <span class="text-[#A855F7] drop-shadow-[0_0_15px_rgba(168,85,247,0.4)]">study time</span> do you have?', sub: "Be realistic about Pomodoro blocks and daily deep work sessions.", ph: "e.g. 2 hours every evening (~4 Pomodoros daily)...", key: "time" },
+      { titleHtml: 'What <span class="text-[#A855F7] drop-shadow-[0_0_15px_rgba(168,85,247,0.4)]">resources & docs</span> do you need?', sub: "Paste links, lecture slides, or reference books you will use.", ph: "e.g. MongoDB aggregation cheat sheet, Express docs...", key: "resources" },
+      { titleHtml: 'What potential <span class="text-[#A855F7] drop-shadow-[0_0_15px_rgba(168,85,247,0.4)]">obstacles</span> do you foresee?', sub: "What could slow you down or cause procrastination?", ph: "e.g. Unfamiliar with authentication middleware or exam stress...", key: "obstacles" }
+    ];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      await window.SF_STORE.bootstrap(['user', 'goals']);
+      const params = new URLSearchParams(window.location.search);
+      editingGoalId = params.get('goalId');
+      if (editingGoalId) {
+        await window.SF_STORE.dispatch('idealab/OPEN_GOAL', { goalId: editingGoalId });
+        const found = window.SF_STORE.getSlice('idealab').activeGoal;
+        if (found) {
+          goalData.title = found.title;
+          goalData.deadline = found.finalDeadlineDisplay || "In 10 days";
+          goalData.braindump = found.subtasks ? found.subtasks.map(s => "- " + s.title).join("\n") : "";
+          
+          document.getElementById('ideaLabHeaderTitle').textContent = `Restructuring: ${found.title}`;
+          document.getElementById('editingGoalBadge').classList.remove('hidden');
+          document.getElementById('stepInput').value = goalData.title;
+        }
+      }
+      goToStep(1);
+    });
+
+    function saveCurrentInput() {
+      const val = document.getElementById('stepInput').value.trim();
+      const q = questions[currentStep];
+      if (q && q.key) {
+        goalData[q.key] = val;
+      }
+    }
+
+    function goToStep(s) {
+      saveCurrentInput();
+      currentStep = s;
+      document.getElementById('stepTitle').innerHTML = questions[s].titleHtml;
+      document.getElementById('stepSub').textContent = questions[s].sub;
+      const inputEl = document.getElementById('stepInput');
+      inputEl.placeholder = questions[s].ph;
+      
+      const key = questions[s].key;
+      inputEl.value = goalData[key] || "";
+      inputEl.focus();
+      
+      const prevBtn = document.getElementById('prevBtn');
+      if (s > 1) prevBtn.classList.remove('invisible');
+      else prevBtn.classList.add('invisible');
+
+      const nextText = document.getElementById('nextBtnText');
+      if (s === 7) {
+        if (nextText) nextText.textContent = editingGoalId ? "Update Plan & Launch" : "Generate Action Plan";
+      } else {
+        if (nextText) nextText.textContent = "Ask AI & Next";
+      }
+
+      for (let i = 1; i <= 7; i++) {
+        const dot = document.getElementById('stepDot' + i);
+        const txt = document.getElementById('stepText' + i);
+        if (i < s) {
+          dot.className = "w-9 h-9 rounded-full bg-[#A855F7]/30 text-[#A855F7] border border-[#A855F7]/40 font-bold text-xs flex items-center justify-center ring-4 ring-[#050508]";
+          dot.innerHTML = '<svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>';
+          if (txt) txt.className = "text-[10px] font-bold text-[#A855F7] mt-2.5 uppercase tracking-widest";
+        } else if (i === s) {
+          dot.className = "w-9 h-9 rounded-full bg-[#A855F7] text-white font-bold text-xs flex items-center justify-center ring-4 ring-[#050508] shadow-[0_0_20px_rgba(168,85,247,0.5)] scale-110 transition duration-200";
+          dot.textContent = i;
+          if (txt) txt.className = "text-[10px] font-bold text-[#FAFAFA] mt-2.5 uppercase tracking-widest drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]";
+        } else {
+          dot.className = "w-9 h-9 rounded-full bg-[#12121A] border border-[#20202E] text-[#6B7280] font-bold text-xs flex items-center justify-center ring-4 ring-[#050508] group-hover:border-[#A855F7]/50 transition duration-200";
+          dot.textContent = i;
+          if (txt) txt.className = "text-[10px] font-medium text-[#6B7280] mt-2.5 uppercase tracking-widest";
+        }
+      }
+    }
+
+    function handleStepAdvance() {
+      saveCurrentInput();
+      
+      // Add simulated feedback to AI Assistant feed
+      const inputVal = document.getElementById('stepInput').value.trim();
+      if (inputVal) {
+        appendAssistantMessage(inputVal, 'user');
+        setTimeout(() => {
+          let reply = `Great! I've noted your ${questions[currentStep].key.toUpperCase()}. Let's move on to the next step.`;
+          if (currentStep === 7) reply = "All 7 steps completed! Building your customized AI workspace and Kanban goals now...";
+          appendAssistantMessage(reply, 'ai');
+        }, 500);
+      }
+
+      if (currentStep < 7) {
+        goToStep(currentStep + 1);
+      } else {
+        commitAIGoal();
+      }
+    }
+
+    function prevStep() {
+      if (currentStep > 1) goToStep(currentStep - 1);
+    }
+
+    function selectExample(text) {
+      document.getElementById('stepInput').value = text;
+      saveCurrentInput();
+      appendAssistantMessage(text, 'user');
+      setTimeout(() => {
+        appendAssistantMessage(`Excellent choice! Let's tailor the architectural roadmap specifically for "${text}". Click 'Ask AI & Next' or press Enter when you're ready!`, 'ai');
+      }, 600);
+    }
+
+    function handleAIChatSubmit() {
+      const inputEl = document.getElementById('aiAssistantInput');
+      const text = inputEl.value.trim();
+      if (!text) return;
+      appendAssistantMessage(text, 'user');
+      inputEl.value = '';
+      setTimeout(() => {
+        appendAssistantMessage(`I'm analyzing "${text}" to optimize your study velocity and roadmap milestones.`, 'ai');
+      }, 700);
+    }
+
+    function appendAssistantMessage(msg, sender) {
+      const feed = document.getElementById('aiChatFeed');
+      if (!feed) return;
+      const div = document.createElement('div');
+      div.className = "flex items-start space-x-3 animate-fadeIn mt-3";
+      
+      if (sender === 'user') {
+        div.className = "flex items-start justify-end space-x-3 animate-fadeIn mt-3";
+        div.innerHTML = `
+          <div class="bg-[#A855F7] text-white p-3.5 rounded-2xl rounded-tr-sm text-xs leading-relaxed max-w-[85%] shadow-md font-medium">
+            ${msg}
+          </div>
+        `;
+      } else {
+        div.innerHTML = `
+          <div class="w-7 h-7 rounded-lg bg-[#A855F7]/20 border border-[#A855F7]/40 flex items-center justify-center text-[#A855F7] shrink-0 mt-0.5">
+            <svg class="w-4 h-4 fill-current" viewBox="0 0 24 24"><path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/></svg>
+          </div>
+          <div class="bg-[#151520] border border-[#252535] p-3.5 rounded-2xl rounded-tl-sm text-xs leading-relaxed text-[#D4D4D8] shadow-sm max-w-[85%]">
+            ${msg}
+          </div>
+        `;
+      }
+      feed.appendChild(div);
+      feed.scrollTop = feed.scrollHeight;
+    }
+
+    async function commitAIGoal() {
+      saveCurrentInput();
+      alert(`✨ StudyFlow AI Architect generating customized roadmap for "${goalData.title || 'AI Academic Goal'}"...`);
+      
+      if (editingGoalId) {
+        await window.SF_STORE.dispatch('goals/DELETE', { goalId: editingGoalId });
+      }
+
+      await window.SF_STORE.dispatch('goals/CREATE_WITH_SUBTASKS', {
+        title: goalData.title || "DBMS Mini Project Architecture",
+        urgency: "URGENT",
+        description: goalData.why || "Structured via IdeaLab 7-Step AI Architect.",
+        finalDeadlineDaysStr: goalData.deadline || "10 days",
+        rawDump: goalData.braindump || "- Phase 1 Research & Architecture\n- Phase 2 Core Implementation\n- Phase 3 Final Review & Polish"
+      });
+
+      window.location.href = 'workspace.html';
+    }
+  </script>
+</body>
+</html>
