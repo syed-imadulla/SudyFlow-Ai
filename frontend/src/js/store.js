@@ -447,14 +447,6 @@ window.SF_STORE = (function () {
     return _clone(_state[sliceName]);
   }
 
-  /**
-   * Full read-only state snapshot across all slices.
-   * Pages should prefer getSlice() for targeted reads.
-   */
-  Object.defineProperty(window.SF_STORE || {}, 'state', {
-    get: () => _clone(_state),
-    enumerable: true
-  });
 
   /**
    * Dispatch an action to mutate state.

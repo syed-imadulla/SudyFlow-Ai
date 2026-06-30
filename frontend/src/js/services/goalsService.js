@@ -31,7 +31,7 @@ window.goalsService = (function () {
   async function _ensureSeed() {
     if (!window.SF_CONFIG?.USE_MOCK_API) return;
     if (!_readLS()) {
-      const { SEED_GOALS = [] } = await import('./src/js/mocks/goals.mock.js');
+      const { SEED_GOALS = [] } = await window.SF_HTTP.loadMock('goals.mock.js');
       _writeLS(SEED_GOALS);
     }
   }
@@ -61,8 +61,10 @@ window.goalsService = (function () {
       subtasks: [],
       ...payload
     };
-    goals.unshift(newGoal);
-    _writeLS(goals);
+    if (window.SF_CONFIG?.USE_MOCK_API) {
+      goals.unshift(newGoal);
+      _writeLS(goals);
+    }
     return window.SF_HTTP.request('/goals', newGoal, {
       method: 'POST',
       body: JSON.stringify(payload)
@@ -83,7 +85,7 @@ window.goalsService = (function () {
       : [];
 
     if (lines.length === 0 && window.SF_CONFIG?.USE_MOCK_API) {
-      const { DEFAULT_BRAINDUMP_STEPS = [] } = await import('./src/js/mocks/idealab.mock.js');
+      const { DEFAULT_BRAINDUMP_STEPS = [] } = await window.SF_HTTP.loadMock('idealab.mock.js');
       lines = DEFAULT_BRAINDUMP_STEPS;
     } else if (lines.length === 0) {
       lines = ['Complete Milestone 1', 'Complete Milestone 2', 'Final Review'];
@@ -117,28 +119,35 @@ window.goalsService = (function () {
     await _ensureSeed();
     const goals = _readLS() || [];
     const goal  = goals.find(g => g.id === goalId);
-    if (!goal) return Promise.reject(new Error('Goal not found'));
-    const sub = goal.subtasks.find(s => s.id === subtaskId);
-    if (!sub)  return Promise.reject(new Error('Subtask not found'));
-    sub.completed = !sub.completed;
-    _recalcProgress(goal);
-    _writeLS(goals);
-    return window.SF_HTTP.request(`/goals/${goalId}/subtasks/${subtaskId}/toggle`, goal, {
+    if (!goal && window.SF_CONFIG?.USE_MOCK_API) return Promise.reject(new Error('Goal not found'));
+    const sub = goal ? goal.subtasks.find(s => s.id === subtaskId) : null;
+    if (!sub && window.SF_CONFIG?.USE_MOCK_API)  return Promise.reject(new Error('Subtask not found'));
+    const newCompleted = sub ? !sub.completed : true;
+    if (window.SF_CONFIG?.USE_MOCK_API && goal && sub) {
+      sub.completed = newCompleted;
+      _recalcProgress(goal);
+      _writeLS(goals);
+    }
+    return window.SF_HTTP.request(`/goals/${goalId}/subtasks/${subtaskId}/toggle`, goal || {}, {
       method: 'PATCH',
-      body: JSON.stringify({ completed: sub.completed })
+      body: JSON.stringify({ completed: newCompleted })
     });
   }
 
   async function deleteGoal(goalId) {
     await _ensureSeed();
-    let goals = _readLS() || [];
-    goals = goals.filter(g => g.id !== goalId);
-    _writeLS(goals);
+    if (window.SF_CONFIG?.USE_MOCK_API) {
+      let goals = _readLS() || [];
+      goals = goals.filter(g => g.id !== goalId);
+      _writeLS(goals);
+    }
     return window.SF_HTTP.request(`/goals/${goalId}`, null, { method: 'DELETE' });
   }
 
   async function saveGoals(goals) {
-    _writeLS(goals);
+    if (window.SF_CONFIG?.USE_MOCK_API) {
+      _writeLS(goals);
+    }
     return window.SF_HTTP.request('/goals/bulk', goals, {
       method: 'PUT',
       body: JSON.stringify(goals)

@@ -21,7 +21,7 @@ window.userService = (function () {
 
   async function _getMockDefaults() {
     if (!window.SF_CONFIG?.USE_MOCK_API) return { DEFAULT_PROFILE: {}, DEFAULT_SETTINGS: {} };
-    return await import('./src/js/mocks/user.mock.js');
+    return await window.SF_HTTP.loadMock('user.mock.js');
   }
 
   async function _merge(saved) {
@@ -51,7 +51,9 @@ window.userService = (function () {
   async function saveSettings(data) {
     const current  = await _merge(_read());
     const updated  = { ...current, ...data };
-    localStorage.setItem(LS_KEY, JSON.stringify(updated));
+    if (window.SF_CONFIG?.USE_MOCK_API) {
+      localStorage.setItem(LS_KEY, JSON.stringify(updated));
+    }
     return window.SF_HTTP.request('/user/settings', updated, {
       method: 'PUT',
       body: JSON.stringify(updated)

@@ -14,7 +14,7 @@ window.plannerService = (function () {
 
   async function _getMocks() {
     if (!window.SF_CONFIG?.USE_MOCK_API) return {};
-    return await import('./src/js/mocks/planner.mock.js');
+    return await window.SF_HTTP.loadMock('planner.mock.js');
   }
 
   // ─── Service Methods ──────────────────────────────────────────────────────

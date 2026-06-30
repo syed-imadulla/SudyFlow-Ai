@@ -14,7 +14,7 @@ window.focusService = (function () {
 
   async function _getMocks() {
     if (!window.SF_CONFIG?.USE_MOCK_API) return {};
-    return await import('./src/js/mocks/focus.mock.js');
+    return await window.SF_HTTP.loadMock('focus.mock.js');
   }
 
   // ─── Service Methods ──────────────────────────────────────────────────────
@@ -24,15 +24,15 @@ window.focusService = (function () {
    * across all goals (or falls back to static mock when in mock mode).
    */
   async function getActiveSprintTask() {
+    const { MOCK_SPRINT_TASK = null } = await _getMocks();
     if (window.SF_CONFIG?.USE_MOCK_API) {
-      const { MOCK_SPRINT_TASK = null } = await _getMocks();
-      return window.SF_HTTP.mockRequest(MOCK_SPRINT_TASK);
+      return window.SF_HTTP.request('/focus/sprint-task', MOCK_SPRINT_TASK);
     }
     const goals = await window.goalsService.getGoals();
     const topGoal = goals[0];
     if (!topGoal) return null;
     const activeSub = topGoal.subtasks?.find(s => !s.completed);
-    return window.SF_HTTP.apiRequest(`/focus/sprint-task?goalId=${topGoal.id}&subtaskId=${activeSub?.id}`);
+    return window.SF_HTTP.request(`/focus/sprint-task?goalId=${topGoal.id}&subtaskId=${activeSub?.id}`, MOCK_SPRINT_TASK);
   }
 
   /**
