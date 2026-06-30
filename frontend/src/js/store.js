@@ -170,11 +170,18 @@ window.SF_STORE = (function () {
           window.userService.getProfile(),
           window.userService.getSettings()
         ]);
+        if (!profile && window.SF_CONFIG && !window.SF_CONFIG.USE_MOCK_API) {
+          window.location.replace('login.html');
+          return;
+        }
         _patch('user', { profile, loading: false });
         _patch('settings', { ...settings, loaded: true });
       } catch (e) {
         _patch('user', { loading: false, error: e.message });
         console.error('[SF_STORE] user/LOAD failed:', e);
+        if (window.SF_CONFIG && !window.SF_CONFIG.USE_MOCK_API) {
+          window.location.replace('login.html');
+        }
       }
     },
 

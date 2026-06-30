@@ -12,8 +12,7 @@
  */
 window.StudyFlowDB = {
   init() {
-    // Seeding is now handled inside goalsService. This is a no-op kept for compatibility.
-    if (window.goalsService) window.goalsService.getGoals(); // triggers seed if needed
+    // Seeding and loading are handled cleanly by SF_STORE.bootstrap() or explicit service calls.
   },
 
   getGoals() {
@@ -142,7 +141,7 @@ window.StudyFlowTemplates = {
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
           </button>
         </div>
-        <button onclick="window.location.href='login.html'" class="w-full flex items-center justify-center space-x-2 py-2.5 rounded-xl text-xs font-bold text-[#EF4444] bg-[#EF4444]/15 border border-[#EF4444]/40 hover:bg-[#EF4444] hover:text-white transition shadow-[0_0_15px_rgba(239,68,68,0.2)] cursor-pointer">
+        <button onclick="window.authService ? window.authService.logout() : window.location.href='login.html'" class="w-full flex items-center justify-center space-x-2 py-2.5 rounded-xl text-xs font-bold text-[#EF4444] bg-[#EF4444]/15 border border-[#EF4444]/40 hover:bg-[#EF4444] hover:text-white transition shadow-[0_0_15px_rgba(239,68,68,0.2)] cursor-pointer">
           <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
           <span>Log Out</span>
         </button>
@@ -495,6 +494,27 @@ window.SF_ROUTER = window.SF_ROUTER || {
     const page = window.location.pathname.split('/').pop() || 'dashboard.html';
     const routeKey = page.replace('.html', '') || 'dashboard';
     this._activeRoute = routeKey === 'index' ? 'dashboard' : routeKey;
+
+    const protectedRoutes = ['dashboard', 'workspace', 'planner', 'analytics', 'focus', 'settings', 'idealab'];
+    if (protectedRoutes.includes(this._activeRoute)) {
+      if (window.SF_CONFIG && !window.SF_CONFIG.USE_MOCK_API) {
+        const tokenKey = window.SF_CONFIG.AUTH_TOKEN_KEY || 'accessToken';
+        const isAuth = window.authService ? window.authService.isAuthenticated() : !!localStorage.getItem(tokenKey);
+        if (!isAuth) {
+          window.location.replace('login.html');
+          return;
+        }
+      }
+    } else if (['login', 'register'].includes(this._activeRoute)) {
+      if (window.authService && window.authService.isAuthenticated()) {
+        setTimeout(async () => {
+          const user = await window.authService.restoreSession();
+          if (user) {
+            window.location.href = 'dashboard.html';
+          }
+        }, 50);
+      }
+    }
     
     if (window._sfPendingRoutes && window._sfPendingRoutes[this._activeRoute]) {
       this.routes[this._activeRoute] = window._sfPendingRoutes[this._activeRoute];
@@ -505,7 +525,7 @@ window.SF_ROUTER = window.SF_ROUTER || {
     } else {
       const script = document.createElement('script');
       script.src = `router/${this._activeRoute}.router.js`;
-      script.async = true;
+      script.async = false;
       document.head.appendChild(script);
     }
   }
@@ -513,14 +533,30 @@ window.SF_ROUTER = window.SF_ROUTER || {
 
 // Router & Injection Engine
 function initializeStudyFlowRouter() {
+  if (!window.SF_CONFIG) {
+    const sc = document.createElement('script');
+    sc.src = 'src/js/config.js';
+    sc.async = false;
+    document.head.appendChild(sc);
+  }
+  if (!window.SF_HTTP) {
+    const sc = document.createElement('script');
+    sc.src = 'src/js/http.js';
+    sc.async = false;
+    document.head.appendChild(sc);
+  }
+  if (!window.authService) {
+    const sc = document.createElement('script');
+    sc.src = 'src/js/services/authService.js';
+    sc.async = false;
+    document.head.appendChild(sc);
+  }
   if (!window.SF_COMPONENTS) {
     const sc = document.createElement('script');
     sc.src = 'src/js/components.js';
     sc.async = false;
     document.head.appendChild(sc);
   }
-
-  window.StudyFlowDB.init();
 
   // Global escape key listener to close modals
   window.addEventListener('keydown', (e) => {

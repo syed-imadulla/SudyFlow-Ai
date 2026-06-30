@@ -11,11 +11,19 @@
   <!-- Services Layer -->
   <script src="src/js/config.js"></script>
   <script src="src/js/http.js"></script>
+  <script src="src/js/services/authService.js"></script>
   <script src="src/js/services/userService.js"></script>
   <script src="src/js/services/goalsService.js"></script>
   <script src="src/js/store.js"></script>
   <script src="src/js/components.js"></script>
   <script src="router.js"></script>
+  <script>
+    if (window.SF_CONFIG && !window.SF_CONFIG.USE_MOCK_API) {
+      if (!window.authService || !window.authService.isAuthenticated()) {
+        window.location.replace('login.html');
+      }
+    }
+  </script>
 </head>
 
 <body class="bg-background text-text-primary min-h-screen flex antialiased selection:bg-primary selection:text-white">
@@ -446,6 +454,13 @@
     }
 
     document.addEventListener('DOMContentLoaded', async () => {
+      if (window.SF_CONFIG && !window.SF_CONFIG.USE_MOCK_API) {
+        if (!window.authService || !window.authService.isAuthenticated()) {
+          window.location.replace('login.html');
+          return;
+        }
+      }
+
       const mainGoalsContainer = document.getElementById('dashMainGoalsList');
       const tasksContainer = document.getElementById('dashTasksList');
       if (mainGoalsContainer && window.SF_COMPONENTS) mainGoalsContainer.innerHTML = window.SF_COMPONENTS.renderSkeleton('compact', 3);

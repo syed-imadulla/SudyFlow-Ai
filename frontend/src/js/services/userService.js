@@ -32,32 +32,47 @@ window.userService = (function () {
   // ─── Service Methods ──────────────────────────────────────────────────────
 
   async function getSettings() {
-    const merged = await _merge(_read());
-    return window.SF_HTTP.request('/user/settings', merged);
+    return await _merge(_read());
   }
 
   async function getProfile() {
+    if (window.authService && typeof window.authService.restoreSession === 'function') {
+      const user = await window.authService.restoreSession();
+      if (user) return user;
+      if (window.SF_CONFIG && !window.SF_CONFIG.USE_MOCK_API) return null;
+    }
     const saved = _read();
     const { DEFAULT_PROFILE = {} } = await _getMockDefaults();
-    const profile = {
+    return {
       name:   saved?.name   || DEFAULT_PROFILE.name || 'User',
       email:  saved?.email  || DEFAULT_PROFILE.email || '',
       avatar: saved?.avatar || DEFAULT_PROFILE.avatar || '',
       plan:   DEFAULT_PROFILE.plan || 'Student Plan'
     };
-    return window.SF_HTTP.request('/user/profile', profile);
   }
 
   async function saveSettings(data) {
     const current  = await _merge(_read());
     const updated  = { ...current, ...data };
+    localStorage.setItem(LS_KEY, JSON.stringify(updated));
+
     if (window.SF_CONFIG?.USE_MOCK_API) {
-      localStorage.setItem(LS_KEY, JSON.stringify(updated));
+      return window.SF_HTTP.mockRequest(updated);
     }
-    return window.SF_HTTP.request('/user/settings', updated, {
-      method: 'PUT',
-      body: JSON.stringify(updated)
-    });
+
+    if (data.name || data.avatar) {
+      const patchPayload = {};
+      if (data.name) patchPayload.name = data.name;
+      if (data.avatar) patchPayload.avatar = data.avatar;
+      await window.SF_HTTP.apiRequest('/auth/profile', {
+        method: 'PATCH',
+        body: JSON.stringify(patchPayload)
+      });
+    } else {
+      await window.SF_HTTP.apiRequest('/auth/me', { method: 'GET' });
+    }
+
+    return updated;
   }
 
   return { getProfile, getSettings, saveSettings };

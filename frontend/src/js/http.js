@@ -60,7 +60,16 @@ window.SF_HTTP = (function () {
    */
   function getAuthToken() {
     const key = window.SF_CONFIG?.AUTH_TOKEN_KEY || 'accessToken';
-    return localStorage.getItem(key);
+    const token = localStorage.getItem(key);
+    if (!token) return null;
+    if (window.SF_CONFIG && !window.SF_CONFIG.USE_MOCK_API) {
+      if (token.startsWith('mock-') || token === 'mock-jwt-token-12345' || token.split('.').length !== 3) {
+        localStorage.removeItem(key);
+        localStorage.removeItem('studyflow_user');
+        return null;
+      }
+    }
+    return token;
   }
 
   /**
@@ -102,9 +111,10 @@ window.SF_HTTP = (function () {
     const baseUrl = window.SF_CONFIG?.API_BASE_URL || 'http://localhost:5000/api/v1';
     const url = `${baseUrl}${endpoint}`;
     const defaultHeaders = { 'Content-Type': 'application/json' };
+    const isPublicAuthRoute = endpoint.includes('/auth/login') || endpoint.includes('/auth/register') || endpoint.includes('/auth/refresh') || endpoint.includes('/health');
     const token = getAuthToken();
-    if (token) {
-      defaultHeaders['Authorization'] = `Bearer ${token}`;
+    if (token && typeof token === 'string' && token.trim() !== '' && !isPublicAuthRoute) {
+      defaultHeaders['Authorization'] = `Bearer ${token.trim()}`;
     }
 
     const controller = new AbortController();
@@ -122,7 +132,7 @@ window.SF_HTTP = (function () {
       clearTimeout(timeoutId);
 
       // Handle 401 Refresh Hook if registered
-      if (response.status === 401 && _onRefreshToken && !options._retry) {
+      if (response.status === 401 && _onRefreshToken && !options._retry && !isPublicAuthRoute) {
         try {
           await _onRefreshToken();
           return await apiRequest(endpoint, { ...options, _retry: true });
@@ -143,7 +153,28 @@ window.SF_HTTP = (function () {
         } catch (parseErr) {
           errorMsg = await response.text();
         }
-        throw new Error(`[SF_HTTP] ${response.status} ${response.statusText}: ${errorMsg}`);
+
+        let cleanMessage = errorMsg;
+        if (response.status === 401) {
+          if (endpoint.includes('/auth/login')) {
+            cleanMessage = 'Incorrect email or password.';
+          } else {
+            cleanMessage = errorMsg || 'Authentication required. Please log in again.';
+          }
+        } else if (response.status === 409) {
+          if (endpoint.includes('/auth/register')) {
+            cleanMessage = 'Email already registered.';
+          } else {
+            cleanMessage = errorMsg || 'Resource conflict.';
+          }
+        } else if (response.status >= 500) {
+          cleanMessage = 'Something went wrong.';
+        }
+
+        const err = new Error(cleanMessage);
+        err.status = response.status;
+        err.statusCode = response.status;
+        throw err;
       }
 
       const json = await response.json();
@@ -151,9 +182,9 @@ window.SF_HTTP = (function () {
     } catch (err) {
       clearTimeout(timeoutId);
       if (err.name === 'AbortError') {
-        err = new Error(`[SF_HTTP] Request timed out after ${timeoutMs}ms`);
+        err = new Error(`Request timed out after ${timeoutMs}ms`);
       }
-      if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+      if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast && !endpoint.includes('/auth/') && options._silent !== true) {
         window.SF_COMPONENTS.showToast(err.message || 'Network Request Failed', 'error');
       }
       throw err;
