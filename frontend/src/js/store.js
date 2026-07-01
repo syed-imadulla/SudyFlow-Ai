@@ -228,8 +228,7 @@ window.SF_STORE = (function () {
         const newGoal = await window.goalsService.createGoalWithSubtasks(
           title, urgency, description, finalDeadlineDaysStr, rawDump
         );
-        // The service already persists; refresh store state from source of truth
-        const items = await window.goalsService.getGoals();
+        const items = [newGoal, ..._state.goals.items];
         _patch('goals', { items, lastSync: Date.now() });
         return newGoal;
       } catch (e) {

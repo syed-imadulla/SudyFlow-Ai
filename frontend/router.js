@@ -50,6 +50,9 @@ window.StudyFlowDB = {
   },
 
   createGoalWithSubtasks(title, urgency, description, finalDeadlineDaysStr, rawDump) {
+    if (window.SF_STORE) {
+      return window.SF_STORE.dispatch('goals/CREATE_WITH_SUBTASKS', { title, urgency, description, finalDeadlineDaysStr, rawDump });
+    }
     if (window.goalsService) {
       return window.goalsService.createGoalWithSubtasks(title, urgency, description, finalDeadlineDaysStr, rawDump);
     }
@@ -379,7 +382,7 @@ window.openAddItemModal = function (targetContainerId, isTimeBlock = false) {
   modalEl.style.display = 'flex';
   document.getElementById('modalInputTitle').focus();
 
-  window.submitGlobalAdd = function () {
+  window.submitGlobalAdd = async function () {
     const title = document.getElementById('modalInputTitle').value.trim();
     const sub = document.getElementById('modalInputSub').value.trim();
     const tag = document.getElementById('modalInputTag').value;
@@ -388,61 +391,62 @@ window.openAddItemModal = function (targetContainerId, isTimeBlock = false) {
 
     if (!title || !sub) return;
 
-    if (autoBreakdown) {
-      window.StudyFlowDB.createGoalWithSubtasks(title, tag === 'High' ? 'URGENT' : 'ACTIVE', 'Created via AI Goal Breakdown Modal', sub, braindump);
+    if (!isTimeBlock) {
       modalEl.style.display = 'none';
-      if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-        window.SF_COMPONENTS.showToast('AI Goal Breakdown created successfully!', 'success');
-      }
-      setTimeout(() => {
-        if (window.location.pathname.includes('workspace.html')) {
-          window.location.reload();
+      const urgency = tag === 'High' ? 'URGENT' : tag === 'Medium' || tag === 'Review' ? 'UPCOMING' : 'ACTIVE';
+      try {
+        if (autoBreakdown) {
+          await window.SF_STORE.dispatch('goals/CREATE_WITH_SUBTASKS', {
+            title,
+            urgency,
+            description: 'Created via AI Goal Breakdown Modal',
+            finalDeadlineDaysStr: sub,
+            rawDump: braindump
+          });
+          if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+            window.SF_COMPONENTS.showToast('AI Goal Breakdown created successfully!', 'success');
+          }
         } else {
-          window.location.href = 'workspace.html';
+          await window.SF_STORE.dispatch('goals/CREATE', {
+            title,
+            urgency,
+            description: 'Created via Add Item Modal',
+            finalDeadlineDisplay: sub,
+            finalDeadline: sub
+          });
+          if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+            window.SF_COMPONENTS.showToast(`Goal "${title}" created successfully!`, 'success');
+          }
         }
-      }, 300);
+      } catch (err) {
+        console.error('[Create Goal Error]:', err);
+        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+          window.SF_COMPONENTS.showToast(err.message || 'Failed to create goal', 'error');
+        }
+      }
       return;
     }
 
     const container = document.getElementById(targetContainerId);
     if (container) {
       const newItem = document.createElement('div');
-      if (isTimeBlock) {
-        let tagClass = "bg-[#A855F7]/15 border-[#A855F7]/40 text-[#A855F7]";
-        let circleClass = "bg-[#A855F7]";
-        if (tag === 'Review' || tag === 'Medium') { tagClass = "bg-[#FACC15]/15 border-[#FACC15]/40 text-[#FACC15]"; circleClass = "bg-[#FACC15]"; }
-        if (tag === 'Study' || tag === 'Low') { tagClass = "bg-[#151515] border-[#2A2A2A] text-[#A1A1AA]"; circleClass = "bg-[#6B7280]"; }
+      let tagClass = "bg-[#A855F7]/15 border-[#A855F7]/40 text-[#A855F7]";
+      let circleClass = "bg-[#A855F7]";
+      if (tag === 'Review' || tag === 'Medium') { tagClass = "bg-[#FACC15]/15 border-[#FACC15]/40 text-[#FACC15]"; circleClass = "bg-[#FACC15]"; }
+      if (tag === 'Study' || tag === 'Low') { tagClass = "bg-[#151515] border-[#2A2A2A] text-[#A1A1AA]"; circleClass = "bg-[#6B7280]"; }
 
-        newItem.className = "p-4 rounded-xl bg-[#0A0A0A] border border-[#202020] flex items-center justify-between group hover:border-[#A855F7]/50 transition animate-fadeIn mt-3.5";
-        newItem.innerHTML = `
-          <div class="flex items-center space-x-3.5 overflow-hidden">
-            <span class="font-mono text-xs text-[#6B7280] shrink-0">${sub}</span>
-            <div class="w-1 h-8 ${circleClass} rounded-full shrink-0"></div>
-            <div class="truncate">
-              <h4 class="font-bold text-xs text-[#FAFAFA] truncate">${title}</h4>
-              <p class="text-[11px] text-[#6B7280] truncate">User Time Block</p>
-            </div>
+      newItem.className = "p-4 rounded-xl bg-[#0A0A0A] border border-[#202020] flex items-center justify-between group hover:border-[#A855F7]/50 transition animate-fadeIn mt-3.5";
+      newItem.innerHTML = `
+        <div class="flex items-center space-x-3.5 overflow-hidden">
+          <span class="font-mono text-xs text-[#6B7280] shrink-0">${sub}</span>
+          <div class="w-1 h-8 ${circleClass} rounded-full shrink-0"></div>
+          <div class="truncate">
+            <h4 class="font-bold text-xs text-[#FAFAFA] truncate">${title}</h4>
+            <p class="text-[11px] text-[#6B7280] truncate">User Time Block</p>
           </div>
-          <span class="px-2.5 py-1 rounded-md text-[10px] font-semibold border ${tagClass} shrink-0 ml-2">${tag}</span>
-        `;
-      } else {
-        newItem.className = "flex items-center justify-between p-4 rounded-2xl bg-[#0E0E0E] border border-[#202020] hover:border-[#343434] transition duration-200 group animate-fadeIn mt-3";
-        newItem.innerHTML = `
-          <div class="flex items-center space-x-4">
-            <input type="checkbox" class="w-5 h-5 rounded border-[#2A2A2A] bg-[#0A0A0A] text-[#A855F7] focus:ring-[#A855F7] cursor-pointer" />
-            <div>
-              <h4 class="text-sm font-semibold text-[#FAFAFA] group-hover:text-[#A855F7] transition">${title}</h4>
-              <p class="text-xs text-[#6B7280] mt-0.5">${sub}</p>
-            </div>
-          </div>
-          <div class="flex items-center space-x-3">
-            <span class="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#151515] border border-[#2A2A2A] text-[#A855F7]">${tag}</span>
-            <button onclick="window.location.href='focus.html'" class="p-2 rounded-xl bg-[#0A0A0A] border border-[#202020] hover:border-[#A855F7] text-[#A1A1AA] hover:text-[#FAFAFA] transition">
-              <svg class="w-4 h-4 text-[#A855F7]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
-            </button>
-          </div>
-        `;
-      }
+        </div>
+        <span class="px-2.5 py-1 rounded-md text-[10px] font-semibold border ${tagClass} shrink-0 ml-2">${tag}</span>
+      `;
       container.appendChild(newItem);
       if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
         window.SF_COMPONENTS.showToast(`Added "${title}" successfully!`, 'success');

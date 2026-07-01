@@ -28,7 +28,9 @@ window.focusService = (function () {
     if (window.SF_CONFIG?.USE_MOCK_API) {
       return window.SF_HTTP.request('/focus/sprint-task', MOCK_SPRINT_TASK);
     }
-    const goals = await window.goalsService.getGoals();
+    const goals = window.SF_STORE?.getSlice('goals')?.items?.length
+      ? window.SF_STORE.getSlice('goals').items
+      : await window.goalsService.getGoals();
     const topGoal = goals[0];
     if (!topGoal) return null;
     const activeSub = topGoal.subtasks?.find(s => !s.completed);

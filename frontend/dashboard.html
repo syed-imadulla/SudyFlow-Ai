@@ -428,14 +428,15 @@
       if (tasksContainer) {
         let allSubtasks = [];
         goals.forEach(g => {
-          g.subtasks.forEach(s => {
-            if (!s.completed) {
-              if (s.deadlineDisplay === 'Tomorrow' || s.deadlineDisplay === 'In 2 days' || s.deadlineDisplay === 'In 3 days') {
-                s.deadlineDisplay = 'Today';
+          (g.subtasks || []).forEach(s => {
+            const subCopy = { ...s, goalTitle: g.title, goalId: g.id };
+            if (!subCopy.completed) {
+              if (subCopy.deadlineDisplay === 'Tomorrow' || subCopy.deadlineDisplay === 'In 2 days' || subCopy.deadlineDisplay === 'In 3 days') {
+                subCopy.deadlineDisplay = 'Today';
               }
             }
-            if (s.deadlineDisplay === 'Today' || s.deadlineDisplay === 'Overdue') {
-              allSubtasks.push({ ...s, goalTitle: g.title, goalId: g.id });
+            if (subCopy.deadlineDisplay === 'Today' || subCopy.deadlineDisplay === 'Overdue') {
+              allSubtasks.push(subCopy);
             }
           });
         });
