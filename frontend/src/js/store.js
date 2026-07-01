@@ -237,6 +237,22 @@ window.SF_STORE = (function () {
       }
     },
 
+    async 'goals/UPDATE'(payload) {
+      const { goalId, patch } = payload;
+      try {
+        const updatedGoal = await window.goalsService.updateGoal(goalId, patch);
+        const items = _state.goals.items.map(g => g.id === goalId ? { ...g, ...updatedGoal } : g);
+        _patch('goals', { items, lastSync: Date.now() });
+        if (_state.idealab.activeGoalId === goalId) {
+          _patch('idealab', { activeGoal: _clone(updatedGoal) });
+        }
+        return updatedGoal;
+      } catch (e) {
+        console.error('[SF_STORE] goals/UPDATE failed:', e);
+        throw e;
+      }
+    },
+
     async 'goals/TOGGLE_SUBTASK'(payload) {
       const { goalId, subtaskId } = payload;
       // Optimistic update: flip in local state immediately

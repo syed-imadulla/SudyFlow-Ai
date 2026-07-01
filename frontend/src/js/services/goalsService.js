@@ -134,6 +134,27 @@ window.goalsService = (function () {
     });
   }
 
+  async function updateGoal(goalId, patch) {
+    await _ensureSeed();
+    if (window.SF_CONFIG?.USE_MOCK_API) {
+      const goals = _readLS() || [];
+      const idx = goals.findIndex(g => g.id === goalId);
+      if (idx !== -1) {
+        goals[idx] = { ...goals[idx], ...patch };
+        _recalcProgress(goals[idx]);
+        _writeLS(goals);
+        return window.SF_HTTP.request(`/goals/${goalId}`, goals[idx], {
+          method: 'PATCH',
+          body: JSON.stringify(patch)
+        });
+      }
+    }
+    return window.SF_HTTP.request(`/goals/${goalId}`, null, {
+      method: 'PATCH',
+      body: JSON.stringify(patch)
+    });
+  }
+
   async function deleteGoal(goalId) {
     await _ensureSeed();
     if (window.SF_CONFIG?.USE_MOCK_API) {
@@ -154,5 +175,5 @@ window.goalsService = (function () {
     });
   }
 
-  return { getGoals, createGoal, createGoalWithSubtasks, toggleSubtask, deleteGoal, saveGoals };
+  return { getGoals, createGoal, createGoalWithSubtasks, updateGoal, toggleSubtask, deleteGoal, saveGoals };
 })();

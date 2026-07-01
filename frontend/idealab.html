@@ -411,7 +411,38 @@
       alert(`✨ StudyFlow AI Architect generating customized roadmap for "${goalData.title || 'AI Academic Goal'}"...`);
       
       if (editingGoalId) {
-        await window.SF_STORE.dispatch('goals/DELETE', { goalId: editingGoalId });
+        const existing = window.SF_STORE.getSlice('goals')?.items?.find(g => g.id === editingGoalId) || window.SF_STORE.getSlice('idealab')?.activeGoal;
+        const rawDump = goalData.braindump || "- Phase 1 Research & Architecture\n- Phase 2 Core Implementation\n- Phase 3 Final Review & Polish";
+        const lines = rawDump.split('\n').map(l => l.replace(/^[-*•\d.]+\s*/, '').trim()).filter(Boolean);
+        const subtasks = lines.map((line, idx) => {
+          const oldSub = existing?.subtasks?.find(s => s.title.toLowerCase() === line.toLowerCase()) || existing?.subtasks?.[idx];
+          return {
+            id: oldSub?.id || ('sub_' + Math.random().toString(36).substr(2, 7)),
+            title: line,
+            completed: oldSub ? oldSub.completed : false,
+            priority: oldSub?.priority || 'High',
+            estimate: oldSub?.estimate || '2 Pomodoros',
+            deadlineDisplay: oldSub?.deadlineDisplay || (idx === 0 ? 'Tomorrow' : `In ${idx + 2} days`)
+          };
+        });
+        try {
+          await window.SF_STORE.dispatch('goals/UPDATE', {
+            goalId: editingGoalId,
+            patch: {
+              title: goalData.title || "DBMS Mini Project Architecture",
+              description: goalData.why || "Structured via IdeaLab 7-Step AI Architect.",
+              finalDeadlineDisplay: goalData.deadline || "In 10 days",
+              subtasks
+            }
+          });
+          if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+            window.SF_COMPONENTS.showToast('Goal updated successfully.', 'success');
+          }
+          window.location.href = 'workspace.html';
+        } catch (err) {
+          alert('Failed to update goal: ' + (err.message || 'Error'));
+        }
+        return;
       }
 
       await window.SF_STORE.dispatch('goals/CREATE_WITH_SUBTASKS', {

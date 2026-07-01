@@ -471,6 +471,115 @@ window.toggleCustomDropdown = function (menuId, arrowId) {
   }
 };
 
+window.openEditGoalModal = function (goalId) {
+  const goal = window.SF_STORE?.getSlice('goals')?.items?.find(g => g.id === goalId);
+  if (!goal) return;
+
+  let modalEl = document.getElementById('globalEditGoalModal');
+  if (!modalEl) {
+    modalEl = document.createElement('div');
+    modalEl.id = 'globalEditGoalModal';
+    modalEl.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fadeIn p-4';
+    modalEl.innerHTML = `
+      <div class="bg-[#0D0D0D] border border-[#2A2A2A] p-6 rounded-[20px] w-full max-w-md shadow-saas space-y-5">
+        <div class="flex items-center justify-between pb-3 border-b border-[#1C1C1C]">
+          <h3 class="text-base font-bold text-[#FAFAFA]">Edit Goal</h3>
+          <button onclick="document.getElementById('globalEditGoalModal').style.display='none'" class="text-[#6B7280] hover:text-[#FAFAFA]">✕</button>
+        </div>
+        <form id="globalEditGoalForm" class="space-y-4" onsubmit="event.preventDefault(); window.submitEditGoal();">
+          <input id="editGoalIdHidden" type="hidden" />
+          <div>
+            <label class="block text-xs font-semibold text-[#A1A1AA] uppercase mb-1.5">Title</label>
+            <input id="editGoalTitle" type="text" class="input py-2.5 text-xs bg-[#0A0A0A] border-[#2A2A2A]" required />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-[#A1A1AA] uppercase mb-1.5">Description</label>
+            <input id="editGoalDesc" type="text" class="input py-2.5 text-xs bg-[#0A0A0A] border-[#2A2A2A]" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-[#A1A1AA] uppercase mb-1.5">Urgency</label>
+              <select id="editGoalUrgency" class="input py-2.5 text-xs bg-[#0A0A0A] border-[#2A2A2A]">
+                <option value="URGENT">URGENT</option>
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="UPCOMING">UPCOMING</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-[#A1A1AA] uppercase mb-1.5">Final Deadline</label>
+              <input id="editGoalDeadline" type="text" class="input py-2.5 text-xs bg-[#0A0A0A] border-[#2A2A2A]" required />
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-[#A1A1AA] uppercase mb-1.5">Subtasks (One per line)</label>
+            <textarea id="editGoalSubtasks" rows="3" class="input py-2 text-xs bg-[#0A0A0A] border-[#2A2A2A] resize-none"></textarea>
+          </div>
+          <div class="flex items-center justify-end space-x-3 pt-2">
+            <button type="button" onclick="document.getElementById('globalEditGoalModal').style.display='none'" class="btn btn-ghost px-4 py-2 text-xs">Cancel</button>
+            <button type="submit" class="btn btn-primary px-5 py-2 text-xs font-bold shadow-[0_0_20px_rgba(168,85,247,0.25)]">Save Changes →</button>
+          </div>
+        </form>
+      </div>
+    `;
+    document.body.appendChild(modalEl);
+  }
+
+  document.getElementById('editGoalIdHidden').value = goal.id;
+  document.getElementById('editGoalTitle').value = goal.title || '';
+  document.getElementById('editGoalDesc').value = goal.description || '';
+  document.getElementById('editGoalUrgency').value = goal.urgency || 'ACTIVE';
+  document.getElementById('editGoalDeadline').value = goal.finalDeadlineDisplay || goal.finalDeadline || '';
+  document.getElementById('editGoalSubtasks').value = (goal.subtasks || []).map(s => s.title).join('\n');
+  modalEl.style.display = 'flex';
+};
+
+window.submitEditGoal = async function () {
+  const goalId = document.getElementById('editGoalIdHidden').value;
+  const title = document.getElementById('editGoalTitle').value.trim();
+  const description = document.getElementById('editGoalDesc').value.trim();
+  const urgency = document.getElementById('editGoalUrgency').value;
+  const deadline = document.getElementById('editGoalDeadline').value.trim();
+  const subtasksText = document.getElementById('editGoalSubtasks').value;
+
+  if (!title || !goalId) return;
+
+  const existing = window.SF_STORE?.getSlice('goals')?.items?.find(g => g.id === goalId);
+  const lines = subtasksText.split('\n').map(l => l.trim()).filter(Boolean);
+  const subtasks = lines.map((line, idx) => {
+    const oldSub = existing?.subtasks?.find(s => s.title.toLowerCase() === line.toLowerCase()) || existing?.subtasks?.[idx];
+    return {
+      id: oldSub?.id || ('sub_' + Math.random().toString(36).substr(2, 7)),
+      title: line,
+      completed: oldSub ? oldSub.completed : false,
+      priority: oldSub?.priority || 'High',
+      estimate: oldSub?.estimate || '2 Pomodoros',
+      deadlineDisplay: oldSub?.deadlineDisplay || 'Assigned'
+    };
+  });
+
+  document.getElementById('globalEditGoalModal').style.display = 'none';
+  try {
+    await window.SF_STORE.dispatch('goals/UPDATE', {
+      goalId,
+      patch: {
+        title,
+        description,
+        urgency,
+        finalDeadlineDisplay: deadline,
+        subtasks
+      }
+    });
+    if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+      window.SF_COMPONENTS.showToast('Goal updated successfully.', 'success');
+    }
+  } catch (err) {
+    console.error('[Edit Goal Error]:', err);
+    if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+      window.SF_COMPONENTS.showToast(err.message || 'Failed to update goal', 'error');
+    }
+  }
+};
+
 window.selectCustomDropdownItem = function (menuId, arrowId, textId, displayValue, callback) {
   const textEl = document.getElementById(textId);
   if (textEl) textEl.textContent = displayValue;

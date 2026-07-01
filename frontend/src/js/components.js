@@ -55,9 +55,14 @@
                 <span class="text-[#A855F7] font-bold">${progress}%</span>
               </div>
               ${this.renderProgressBar(progress, { heightClass: 'h-1.5', bgClass: 'bg-[#0A0A0A]' })}
-              <button onclick="event.stopPropagation(); window.location.href='idealab.html?goalId=${goal.id}'" class="w-full py-2 bg-[#151515] hover:bg-[#A855F7] text-[#A855F7] hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 border border-[#2A2A2A] hover:border-transparent">
-                <span>✨ IdeaLab Architect</span>
-              </button>
+              <div class="flex items-center space-x-2">
+                <button onclick="event.stopPropagation(); window.openEditGoalModal('${goal.id}')" class="px-3 py-2 bg-[#151515] hover:bg-[#202020] text-[#FAFAFA] rounded-xl text-xs font-bold transition border border-[#2A2A2A]" title="Edit Goal Details">
+                  ✏️ Edit
+                </button>
+                <button onclick="event.stopPropagation(); window.location.href='idealab.html?goalId=${goal.id}'" class="flex-1 py-2 bg-[#151515] hover:bg-[#A855F7] text-[#A855F7] hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 border border-[#2A2A2A] hover:border-transparent">
+                  <span>✨ IdeaLab Architect</span>
+                </button>
+              </div>
             </div>
           </div>
         `;
@@ -74,6 +79,9 @@
                   <div class="flex flex-wrap items-center gap-2.5">
                     <h3 class="text-base font-bold text-[#FAFAFA]">${goal.title}</h3>
                     <span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${isUrg ? 'bg-red-500/15 text-red-400 border border-red-500/30' : 'bg-[#A855F7]/20 text-[#A855F7] border border-[#A855F7]/40'}">${goal.urgency || 'ACTIVE'}</span>
+                    <button onclick="event.stopPropagation(); window.openEditGoalModal('${goal.id}')" class="px-2.5 py-1 rounded-lg bg-[#151515] hover:bg-[#202020] text-[#FAFAFA] border border-[#2A2A2A] text-[11px] font-bold transition shrink-0" title="Quick Edit Goal">
+                      ✏️ Edit
+                    </button>
                     <button onclick="window.location.href='idealab.html?goalId=${goal.id}'" class="px-3 py-1 rounded-lg bg-[#A855F7] text-white hover:bg-[#9333EA] transition text-[11px] font-bold flex items-center space-x-1.5 shadow-[0_0_15px_rgba(168,85,247,0.3)] shrink-0" title="Restructure & Refine Main Goal in IdeaLab">
                       <svg class="w-3.5 h-3.5 inline shrink-0 fill-current drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" viewBox="0 0 24 24"><path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/></svg>
                       <span>IdeaLab Architect</span>
