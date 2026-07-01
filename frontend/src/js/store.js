@@ -254,38 +254,42 @@ window.SF_STORE = (function () {
     },
 
     async 'goals/TOGGLE_SUBTASK'(payload) {
-      const { goalId, subtaskId } = payload;
-      // Optimistic update: flip in local state immediately
-      const items = _clone(_state.goals.items);
-      const goal  = items.find(g => g.id === goalId);
-      if (goal) {
-        const sub = goal.subtasks.find(s => s.id === subtaskId);
-        if (sub) {
-          sub.completed = !sub.completed;
-          const total = goal.subtasks.length;
-          const done  = goal.subtasks.filter(s => s.completed).length;
-          goal.progress = total > 0 ? Math.round((done / total) * 100) : 0;
-          _patch('goals', { items });
+      const { goalId, subtaskId, completed } = payload;
+      try {
+        const updatedGoal = await window.goalsService.toggleSubtask(goalId, subtaskId, completed);
+        if (!updatedGoal) return null;
+        const targetId = updatedGoal.id || updatedGoal._id || goalId;
+        const items = _state.goals.items.map(goal =>
+          (goal.id === targetId || goal._id === targetId)
+            ? updatedGoal
+            : goal
+        );
+        _patch('goals', { items, lastSync: Date.now() });
 
-          // Also update idealab slice if it's viewing this goal
-          if (_state.idealab.activeGoalId === goalId) {
-            _patch('idealab', { activeGoal: _clone(goal) });
-          }
+        if (_state.idealab.activeGoalId === targetId) {
+          _patch('idealab', { activeGoal: _clone(updatedGoal) });
         }
+        return updatedGoal;
+      } catch (e) {
+        console.error('[SF_STORE] goals/TOGGLE_SUBTASK failed:', e);
+        throw e;
       }
-      // Persist via service (async, non-blocking)
-      window.goalsService.toggleSubtask(goalId, subtaskId).catch(e =>
-        console.error('[SF_STORE] goals/TOGGLE_SUBTASK persist failed:', e)
-      );
     },
 
     async 'goals/DELETE'(payload) {
       const { goalId } = payload;
-      const items = _state.goals.items.filter(g => g.id !== goalId);
-      _patch('goals', { items });
-      await window.goalsService.deleteGoal(goalId).catch(e =>
-        console.error('[SF_STORE] goals/DELETE persist failed:', e)
-      );
+      try {
+        await window.goalsService.deleteGoal(goalId);
+        const items = _state.goals.items.filter(g => g.id !== goalId);
+        _patch('goals', { items, lastSync: Date.now() });
+        if (_state.idealab.activeGoalId === goalId) {
+          _patch('idealab', { activeGoalId: null, activeGoal: null });
+        }
+        return true;
+      } catch (e) {
+        console.error('[SF_STORE] goals/DELETE failed:', e);
+        throw e;
+      }
     },
 
     // ── IdeaLab ─────────────────────────────────────────────────────────────

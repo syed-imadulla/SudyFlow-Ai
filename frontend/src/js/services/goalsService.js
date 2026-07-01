@@ -115,18 +115,24 @@ window.goalsService = (function () {
     return createGoal(payload);
   }
 
-  async function toggleSubtask(goalId, subtaskId) {
+  async function toggleSubtask(goalId, subtaskId, completedStatus) {
     await _ensureSeed();
-    const goals = _readLS() || [];
-    const goal  = goals.find(g => g.id === goalId);
+    const storeGoals = window.SF_STORE?.getSlice('goals')?.items || [];
+    const lsGoals = _readLS() || [];
+    const goals = storeGoals.length > 0 ? storeGoals : lsGoals;
+    const goal  = goals.find(g => g.id === goalId || g._id === goalId);
     if (!goal && window.SF_CONFIG?.USE_MOCK_API) return Promise.reject(new Error('Goal not found'));
-    const sub = goal ? goal.subtasks.find(s => s.id === subtaskId) : null;
+    const sub = goal ? (goal.subtasks || []).find(s => s.id === subtaskId || s._id === subtaskId) : null;
     if (!sub && window.SF_CONFIG?.USE_MOCK_API)  return Promise.reject(new Error('Subtask not found'));
-    const newCompleted = sub ? !sub.completed : true;
+    const newCompleted = completedStatus !== undefined ? completedStatus : (sub ? !sub.completed : true);
     if (window.SF_CONFIG?.USE_MOCK_API && goal && sub) {
       sub.completed = newCompleted;
       _recalcProgress(goal);
-      _writeLS(goals);
+      const lsIndex = lsGoals.findIndex(g => g.id === goalId || g._id === goalId);
+      if (lsIndex !== -1) {
+        lsGoals[lsIndex] = goal;
+        _writeLS(lsGoals);
+      }
     }
     return window.SF_HTTP.request(`/goals/${goalId}/subtasks/${subtaskId}/toggle`, goal || {}, {
       method: 'PATCH',

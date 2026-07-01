@@ -4,7 +4,163 @@
  * Preserves 100% identical appearance, CSS classes, and interaction attributes.
  */
 (function () {
+  window.closeGoalActionMenus = function (exceptGoalId = null) {
+    document.querySelectorAll('[id^="goal-menu-dropdown-"]').forEach(menu => {
+      const gId = menu.id.replace('goal-menu-dropdown-', '');
+      if (gId !== exceptGoalId) {
+        menu.classList.add('scale-95', 'opacity-0');
+        setTimeout(() => {
+          if (menu.classList.contains('scale-95')) {
+            menu.classList.add('hidden');
+          }
+        }, 150);
+        const btn = document.getElementById(`goal-menu-btn-${gId}`);
+        if (btn) {
+          btn.setAttribute('aria-expanded', 'false');
+          const card = btn.closest('.group') || btn.closest('.card') || btn.closest('[role="button"]');
+          if (card) card.classList.remove('z-[60]');
+        }
+      }
+    });
+  };
+
+  window.toggleGoalActionMenu = function (goalId, event) {
+    if (event && typeof event.stopPropagation === 'function') event.stopPropagation();
+    const menu = document.getElementById(`goal-menu-dropdown-${goalId}`);
+    const btn = document.getElementById(`goal-menu-btn-${goalId}`);
+    if (!menu || !btn) return;
+
+    const isHidden = menu.classList.contains('hidden');
+    window.closeGoalActionMenus(isHidden ? goalId : null);
+
+    if (isHidden) {
+      menu.classList.remove('hidden');
+      btn.setAttribute('aria-expanded', 'true');
+      const card = btn.closest('.group') || btn.closest('.card') || btn.closest('[role="button"]');
+      if (card) card.classList.add('z-[60]');
+      requestAnimationFrame(() => {
+        menu.classList.remove('scale-95', 'opacity-0');
+        const firstItem = menu.querySelector('[role="menuitem"]');
+        if (firstItem) firstItem.focus();
+      });
+    } else {
+      btn.focus();
+    }
+  };
+
+  window.handleGoalMenuKeyDown = function (goalId, event) {
+    if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      event.stopPropagation();
+      window.toggleGoalActionMenu(goalId, event);
+    }
+  };
+
+  window.handleGoalItemKeyDown = function (goalId, action, event) {
+    const menu = document.getElementById(`goal-menu-dropdown-${goalId}`);
+    if (!menu) return;
+    const items = Array.from(menu.querySelectorAll('[role="menuitem"]'));
+    const currentIndex = items.indexOf(document.activeElement);
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      event.stopPropagation();
+      const nextIndex = (currentIndex + 1) % items.length;
+      items[nextIndex].focus();
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      event.stopPropagation();
+      const prevIndex = (currentIndex - 1 + items.length) % items.length;
+      items[prevIndex].focus();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      window.closeGoalActionMenus();
+      const btn = document.getElementById(`goal-menu-btn-${goalId}`);
+      if (btn) btn.focus();
+    } else if (event.key === 'Tab') {
+      window.closeGoalActionMenus();
+    }
+  };
+
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.goal-action-menu-container')) {
+      window.closeGoalActionMenus();
+    }
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      const openMenu = document.querySelector('[id^="goal-menu-dropdown-"]:not(.hidden)');
+      if (openMenu) {
+        const gId = openMenu.id.replace('goal-menu-dropdown-', '');
+        window.closeGoalActionMenus();
+        const btn = document.getElementById(`goal-menu-btn-${gId}`);
+        if (btn) btn.focus();
+      }
+    }
+  });
+
   window.SF_COMPONENTS = {
+    /**
+     * Render Goal Action Overflow Menu (Sprint 1D.2)
+     */
+    renderGoalActionMenu(goalId) {
+      return `
+        <div class="goal-action-menu-container relative shrink-0">
+          <button
+            type="button"
+            onclick="event.stopPropagation(); window.toggleGoalActionMenu('${goalId}', event)"
+            onkeydown="window.handleGoalMenuKeyDown('${goalId}', event)"
+            id="goal-menu-btn-${goalId}"
+            aria-haspopup="true"
+            aria-expanded="false"
+            aria-label="Goal actions menu"
+            class="p-1.5 min-w-[32px] min-h-[32px] rounded-lg bg-transparent hover:bg-[#151515] text-[#A1A1AA] hover:text-[#FAFAFA] transition border border-transparent hover:border-[#2A2A2A] focus:outline-none focus:ring-1 focus:ring-[#A855F7] flex items-center justify-center shrink-0"
+            title="More Actions"
+          >
+            <svg class="w-4 h-4 fill-current pointer-events-none" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </button>
+          <div
+            id="goal-menu-dropdown-${goalId}"
+            role="menu"
+            aria-labelledby="goal-menu-btn-${goalId}"
+            class="hidden custom-dropdown-menu absolute right-0 top-full mt-1.5 w-44 rounded-xl bg-[#0E0E0E]/95 backdrop-blur-xl border border-[#2A2A2A] shadow-[0_10px_30px_rgba(0,0,0,0.9),0_0_20px_rgba(168,85,247,0.2)] py-1.5 z-[100] transform origin-top-right transition-all duration-150 ease-out scale-95 opacity-0"
+          >
+            <button
+              role="menuitem"
+              type="button"
+              tabindex="-1"
+              onclick="event.stopPropagation(); window.closeGoalActionMenus(); window.openEditGoalModal('${goalId}')"
+              onkeydown="window.handleGoalItemKeyDown('${goalId}', 'edit', event)"
+              class="w-full px-3 py-2 text-left text-xs font-semibold text-[#A1A1AA] hover:text-[#FAFAFA] hover:bg-[#1C1C24] transition flex items-center space-x-2.5 focus:outline-none focus:bg-[#1C1C24] focus:text-[#FAFAFA]"
+            >
+              <svg class="w-3.5 h-3.5 fill-current shrink-0 pointer-events-none text-[#A855F7]" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+              <span>Edit Goal</span>
+            </button>
+            <button
+              role="menuitem"
+              type="button"
+              tabindex="-1"
+              onclick="event.stopPropagation(); window.closeGoalActionMenus(); window.confirmDeleteGoal('${goalId}', event)"
+              onkeydown="window.handleGoalItemKeyDown('${goalId}', 'delete', event)"
+              class="w-full px-3 py-2 text-left text-xs font-semibold text-red-400 hover:text-red-300 hover:bg-red-500/15 transition flex items-center space-x-2.5 focus:outline-none focus:bg-red-500/15 focus:text-red-300"
+            >
+              <svg class="w-3.5 h-3.5 fill-current shrink-0 pointer-events-none" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+              <span>Delete Goal</span>
+            </button>
+          </div>
+        </div>
+      `;
+    },
+
+    /**
+     * Render Floating Action Buttons for Goal Cards
+     */
+    renderGoalActionButtons(goalId) {
+      return this.renderGoalActionMenu(goalId);
+    },
+
     /**
      * Render Goal Card
      * @param {Object} goal
@@ -19,10 +175,13 @@
       if (mode === 'compact') {
         const urgClass = isUrg ? 'bg-red-500/15 text-red-400 border border-red-500/30 font-bold' : 'bg-[#A855F7]/15 text-[#A855F7] border border-[#A855F7]/30 font-bold';
         return `
-          <div role="button" tabindex="0" aria-label="Open Goal: ${goal.title}" onclick="window.location.href='idealab.html?goalId=${goal.id}'" onkeydown="if(event.key==='Enter'||event.key===' ')window.location.href='idealab.html?goalId=${goal.id}'" class="p-3.5 rounded-xl bg-[#0A0A0A] border border-[#202020] hover:border-[#A855F7]/50 transition cursor-pointer space-y-2.5 group">
-            <div class="flex items-center justify-between">
-              <span class="text-[10px] px-2 py-0.5 rounded ${urgClass}">${goal.urgency || 'ACTIVE'}</span>
-              <span class="text-[10px] font-mono text-[#FACC15]">📅 ${goal.finalDeadlineDisplay || 'No deadline'}</span>
+          <div role="button" tabindex="0" aria-label="Open Goal: ${goal.title}" onclick="window.location.href='idealab.html?goalId=${goal.id}'" onkeydown="if(event.key==='Enter'||event.key===' ')window.location.href='idealab.html?goalId=${goal.id}'" class="relative p-3.5 rounded-xl bg-[#0A0A0A] border border-[#202020] hover:border-[#A855F7]/50 hover:shadow-lg transition-all duration-200 cursor-pointer space-y-2.5 group">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center space-x-2 min-w-0">
+                <span class="text-[10px] px-2 py-0.5 rounded shrink-0 ${urgClass}">${goal.urgency || 'ACTIVE'}</span>
+                <span class="text-[10px] font-mono text-[#FACC15] truncate">📅 ${goal.finalDeadlineDisplay || 'No deadline'}</span>
+              </div>
+              ${this.renderGoalActionMenu(goal.id)}
             </div>
             <div>
               <h4 class="text-xs font-bold text-[#FAFAFA] group-hover:text-[#A855F7] transition truncate">${goal.title}</h4>
@@ -40,11 +199,14 @@
       } else if (mode === 'grid') {
         const urgClass = isUrg ? 'bg-red-500/15 text-red-400 border border-red-500/30' : 'bg-[#A855F7]/20 text-[#A855F7] border border-[#A855F7]/40';
         return `
-          <div role="button" tabindex="0" aria-label="Open Goal Grid: ${goal.title}" onclick="window.location.href='idealab.html?goalId=${goal.id}'" onkeydown="if(event.key==='Enter'||event.key===' ')window.location.href='idealab.html?goalId=${goal.id}'" class="card bg-[#0E0E0E] border border-[#202020] p-6 rounded-[20px] flex flex-col justify-between space-y-4 hover:border-[#A855F7]/50 transition cursor-pointer relative group">
+          <div role="button" tabindex="0" aria-label="Open Goal Grid: ${goal.title}" onclick="window.location.href='idealab.html?goalId=${goal.id}'" onkeydown="if(event.key==='Enter'||event.key===' ')window.location.href='idealab.html?goalId=${goal.id}'" class="card bg-[#0E0E0E] border border-[#202020] p-6 rounded-[20px] flex flex-col justify-between space-y-4 hover:border-[#A855F7]/50 hover:shadow-[0_10px_30px_rgba(168,85,247,0.12)] transition-all duration-200 cursor-pointer relative group">
             <div class="space-y-2">
-              <div class="flex items-center justify-between">
-                <span class="px-2.5 py-1 rounded text-[10px] font-bold tracking-wider uppercase ${urgClass}">${goal.urgency || 'ACTIVE'}</span>
-                <span class="text-xs font-mono text-[#FACC15] font-semibold">${goal.finalDeadlineDisplay || 'In 7 days'}</span>
+              <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center space-x-2.5 min-w-0">
+                  <span class="px-2.5 py-1 rounded text-[10px] font-bold tracking-wider uppercase shrink-0 ${urgClass}">${goal.urgency || 'ACTIVE'}</span>
+                  <span class="text-xs font-mono text-[#FACC15] font-semibold truncate">${goal.finalDeadlineDisplay || 'In 7 days'}</span>
+                </div>
+                ${this.renderGoalActionMenu(goal.id)}
               </div>
               <h3 class="text-base font-bold text-[#FAFAFA]">${goal.title}</h3>
               <p class="text-xs text-[#A1A1AA] line-clamp-2 leading-relaxed">${goal.description || ''}</p>
@@ -55,12 +217,10 @@
                 <span class="text-[#A855F7] font-bold">${progress}%</span>
               </div>
               ${this.renderProgressBar(progress, { heightClass: 'h-1.5', bgClass: 'bg-[#0A0A0A]' })}
-              <div class="flex items-center space-x-2">
-                <button onclick="event.stopPropagation(); window.openEditGoalModal('${goal.id}')" class="px-3 py-2 bg-[#151515] hover:bg-[#202020] text-[#FAFAFA] rounded-xl text-xs font-bold transition border border-[#2A2A2A]" title="Edit Goal Details">
-                  ✏️ Edit
-                </button>
-                <button onclick="event.stopPropagation(); window.location.href='idealab.html?goalId=${goal.id}'" class="flex-1 py-2 bg-[#151515] hover:bg-[#A855F7] text-[#A855F7] hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 border border-[#2A2A2A] hover:border-transparent">
-                  <span>✨ IdeaLab Architect</span>
+              <div class="flex items-center">
+                <button onclick="event.stopPropagation(); window.location.href='idealab.html?goalId=${goal.id}'" class="w-full py-2 bg-[#151515] hover:bg-[#A855F7] text-[#A855F7] hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-1.5 border border-[#2A2A2A] hover:border-transparent shadow-sm">
+                  <svg class="w-3.5 h-3.5 inline shrink-0 fill-current drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" viewBox="0 0 24 24"><path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/></svg>
+                  <span>IdeaLab Architect</span>
                 </button>
               </div>
             </div>
@@ -69,19 +229,16 @@
       } else if (mode === 'expanded') {
         const subtasksHtml = (goal.subtasks || []).map(sub => this.renderTaskCard(sub, { mode: 'workspace', goalId: goal.id })).join('');
         return `
-          <div class="card bg-[#0E0E0E] border border-[#202020] p-6 rounded-[20px] space-y-4 shadow-saas animate-fadeIn">
+          <div class="card bg-[#0E0E0E] border border-[#202020] p-6 rounded-[20px] space-y-4 shadow-saas animate-fadeIn relative group hover:border-[#A855F7]/40 transition-all duration-200">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#1C1C1C]">
-              <div class="flex items-start space-x-3.5">
+              <div class="flex items-start space-x-3.5 min-w-0 flex-1">
                 <div class="w-10 h-10 rounded-xl bg-[#A855F7]/15 border border-[#A855F7]/30 flex items-center justify-center text-[#A855F7] font-bold text-sm shrink-0 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
                   <svg class="w-5 h-5 text-[#A855F7] fill-current drop-shadow-[0_0_8px_rgba(168,85,247,0.8)]" viewBox="0 0 24 24"><path d="M10 4H4C2.89 4 2.01 4.89 2.01 6L2 18C2 19.11 2.89 20 4 20H20C21.11 20 22 19.11 22 18V8C22 6.89 21.11 6 20 6H12L10 4Z"/></svg>
                 </div>
-                <div>
+                <div class="min-w-0 flex-1">
                   <div class="flex flex-wrap items-center gap-2.5">
-                    <h3 class="text-base font-bold text-[#FAFAFA]">${goal.title}</h3>
-                    <span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase ${isUrg ? 'bg-red-500/15 text-red-400 border border-red-500/30' : 'bg-[#A855F7]/20 text-[#A855F7] border border-[#A855F7]/40'}">${goal.urgency || 'ACTIVE'}</span>
-                    <button onclick="event.stopPropagation(); window.openEditGoalModal('${goal.id}')" class="px-2.5 py-1 rounded-lg bg-[#151515] hover:bg-[#202020] text-[#FAFAFA] border border-[#2A2A2A] text-[11px] font-bold transition shrink-0" title="Quick Edit Goal">
-                      ✏️ Edit
-                    </button>
+                    <h3 class="text-base font-bold text-[#FAFAFA] truncate">${goal.title}</h3>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase shrink-0 ${isUrg ? 'bg-red-500/15 text-red-400 border border-red-500/30' : 'bg-[#A855F7]/20 text-[#A855F7] border border-[#A855F7]/40'}">${goal.urgency || 'ACTIVE'}</span>
                     <button onclick="window.location.href='idealab.html?goalId=${goal.id}'" class="px-3 py-1 rounded-lg bg-[#A855F7] text-white hover:bg-[#9333EA] transition text-[11px] font-bold flex items-center space-x-1.5 shadow-[0_0_15px_rgba(168,85,247,0.3)] shrink-0" title="Restructure & Refine Main Goal in IdeaLab">
                       <svg class="w-3.5 h-3.5 inline shrink-0 fill-current drop-shadow-[0_0_8px_rgba(255,255,255,0.8)]" viewBox="0 0 24 24"><path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/></svg>
                       <span>IdeaLab Architect</span>
@@ -91,7 +248,7 @@
                   <p class="text-xs text-[#A1A1AA] mt-1">${goal.description || 'AI Goal Plan'}</p>
                 </div>
               </div>
-              <div class="flex items-center space-x-4 shrink-0">
+              <div class="flex items-center justify-between md:justify-end space-x-4 shrink-0 w-full md:w-auto pt-2 md:pt-0 border-t md:border-t-0 border-[#1C1C1C]">
                 <div class="text-right">
                   <span class="text-[10px] font-mono text-[#6B7280] block">FINAL DEADLINE</span>
                   <span class="text-xs font-bold text-[#FACC15]">${goal.finalDeadlineDisplay || 'In 7 days'}</span>
@@ -103,6 +260,7 @@
                   </div>
                   <span class="text-xs font-mono font-bold text-[#A855F7] w-9 text-right">${progress}%</span>
                 </div>
+                ${this.renderGoalActionMenu(goal.id)}
               </div>
             </div>
 
@@ -361,14 +519,125 @@
      * Render Error Component
      */
     renderError({ title = 'Something went wrong', message = 'We encountered an error loading this section.', retryAction = 'window.location.reload()' }) {
+      const alertSvg = `<svg class="w-5 h-5 text-red-400 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`;
       return `
         <div class="p-6 rounded-2xl bg-red-500/10 border border-red-500/30 text-center space-y-3 my-4 animate-fadeIn" role="alert">
-          <div class="w-10 h-10 rounded-xl bg-red-500/20 border border-red-500/40 flex items-center justify-center text-lg mx-auto text-red-400">⚠️</div>
+          <div class="w-10 h-10 rounded-xl bg-red-500/20 border border-red-500/40 flex items-center justify-center mx-auto shadow-[0_0_15px_rgba(239,68,68,0.2)]">${alertSvg}</div>
           <h4 class="text-sm font-bold text-red-400">${title}</h4>
           <p class="text-xs text-[#A1A1AA] max-w-md mx-auto leading-relaxed">${message}</p>
           <button onclick="${retryAction}" class="px-4 py-2 bg-[#151515] hover:bg-red-500/20 text-red-400 rounded-xl text-xs font-bold transition border border-red-500/30">Try Again</button>
         </div>
       `;
+    },
+
+    /**
+     * Show Custom StudyFlow Confirmation Modal
+     */
+    showConfirm(options = {}) {
+      const {
+        title = "Delete Goal?",
+        description = "This action cannot be undone. The goal and all of its subtasks will be permanently deleted.",
+        confirmText = "Delete Goal",
+        cancelText = "Cancel",
+        onConfirm = () => {},
+        onCancel = () => {}
+      } = options;
+
+      const existing = document.getElementById('sf-confirm-modal');
+      if (existing) existing.remove();
+
+      const trashSvg = `<svg class="w-4 h-4 shrink-0 fill-current" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`;
+
+      const modalHtml = `
+        <div id="sf-confirm-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fadeIn transition-opacity duration-200" role="dialog" aria-modal="true" aria-labelledby="sf-confirm-title">
+          <div id="sf-confirm-card" class="bg-[#0E0E0E]/95 border border-[#2A2A2A] rounded-2xl p-6 max-w-md w-full mx-4 shadow-[0_0_50px_rgba(168,85,247,0.15)] relative transform transition-all duration-200 scale-95 opacity-0">
+            <div class="flex items-start space-x-4">
+              <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 shrink-0 shadow-[0_0_15px_rgba(239,68,68,0.2)]">
+                ${trashSvg}
+              </div>
+              <div class="flex-1 space-y-1.5">
+                <h3 id="sf-confirm-title" class="text-base font-bold text-[#FAFAFA]">${title}</h3>
+                <p class="text-xs text-[#A1A1AA] leading-relaxed">${description}</p>
+              </div>
+            </div>
+            <div class="flex items-center justify-end space-x-3 mt-6 pt-4 border-t border-[#1C1C1C]">
+              <button id="sf-confirm-cancel-btn" class="px-4 py-2 rounded-xl bg-[#151515] hover:bg-[#202020] text-[#A1A1AA] hover:text-[#FAFAFA] text-xs font-bold transition border border-[#2A2A2A]">
+                ${cancelText}
+              </button>
+              <button id="sf-confirm-proceed-btn" class="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 text-white text-xs font-bold transition shadow-[0_0_15px_rgba(239,68,68,0.3)] flex items-center space-x-1.5">
+                ${trashSvg}
+                <span>${confirmText}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+      const modalEl = document.getElementById('sf-confirm-modal');
+      const cardEl = document.getElementById('sf-confirm-card');
+      const cancelBtn = document.getElementById('sf-confirm-cancel-btn');
+      const proceedBtn = document.getElementById('sf-confirm-proceed-btn');
+
+      requestAnimationFrame(() => {
+        if (cardEl) {
+          cardEl.classList.remove('scale-95', 'opacity-0');
+          cardEl.classList.add('scale-100', 'opacity-100');
+        }
+        if (cancelBtn) cancelBtn.focus();
+      });
+
+      const close = () => {
+        if (cardEl) {
+          cardEl.classList.remove('scale-100', 'opacity-100');
+          cardEl.classList.add('scale-95', 'opacity-0');
+        }
+        if (modalEl) modalEl.classList.add('opacity-0');
+        setTimeout(() => {
+          if (modalEl) modalEl.remove();
+          document.removeEventListener('keydown', keydownHandler);
+        }, 150);
+      };
+
+      const keydownHandler = (e) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          onCancel();
+          close();
+        } else if (e.key === 'Tab') {
+          if (document.activeElement === proceedBtn && !e.shiftKey) {
+            e.preventDefault();
+            cancelBtn.focus();
+          } else if (document.activeElement === cancelBtn && e.shiftKey) {
+            e.preventDefault();
+            proceedBtn.focus();
+          }
+        }
+      };
+
+      document.addEventListener('keydown', keydownHandler);
+
+      cancelBtn.addEventListener('click', () => {
+        onCancel();
+        close();
+      });
+
+      proceedBtn.addEventListener('click', () => {
+        close();
+        onConfirm();
+      });
+
+      modalEl.addEventListener('click', (e) => {
+        if (e.target === modalEl) {
+          onCancel();
+          close();
+        }
+      });
+    },
+
+    confirm(options = {}) {
+      return this.showConfirm(options);
     },
 
     /**
@@ -387,20 +656,20 @@
       const toastEl = document.createElement('div');
       toastEl.id = toastId;
 
-      let icon = '💡';
+      let icon = `<svg class="w-4 h-4 text-[#A855F7] fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>`;
       let borderGlow = 'border-[#A855F7]/40 text-[#FAFAFA] bg-[#0D0D0D]/95 shadow-[0_0_20px_rgba(168,85,247,0.2)]';
       if (type === 'success') {
-        icon = '✨';
+        icon = `<svg class="w-4 h-4 text-green-400 fill-current" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
         borderGlow = 'border-green-500/40 text-[#FAFAFA] bg-[#0D0D0D]/95 shadow-[0_0_20px_rgba(34,197,94,0.2)]';
       } else if (type === 'error') {
-        icon = '⚠️';
+        icon = `<svg class="w-4 h-4 text-red-400 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>`;
         borderGlow = 'border-red-500/40 text-red-400 bg-[#0D0D0D]/95 shadow-[0_0_20px_rgba(239,68,68,0.2)]';
       }
 
       toastEl.className = `pointer-events-auto flex items-center justify-between p-3.5 rounded-xl border backdrop-blur-md transition-all duration-300 transform translate-y-2 opacity-0 ${borderGlow}`;
       toastEl.innerHTML = `
         <div class="flex items-center space-x-3 overflow-hidden">
-          <span class="text-base shrink-0">${icon}</span>
+          <span class="shrink-0 flex items-center">${icon}</span>
           <span class="text-xs font-semibold truncate">${message}</span>
         </div>
         <button onclick="const t = document.getElementById('${toastId}'); if(t) { t.style.opacity='0'; setTimeout(()=>t.remove(),200); }" class="text-[#6B7280] hover:text-[#FAFAFA] ml-3 text-xs shrink-0">✕</button>

@@ -580,6 +580,38 @@ window.submitEditGoal = async function () {
   }
 };
 
+window.confirmDeleteGoal = function (goalId, event) {
+  if (event && typeof event.stopPropagation === 'function') {
+    event.stopPropagation();
+  }
+
+  const performDelete = async () => {
+    try {
+      await window.SF_STORE.dispatch('goals/DELETE', { goalId });
+      if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+        window.SF_COMPONENTS.showToast("Goal deleted successfully.", "success");
+      }
+    } catch (err) {
+      console.error("[Delete Goal Error]:", err);
+      if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+        window.SF_COMPONENTS.showToast(err.message || "Failed to delete goal.", "error");
+      }
+    }
+  };
+
+  if (window.SF_COMPONENTS && typeof window.SF_COMPONENTS.showConfirm === 'function') {
+    window.SF_COMPONENTS.showConfirm({
+      title: "Delete Goal?",
+      description: "This action cannot be undone. The goal and all of its associated subtasks will be permanently deleted.",
+      confirmText: "Delete Goal",
+      cancelText: "Cancel",
+      onConfirm: performDelete
+    });
+  } else if (confirm("Delete this goal?")) {
+    performDelete();
+  }
+};
+
 window.selectCustomDropdownItem = function (menuId, arrowId, textId, displayValue, callback) {
   const textEl = document.getElementById(textId);
   if (textEl) textEl.textContent = displayValue;
