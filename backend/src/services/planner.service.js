@@ -105,6 +105,19 @@ export class PlannerService {
   }
 
   /**
+   * Get events for specific date string (YYYY-MM-DD)
+   */
+  static async getEventsForDate(userId, dateStr) {
+    if (dateStr && typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      const parts = dateStr.split('-').map(Number);
+      const startOfDay = new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0);
+      const endOfDay = new Date(parts[0], parts[1] - 1, parts[2], 23, 59, 59);
+      return this.getEventsByRange(userId, startOfDay.toISOString(), endOfDay.toISOString());
+    }
+    return this.getTodayEvents(userId);
+  }
+
+  /**
    * Get upcoming deadlines across active user goals (for UI /deadlines compatibility)
    */
   static async getUpcomingDeadlines(userId) {

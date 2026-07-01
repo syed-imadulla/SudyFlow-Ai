@@ -395,14 +395,14 @@
       const ringText = document.getElementById('heroRingText');
       const ringCircle = document.getElementById('heroRingCircle');
 
+      const calcP = window.calculateGoalProgress ? window.calculateGoalProgress(topGoal) : (topGoal.progress || 0);
       if (hTitle) hTitle.textContent = topGoal.title;
       if (hDesc) hDesc.textContent = topGoal.description || 'AI active project plan.';
-      if (hProgText) hProgText.textContent = `${topGoal.progress || 0}%`;
-      if (hProgBar) hProgBar.style.width = `${topGoal.progress || 0}%`;
-      if (ringText) ringText.textContent = `${topGoal.progress || 0}%`;
+      if (hProgText) hProgText.textContent = `${calcP}%`;
+      if (hProgBar) hProgBar.style.width = `${calcP}%`;
+      if (ringText) ringText.textContent = `${calcP}%`;
       if (ringCircle) {
-        const p = topGoal.progress || 0;
-        ringCircle.style.strokeDashoffset = `${263.89 - (263.89 * p / 100)}`;
+        ringCircle.style.strokeDashoffset = `${263.89 - (263.89 * calcP / 100)}`;
       }
       if (hDeadline) hDeadline.textContent = topGoal.finalDeadlineDisplay;
       if (hUrgency) {
@@ -467,14 +467,11 @@
       if (mainGoalsContainer && window.SF_COMPONENTS) mainGoalsContainer.innerHTML = window.SF_COMPONENTS.renderSkeleton('compact', 3);
       if (tasksContainer && window.SF_COMPONENTS) tasksContainer.innerHTML = window.SF_COMPONENTS.renderSkeleton('row', 3);
 
-      // Bootstrap the store – loads goals slice from goalsService
-      await window.SF_STORE.bootstrap(['user', 'goals']);
-
       // Subscribe to goals slice – re-renders whenever goals change
       window.SF_STORE.subscribe('goals', () => renderDashboardTasks());
 
-      // Initial render (data already in store after bootstrap)
-      renderDashboardTasks();
+      // Bootstrap the store – loads goals slice which reactively notifies subscribers
+      await window.SF_STORE.bootstrap(['user', 'goals']);
 
       setTimeout(() => {
         const cEl = document.getElementById('weeklyBarChart');

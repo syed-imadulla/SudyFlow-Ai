@@ -110,12 +110,10 @@
       if (container && window.SF_COMPONENTS) container.innerHTML = window.SF_COMPONENTS.renderSkeleton('compact', 2);
       if (cardsContainer && window.SF_COMPONENTS) cardsContainer.innerHTML = window.SF_COMPONENTS.renderSkeleton('grid', 2);
 
-      await window.SF_STORE.bootstrap(['user', 'goals']);
-
       // Re-render when goals slice changes (e.g. after subtask toggle)
       window.SF_STORE.subscribe('goals', () => renderWorkspaceGoals());
 
-      renderWorkspaceGoals();
+      await window.SF_STORE.bootstrap(['user', 'goals']);
 
       const tabs = document.querySelectorAll('.ws-tab');
       const panels = document.querySelectorAll('.ws-panel');

@@ -83,6 +83,7 @@ window.SF_STORE = (function () {
     },
 
     planner: {
+      selectedDate:      new Date().toISOString().split('T')[0],
       dailyBlocks:       [],
       weeklyStats:       null,
       monthlyCalendar:   null,
@@ -140,10 +141,42 @@ window.SF_STORE = (function () {
     try { return structuredClone(obj); } catch { return JSON.parse(JSON.stringify(obj)); }
   }
 
+  function _syncFocusTaskFromGoals(items) {
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      if (_state.focus && _state.focus.activeTask) {
+        _state.focus.activeTask = null;
+        _notify('focus');
+      }
+      return;
+    }
+    const topGoal = items[0];
+    if (!topGoal) return;
+    const activeSub = topGoal.subtasks?.find(s => !s.completed) || topGoal.subtasks?.[0];
+    if (_state.focus) {
+      _state.focus.activeTask = {
+        id: activeSub?.id || activeSub?._id || 'sub-1',
+        title: activeSub?.title || activeSub?.text || topGoal.title,
+        goalTitle: topGoal.title,
+        milestone: topGoal.finalDeadlineDisplay || 'Active Sprint',
+        urgency: topGoal.urgency || 'ACTIVE',
+        goalId: topGoal.id,
+        checklist: (topGoal.subtasks || []).map(s => ({
+          id: s.id || s._id,
+          text: s.title || s.text || s.description || 'Subtask',
+          completed: !!s.completed
+        }))
+      };
+      _notify('focus');
+    }
+  }
+
   /** Merge patch into a slice and notify subscribers */
   function _patch(sliceName, patch) {
     Object.assign(_state[sliceName], patch);
     _notify(sliceName);
+    if (sliceName === 'goals' && patch && patch.items) {
+      _syncFocusTaskFromGoals(patch.items);
+    }
   }
 
   /** Fire all subscribers registered for sliceName */
@@ -323,19 +356,68 @@ window.SF_STORE = (function () {
 
     // ── Planner ─────────────────────────────────────────────────────────────
 
-    async 'planner/LOAD'() {
-      _patch('planner', { loading: true, error: null });
+    async 'planner/LOAD'(payload) {
+      const dateStr = payload?.date || _state.planner.selectedDate || new Date().toISOString().split('T')[0];
+      const isDateChangeOnly = payload && payload.date && payload.date !== _state.planner.selectedDate && _state.planner.weeklyStats !== null;
+      _patch('planner', { loading: true, error: null, selectedDate: dateStr });
       try {
-        const [dailyBlocks, weeklyStats, monthlyCalendar, upcomingDeadlines] = await Promise.all([
-          window.plannerService.getDailyBlocks(),
-          window.plannerService.getWeeklyStats(),
-          window.plannerService.getMonthlyCalendar(),
-          window.plannerService.getUpcomingDeadlines()
-        ]);
-        _patch('planner', { dailyBlocks, weeklyStats, monthlyCalendar, upcomingDeadlines, loading: false });
+        if (isDateChangeOnly) {
+          const dailyBlocks = await window.plannerService.getDailyBlocks(dateStr);
+          _patch('planner', { dailyBlocks, loading: false });
+        } else {
+          const [dailyBlocks, weeklyStats, monthlyCalendar, upcomingDeadlines] = await Promise.all([
+            window.plannerService.getDailyBlocks(dateStr),
+            window.plannerService.getWeeklyStats(),
+            window.plannerService.getMonthlyCalendar(),
+            window.plannerService.getUpcomingDeadlines()
+          ]);
+          _patch('planner', { dailyBlocks, weeklyStats, monthlyCalendar, upcomingDeadlines, loading: false });
+        }
       } catch (e) {
         _patch('planner', { loading: false, error: e.message });
         console.error('[SF_STORE] planner/LOAD failed:', e);
+      }
+    },
+
+    async 'planner/CREATE'(payload) {
+      try {
+        const newBlock = await window.plannerService.createBlock(payload);
+        const dailyBlocks = [...(_state.planner.dailyBlocks || []), newBlock];
+        _patch('planner', { dailyBlocks });
+        return newBlock;
+      } catch (e) {
+        console.error('[SF_STORE] planner/CREATE failed:', e);
+        throw e;
+      }
+    },
+
+    async 'planner/UPDATE'(payload) {
+      const { blockId, id, patch } = payload;
+      const targetId = blockId || id;
+      try {
+        const updatedBlock = await window.plannerService.updateBlock(targetId, patch);
+        const dailyBlocks = (_state.planner.dailyBlocks || []).map(b =>
+          (b.id === targetId || b._id === targetId) ? { ...b, ...updatedBlock } : b
+        );
+        _patch('planner', { dailyBlocks });
+        return updatedBlock;
+      } catch (e) {
+        console.error('[SF_STORE] planner/UPDATE failed:', e);
+        throw e;
+      }
+    },
+
+    async 'planner/DELETE'(payload) {
+      const { blockId, id } = payload;
+      const targetId = blockId || id;
+      try {
+        await window.plannerService.deleteBlock(targetId);
+        const dailyBlocks = (_state.planner.dailyBlocks || []).filter(b => b.id !== targetId && b._id !== targetId);
+        _patch('planner', { dailyBlocks });
+        return true;
+      } catch (e) {
+        console.error('[SF_STORE] planner/DELETE failed:', e);
+        throw e;
       }
     },
 

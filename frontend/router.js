@@ -39,9 +39,13 @@ window.StudyFlowDB = {
       const sub = goal.subtasks.find(s => s.id === subtaskId);
       if (sub) {
         sub.completed = !sub.completed;
-        const total = goal.subtasks.length;
-        const done  = goal.subtasks.filter(s => s.completed).length;
-        goal.progress = total > 0 ? Math.round((done / total) * 100) : 0;
+        if (window.calculateGoalProgress) {
+          goal.progress = window.calculateGoalProgress(goal);
+        } else {
+          const total = goal.subtasks.length;
+          const done  = goal.subtasks.filter(s => s.completed).length;
+          goal.progress = total > 0 ? Math.round((done / total) * 100) : 0;
+        }
         this.saveGoals(goals);
         return goal;
       }

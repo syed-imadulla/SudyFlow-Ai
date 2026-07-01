@@ -4,10 +4,13 @@
  * Owns Daily, Weekly, and Monthly schedule data.
  *
  * Public API:
- *   plannerService.getDailyBlocks()      → Promise<Block[]>
- *   plannerService.getWeeklyStats()      → Promise<WeeklyStats>
- *   plannerService.getMonthlyCalendar()  → Promise<MonthlyCalendar>
- *   plannerService.getUpcomingDeadlines()→ Promise<Deadline[]>
+ *   plannerService.getDailyBlocks()        → Promise<Block[]>
+ *   plannerService.getWeeklyStats()        → Promise<WeeklyStats>
+ *   plannerService.getMonthlyCalendar()    → Promise<MonthlyCalendar>
+ *   plannerService.getUpcomingDeadlines()  → Promise<Deadline[]>
+ *   plannerService.createBlock(data)       → Promise<Block>
+ *   plannerService.updateBlock(id, patch)  → Promise<Block>
+ *   plannerService.deleteBlock(id)         → Promise<void>
  */
 
 window.plannerService = (function () {
@@ -19,9 +22,10 @@ window.plannerService = (function () {
 
   // ─── Service Methods ──────────────────────────────────────────────────────
 
-  async function getDailyBlocks() {
+  async function getDailyBlocks(dateStr) {
+    const query = dateStr ? `?date=${encodeURIComponent(dateStr)}` : '';
     const { MOCK_DAILY_BLOCKS = null } = await _getMocks();
-    return window.SF_HTTP.request('/planner/daily', MOCK_DAILY_BLOCKS);
+    return window.SF_HTTP.request(`/planner/daily${query}`, MOCK_DAILY_BLOCKS);
   }
 
   async function getUpcomingDeadlines() {
@@ -39,5 +43,45 @@ window.plannerService = (function () {
     return window.SF_HTTP.request('/planner/monthly', MOCK_MONTHLY_CALENDAR);
   }
 
-  return { getDailyBlocks, getUpcomingDeadlines, getWeeklyStats, getMonthlyCalendar };
+  async function createBlock(payload) {
+    const newBlock = {
+      id: 'blk-' + Date.now(),
+      completed: false,
+      color: '#A855F7',
+      ...payload
+    };
+    return window.SF_HTTP.request('/planner', newBlock, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
+  async function updateBlock(id, patch) {
+    let updatedMock = { id, ...patch };
+    if (window.SF_CONFIG?.USE_MOCK_API) {
+      const currentBlocks = window.SF_STORE?.getSlice('planner')?.dailyBlocks || [];
+      const existing = currentBlocks.find(b => b.id === id || b._id === id);
+      if (existing) {
+        updatedMock = { ...existing, ...patch };
+      }
+    }
+    return window.SF_HTTP.request(`/planner/${id}`, updatedMock, {
+      method: 'PATCH',
+      body: JSON.stringify(patch)
+    });
+  }
+
+  async function deleteBlock(id) {
+    return window.SF_HTTP.request(`/planner/${id}`, null, { method: 'DELETE' });
+  }
+
+  return {
+    getDailyBlocks,
+    getUpcomingDeadlines,
+    getWeeklyStats,
+    getMonthlyCalendar,
+    createBlock,
+    updateBlock,
+    deleteBlock
+  };
 })();

@@ -155,6 +155,17 @@
     },
 
     /**
+     * Canonical Goal Progress Helper
+     */
+    calculateGoalProgress(goal) {
+      if (!goal || !Array.isArray(goal.subtasks) || goal.subtasks.length === 0) {
+        return 0;
+      }
+      const completedCount = goal.subtasks.filter(s => s.completed).length;
+      return Math.round((completedCount / goal.subtasks.length) * 100);
+    },
+
+    /**
      * Render Floating Action Buttons for Goal Cards
      */
     renderGoalActionButtons(goalId) {
@@ -169,7 +180,7 @@
     renderGoalCard(goal, mode = 'compact') {
       const done = goal.subtasks ? goal.subtasks.filter(s => s.completed).length : 0;
       const total = goal.subtasks ? goal.subtasks.length : 0;
-      const progress = goal.progress || 0;
+      const progress = this.calculateGoalProgress(goal);
       const isUrg = goal.urgency === 'URGENT' || (goal.urgency && goal.urgency.includes('High'));
 
       if (mode === 'compact') {
@@ -694,4 +705,6 @@
       }, duration);
     }
   };
+
+  window.calculateGoalProgress = window.SF_COMPONENTS.calculateGoalProgress;
 })();

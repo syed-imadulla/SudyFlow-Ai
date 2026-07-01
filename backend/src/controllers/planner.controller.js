@@ -83,7 +83,9 @@ export class PlannerController {
 
   // UI compatibility endpoints
   static getDailyBlocks = catchAsync(async (req, res) => {
-    const events = await PlannerService.getTodayEvents(req.user._id);
+    const events = req.query.date
+      ? await PlannerService.getEventsForDate(req.user._id, req.query.date)
+      : await PlannerService.getTodayEvents(req.user._id);
     res.status(HTTP_STATUS.OK).json({
       status: 'success',
       statusCode: HTTP_STATUS.OK,

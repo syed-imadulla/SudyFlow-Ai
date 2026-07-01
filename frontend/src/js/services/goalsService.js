@@ -37,9 +37,13 @@ window.goalsService = (function () {
   }
 
   function _recalcProgress(goal) {
-    const total = goal.subtasks.length;
-    const done  = goal.subtasks.filter(s => s.completed).length;
-    goal.progress = total > 0 ? Math.round((done / total) * 100) : 0;
+    if (window.calculateGoalProgress) {
+      goal.progress = window.calculateGoalProgress(goal);
+    } else {
+      const total = goal?.subtasks?.length || 0;
+      const done = goal?.subtasks?.filter(s => s.completed)?.length || 0;
+      goal.progress = total > 0 ? Math.round((done / total) * 100) : 0;
+    }
     return goal;
   }
 

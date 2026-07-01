@@ -47,12 +47,12 @@
               </div>
               <div>
                 <span class="text-[10px] font-bold text-[#A855F7] uppercase tracking-wider font-mono">ACTIVE SPRINT TASK</span>
-                <h2 class="text-lg sm:text-xl font-bold text-white tracking-tight mt-0.5">Create ER Diagram</h2>
-                <p class="text-xs text-[#A1A1AA] mt-0.5">DBMS Mini Project • Milestone 2</p>
+                <h2 id="focusSprintTitle" class="text-lg sm:text-xl font-bold text-white tracking-tight mt-0.5">Create ER Diagram</h2>
+                <p id="focusSprintSubtitle" class="text-xs text-[#A1A1AA] mt-0.5">DBMS Mini Project • Milestone 2</p>
               </div>
             </div>
 
-            <span class="px-3.5 py-1.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold flex items-center gap-1.5 shrink-0 self-start sm:self-center shadow-[0_0_12px_rgba(239,68,68,0.25)]">
+            <span id="focusSprintUrgency" class="px-3.5 py-1.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold flex items-center gap-1.5 shrink-0 self-start sm:self-center shadow-[0_0_12px_rgba(239,68,68,0.25)]">
               🔥 Urgent Priority
             </span>
           </div>
@@ -68,7 +68,7 @@
                   <span>Sub-checklist</span>
                 </div>
 
-                <div class="space-y-3.5">
+                <div id="focusSubchecklistContainer" class="space-y-3.5">
                   <label class="flex items-center space-x-3 text-xs cursor-pointer group">
                     <input type="checkbox" checked class="w-4 h-4 rounded border-[#2A2A35] bg-[#12121A] text-[#A855F7] focus:ring-0 focus:ring-offset-0 cursor-pointer accent-[#A855F7]" />
                     <span class="line-through text-[#6B7280] group-hover:text-[#A1A1AA] transition">Identify Entities (Student, Course, Dept)</span>
@@ -227,8 +227,16 @@
     let isRunning      = false;
 
     document.addEventListener('DOMContentLoaded', async () => {
-      // Bootstrap store: loads user settings + focus (timer config, sprint task, AI suggestion)
-      await window.SF_STORE.bootstrap(['user', 'focus']);
+      // Subscribe to focus and goals slices to keep UI and distraction counter in sync
+      window.SF_STORE.subscribe(['focus', 'goals'], () => {
+        const slice = window.SF_STORE.getSlice('focus');
+        const el = document.getElementById('distractCount');
+        if (el) el.textContent = slice?.distractionCount || 0;
+        renderFocusTask();
+      });
+
+      // Bootstrap store: loads user settings + focus + goals
+      await window.SF_STORE.bootstrap(['user', 'goals', 'focus']);
 
       // Apply timer config from store
       const focusSlice = window.SF_STORE.getSlice('focus');
@@ -243,13 +251,37 @@
       if (suggestionEl && focusSlice.aiSuggestion?.message) {
         suggestionEl.textContent = focusSlice.aiSuggestion.message;
       }
-
-      // Subscribe to focus slice to keep distraction counter in sync
-      window.SF_STORE.subscribe('focus', (slice) => {
-        const el = document.getElementById('distractCount');
-        if (el) el.textContent = slice.distractionCount || 0;
-      });
     });
+
+    function renderFocusTask() {
+      const focusSlice = window.SF_STORE.getSlice('focus');
+      const activeTask = focusSlice?.activeTask;
+      if (!activeTask) return;
+
+      const titleEl = document.getElementById('focusSprintTitle');
+      const subEl = document.getElementById('focusSprintSubtitle');
+      const urgEl = document.getElementById('focusSprintUrgency');
+      const container = document.getElementById('focusSubchecklistContainer');
+
+      if (titleEl) titleEl.textContent = activeTask.title || 'Focus Task';
+      if (subEl) subEl.textContent = `${activeTask.goalTitle || 'Active Project'} • ${activeTask.milestone || 'Active Sprint'}`;
+      if (urgEl) {
+        const isUrg = activeTask.urgency === 'URGENT' || (activeTask.urgency && activeTask.urgency.includes('High'));
+        urgEl.textContent = isUrg ? '🔥 Urgent Priority' : `⭐ ${activeTask.urgency || 'Active Priority'}`;
+        urgEl.className = isUrg
+          ? 'px-3.5 py-1.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 text-xs font-bold flex items-center gap-1.5 shrink-0 self-start sm:self-center shadow-[0_0_12px_rgba(239,68,68,0.25)]'
+          : 'px-3.5 py-1.5 rounded-xl bg-[#A855F7]/15 border border-[#A855F7]/30 text-[#A855F7] text-xs font-bold flex items-center gap-1.5 shrink-0 self-start sm:self-center shadow-[0_0_12px_rgba(168,85,247,0.25)]';
+      }
+
+      if (container && Array.isArray(activeTask.checklist)) {
+        container.innerHTML = activeTask.checklist.map(chk => `
+          <label class="flex items-center space-x-3 text-xs cursor-pointer group">
+            <input type="checkbox" ${chk.completed ? 'checked' : ''} onchange="window.SF_STORE.dispatch('goals/TOGGLE_SUBTASK', { goalId: '${activeTask.goalId || chk.goalId || ''}', subtaskId: '${chk.id}', completed: this.checked })" class="w-4 h-4 rounded border-[#2A2A35] bg-[#12121A] text-[#A855F7] focus:ring-0 focus:ring-offset-0 cursor-pointer accent-[#A855F7]" />
+            <span class="${chk.completed ? 'line-through text-[#6B7280]' : 'text-[#D4D4D8]'} group-hover:text-white transition">${chk.text}</span>
+          </label>
+        `).join('');
+      }
+    }
     function setTimerMode(seconds) {
       clearInterval(timerInterval);
       isRunning = false;
