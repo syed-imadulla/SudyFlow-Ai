@@ -907,7 +907,7 @@
         }
 
         return `
-              <div class="relative group sf-planner-card transition-all duration-200" data-id="${id}" data-start-min="${sMin}" data-end-min="${eMin}">
+              <div class="relative group sf-planner-card transition-all duration-200 cursor-grab active:cursor-grabbing" data-id="${id}" data-start-min="${sMin}" data-end-min="${eMin}" onpointerdown="initPlannerBlockDrag(event, '${id}')">
                 <span class="absolute -left-14 top-3 font-mono text-[11px] text-[#6B7280]">${startTime}</span>
                 <div class="${theme.cardBg} border ${theme.border} p-4 rounded-2xl flex items-center justify-between shadow-[0_4px_15px_rgba(0,0,0,0.15)] transition-all duration-200 sf-card-inner">
                   <div class="flex items-center space-x-3.5">
@@ -944,6 +944,207 @@
               </div>
         `;
       }).join('');
+    }
+
+    let _plannerDragState = null;
+
+    function _formatMinutesToAMPM(totalMins) {
+      let h = Math.floor(totalMins / 60);
+      let m = totalMins % 60;
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      h = h % 12;
+      h = h ? h : 12;
+      const mStr = m < 10 ? '0' + m : m;
+      return `${h}:${mStr} ${ampm}`;
+    }
+
+    function initPlannerBlockDrag(e, blockId) {
+      if (_plannerDragState && _plannerDragState.active) return;
+      if (e.target.closest('button') || e.target.closest('.sf-planner-dropdown')) return;
+      if (e.button !== undefined && e.button !== 0 && e.pointerType === 'mouse') return;
+
+      const cardElem = e.currentTarget;
+      if (!cardElem) return;
+
+      const origStartMin = parseInt(cardElem.getAttribute('data-start-min'), 10) || 0;
+      const origEndMin = parseInt(cardElem.getAttribute('data-end-min'), 10) || 60;
+      const duration = Math.max(15, origEndMin - origStartMin);
+
+      const ghostElem = document.createElement('div');
+      ghostElem.id = 'sf-drag-ghost';
+      ghostElem.className = 'border-2 border-dashed border-[#A855F7]/70 rounded-2xl bg-[#A855F7]/10 p-4 transition-all duration-150 flex items-center justify-between text-[#D8B4FE]';
+      ghostElem.style.height = `${cardElem.offsetHeight}px`;
+      const formattedStart = _formatMinutesToAMPM(origStartMin);
+      const formattedEnd = _formatMinutesToAMPM(origEndMin);
+      ghostElem.innerHTML = `<span class="font-bold text-xs font-mono">🕒 ${formattedStart} – ${formattedEnd}</span>`;
+
+      if (cardElem.parentNode) {
+        cardElem.parentNode.insertBefore(ghostElem, cardElem);
+      }
+
+      cardElem.style.transition = 'none';
+      cardElem.classList.add('scale-[1.02]', 'opacity-95', 'z-50', 'shadow-[0_20px_50px_rgba(168,85,247,0.35)]', 'cursor-grabbing');
+      cardElem.style.willChange = 'transform';
+
+      if (cardElem.setPointerCapture && e.pointerId !== undefined) {
+        try { cardElem.setPointerCapture(e.pointerId); } catch (_err) {}
+      }
+
+      _plannerDragState = {
+        active: true,
+        blockId: blockId,
+        pointerId: e.pointerId,
+        startY: e.clientY,
+        originalStartMin: origStartMin,
+        originalEndMin: origEndMin,
+        currentStartMin: origStartMin,
+        currentEndMin: origEndMin,
+        duration: duration,
+        cardElement: cardElem,
+        ghostElement: ghostElem,
+        animationFrame: null,
+        deltaY: 0,
+        isConflict: false
+      };
+
+      window.addEventListener('pointermove', _onPlannerDragMove);
+      window.addEventListener('pointerup', _onPlannerDragEnd);
+      window.addEventListener('pointercancel', _onPlannerDragEnd);
+    }
+
+    function _onPlannerDragMove(e) {
+      if (!_plannerDragState || !_plannerDragState.active) return;
+      if (e.pointerId !== undefined && _plannerDragState.pointerId !== undefined && e.pointerId !== _plannerDragState.pointerId) return;
+
+      _plannerDragState.deltaY = e.clientY - _plannerDragState.startY;
+      if (_plannerDragState.animationFrame) cancelAnimationFrame(_plannerDragState.animationFrame);
+      _plannerDragState.animationFrame = requestAnimationFrame(_mutatePlannerDragVisuals);
+    }
+
+    function _mutatePlannerDragVisuals() {
+      if (!_plannerDragState || !_plannerDragState.active) return;
+      const { blockId, cardElement, ghostElement, originalStartMin, duration, deltaY } = _plannerDragState;
+
+      cardElement.style.transform = `translate3d(0, ${deltaY}px, 0)`;
+
+      const PIXELS_PER_15_MIN = 24;
+      const deltaSteps = Math.round(deltaY / PIXELS_PER_15_MIN);
+      const deltaMins = deltaSteps * 15;
+      const currentStartMin = Math.max(0, Math.min(1440 - duration, originalStartMin + deltaMins));
+      const currentEndMin = currentStartMin + duration;
+
+      _plannerDragState.currentStartMin = currentStartMin;
+      _plannerDragState.currentEndMin = currentEndMin;
+
+      const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
+      const dailyBlocks = plannerState ? (plannerState.dailyBlocks || []) : [];
+      let isConflict = false;
+      for (let i = 0; i < dailyBlocks.length; i++) {
+        const b = dailyBlocks[i];
+        const bId = b.id || b._id;
+        if (bId === blockId) continue;
+        const bStart = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '');
+        const bEnd = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '');
+        if (currentStartMin < bEnd && currentEndMin > bStart) {
+          isConflict = true;
+          break;
+        }
+      }
+      _plannerDragState.isConflict = isConflict;
+
+      if (ghostElement) {
+        const formattedStart = _formatMinutesToAMPM(currentStartMin);
+        const formattedEnd = _formatMinutesToAMPM(currentEndMin);
+        if (isConflict) {
+          ghostElement.className = 'border-2 border-dashed border-red-500/80 rounded-2xl bg-red-500/15 p-4 transition-all duration-150 flex items-center justify-between text-red-300';
+          ghostElement.innerHTML = `<span class="font-bold text-xs">⚠️ Time Conflict: ${formattedStart} – ${formattedEnd}</span>`;
+        } else {
+          ghostElement.className = 'border-2 border-dashed border-[#A855F7]/70 rounded-2xl bg-[#A855F7]/10 p-4 transition-all duration-150 flex items-center justify-between text-[#D8B4FE]';
+          ghostElement.innerHTML = `<span class="font-bold text-xs font-mono">🕒 ${formattedStart} – ${formattedEnd}</span>`;
+        }
+      }
+    }
+
+    async function _onPlannerDragEnd(e) {
+      if (!_plannerDragState || !_plannerDragState.active) return;
+      if (e && e.pointerId !== undefined && _plannerDragState.pointerId !== undefined && e.pointerId !== _plannerDragState.pointerId) return;
+
+      window.removeEventListener('pointermove', _onPlannerDragMove);
+      window.removeEventListener('pointerup', _onPlannerDragEnd);
+      window.removeEventListener('pointercancel', _onPlannerDragEnd);
+
+      if (_plannerDragState.animationFrame) cancelAnimationFrame(_plannerDragState.animationFrame);
+
+      const { blockId, cardElement, ghostElement, originalStartMin, originalEndMin, currentStartMin, currentEndMin, isConflict, pointerId } = _plannerDragState;
+      _plannerDragState.active = false;
+      _plannerDragState = null;
+
+      if (cardElement && cardElement.releasePointerCapture && pointerId !== undefined) {
+        try { cardElement.releasePointerCapture(pointerId); } catch (_err) {}
+      }
+
+      if (ghostElement && ghostElement.parentNode) {
+        ghostElement.parentNode.removeChild(ghostElement);
+      }
+
+      if (cardElement) {
+        cardElement.style.transition = 'transform 0.25s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease, opacity 0.2s ease';
+        cardElement.style.transform = '';
+        cardElement.style.willChange = '';
+        cardElement.classList.remove('scale-[1.02]', 'opacity-95', 'z-50', 'shadow-[0_20px_50px_rgba(168,85,247,0.35)]', 'cursor-grabbing');
+        setTimeout(() => {
+          if (cardElement) cardElement.style.transition = '';
+        }, 260);
+      }
+
+      if (isConflict) {
+        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+          window.SF_COMPONENTS.showToast('Time conflict detected. Choose another slot.', 'error');
+        }
+        return;
+      }
+
+      if (currentStartMin === originalStartMin && currentEndMin === originalEndMin) {
+        return;
+      }
+
+      const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
+      const targetDateStr = (plannerState && plannerState.selectedDate) || _toLocalDateStr();
+      const newStartHH = Math.floor(currentStartMin / 60);
+      const newStartMM = currentStartMin % 60;
+      const newEndHH = Math.floor(currentEndMin / 60);
+      const newEndMM = currentEndMin % 60;
+
+      const newStartISO = new Date(`${targetDateStr}T${String(newStartHH).padStart(2, '0')}:${String(newStartMM).padStart(2, '0')}:00`).toISOString();
+      const newEndISO = new Date(`${targetDateStr}T${String(newEndHH).padStart(2, '0')}:${String(newEndMM).padStart(2, '0')}:00`).toISOString();
+
+      const existingBlock = (plannerState && plannerState.dailyBlocks || []).find(b => b.id === blockId || b._id === blockId);
+      const durationStr = existingBlock ? existingBlock.durationStr : '';
+
+      const patch = {
+        startTime: newStartISO,
+        endTime: newEndISO,
+        startTimeDisplay: _formatTimeDisplay(newStartISO),
+        endTimeDisplay: _formatTimeDisplay(newEndISO),
+        durationStr
+      };
+
+      try {
+        if (window.SF_STORE) {
+          await window.SF_STORE.dispatch('planner/UPDATE', { id: blockId, patch });
+        } else if (window.plannerService) {
+          await window.plannerService.updateBlock(blockId, patch);
+        }
+        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+          window.SF_COMPONENTS.showToast(`Rescheduled to ${_formatMinutesToAMPM(currentStartMin)}`, 'success');
+        }
+      } catch (err) {
+        console.error('[Planner] Error rescheduling block:', err);
+        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+          window.SF_COMPONENTS.showToast(err.message || 'Failed to reschedule block', 'error');
+        }
+        if (window.renderDailyPlanner) window.renderDailyPlanner();
+      }
     }
 
     function _scheduleNextMinute() {
@@ -1850,6 +2051,7 @@
       });
     }
     window.confirmDeleteTimeBlock = confirmDeleteTimeBlock;
+    window.initPlannerBlockDrag = initPlannerBlockDrag;
 
     async function _executeDeleteBlock(blockId) {
       if (_isDeletingBlock) return;
