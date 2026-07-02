@@ -21,6 +21,10 @@
     .custom-scroll::-webkit-scrollbar-track { background: #0A0A0E; border-radius: 8px; }
     .custom-scroll::-webkit-scrollbar-thumb { background: #1C1C24; border-radius: 8px; }
     .custom-scroll::-webkit-scrollbar-thumb:hover { background: #A855F7; }
+
+    /* Sprint 3C.3.4 — Resize UI Layering & Visibility */
+    body.sf-resizing .sf-resize-tooltip { opacity: 0 !important; visibility: hidden !important; }
+    .sf-resize-ghost { pointer-events: none !important; transition: none !important; }
   </style>
 </head>
 <body class="bg-[#050508] text-[#FAFAFA] min-h-screen flex antialiased selection:bg-[#A855F7] selection:text-white overflow-hidden">
@@ -737,8 +741,10 @@
     }
 
     function _timeStrToMinutes(str) {
-      if (!str) return 0;
+      if (str === null || str === undefined || str === '') return 0;
+      if (typeof str === 'number' && !isNaN(str)) return str;
       let s = String(str).trim();
+      if (/^\d+$/.test(s)) return parseInt(s, 10);
       const match = s.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
       if (match) {
         let h = parseInt(match[1], 10);
@@ -753,6 +759,23 @@
         return dt.getHours() * 60 + dt.getMinutes();
       }
       return 0;
+    }
+
+    // ── Unified Conflict Detection Helper (Sprint 3C.3.5) ──────────────────────
+    function _checkPlannerTimeConflict(targetBlockId, startMin, endMin) {
+      const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
+      const dailyBlocks = plannerState ? (plannerState.dailyBlocks || []) : [];
+      for (let i = 0; i < dailyBlocks.length; i++) {
+        const b = dailyBlocks[i];
+        const bId = b.id || b._id;
+        if (bId === targetBlockId) continue;
+        const bStart = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '');
+        const bEnd = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '');
+        if (startMin < bEnd && endMin > bStart) {
+          return true;
+        }
+      }
+      return false;
     }
 
     function renderPlannerFilterChips() {
@@ -909,6 +932,11 @@
         return `
               <div class="relative group sf-planner-card transition-all duration-200 cursor-grab active:cursor-grabbing" data-id="${id}" data-start-min="${sMin}" data-end-min="${eMin}" onpointerdown="initPlannerBlockDrag(event, '${id}')">
                 <span class="absolute -left-14 top-3 font-mono text-[11px] text-[#6B7280]">${startTime}</span>
+                <!-- Top Resize Handle -->
+                <div class="sf-resize-handle absolute -top-1.5 inset-x-6 h-3.5 flex items-center justify-center z-20 cursor-ns-resize opacity-0 group-hover:opacity-100 transition-opacity duration-150" onpointerdown="initPlannerBlockResize(event, '${id}', 'top')">
+                  <div class="w-8 h-1 bg-[#A855F7]/80 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.7)] hover:bg-[#C084FC] hover:shadow-[0_0_12px_rgba(168,85,247,1)] transition-all duration-150"></div>
+                  <span class="sf-resize-tooltip absolute bottom-full mb-1 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-[#12121A]/95 border border-[#2A2A38] rounded text-[10px] font-semibold text-[#D8B4FE] whitespace-nowrap shadow-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-30">Resize start time</span>
+                </div>
                 <div class="${theme.cardBg} border ${theme.border} p-4 rounded-2xl flex items-center justify-between shadow-[0_4px_15px_rgba(0,0,0,0.15)] transition-all duration-200 sf-card-inner">
                   <div class="flex items-center space-x-3.5">
                     <div class="w-1.5 h-10 ${theme.bar} rounded-full transition-all duration-200 sf-card-bar"></div>
@@ -941,6 +969,11 @@
                     </div>
                   </div>
                 </div>
+                <!-- Bottom Resize Handle -->
+                <div class="sf-resize-handle absolute -bottom-1.5 inset-x-6 h-3.5 flex items-center justify-center z-20 cursor-ns-resize opacity-0 group-hover:opacity-100 transition-opacity duration-150" onpointerdown="initPlannerBlockResize(event, '${id}', 'bottom')">
+                  <div class="w-8 h-1 bg-[#A855F7]/80 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.7)] hover:bg-[#C084FC] hover:shadow-[0_0_12px_rgba(168,85,247,1)] transition-all duration-150"></div>
+                  <span class="sf-resize-tooltip absolute top-full mt-1 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-[#12121A]/95 border border-[#2A2A38] rounded text-[10px] font-semibold text-[#D8B4FE] whitespace-nowrap shadow-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-30">Resize end time</span>
+                </div>
               </div>
         `;
       }).join('');
@@ -960,7 +993,7 @@
 
     function initPlannerBlockDrag(e, blockId) {
       if (_plannerDragState && _plannerDragState.active) return;
-      if (e.target.closest('button') || e.target.closest('.sf-planner-dropdown')) return;
+      if (e.target.closest('button') || e.target.closest('.sf-planner-dropdown') || e.target.closest('.sf-resize-handle')) return;
       if (e.button !== undefined && e.button !== 0 && e.pointerType === 'mouse') return;
 
       const cardElem = e.currentTarget;
@@ -1036,20 +1069,7 @@
       _plannerDragState.currentStartMin = currentStartMin;
       _plannerDragState.currentEndMin = currentEndMin;
 
-      const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
-      const dailyBlocks = plannerState ? (plannerState.dailyBlocks || []) : [];
-      let isConflict = false;
-      for (let i = 0; i < dailyBlocks.length; i++) {
-        const b = dailyBlocks[i];
-        const bId = b.id || b._id;
-        if (bId === blockId) continue;
-        const bStart = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '');
-        const bEnd = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '');
-        if (currentStartMin < bEnd && currentEndMin > bStart) {
-          isConflict = true;
-          break;
-        }
-      }
+      const isConflict = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin);
       _plannerDragState.isConflict = isConflict;
 
       if (ghostElement) {
@@ -1147,10 +1167,337 @@
       }
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Sprint 3C.3 — Interactive Resize Duration (Sprint 3C.3.1 QA Refinement)
+    // ─────────────────────────────────────────────────────────────────────────
+    const RESIZE_ACTIVATION_THRESHOLD = 5; // px — prevents accidental resize from simple clicks
+    const RESIZE_CARD_DIM_OPACITY = '0.63'; // premium visual quality: around 0.60–0.65
+    const RESIZE_MIN_DURATION_MINS = 15;    // minimum allowed block duration
+
+    // ── Duration label helper ─────────────────────────────────────────────────
+    function _formatResizeDurationLabel(startMin, endMin) {
+      const totalMins = endMin - startMin;
+      const h = Math.floor(totalMins / 60);
+      const m = totalMins % 60;
+      const dLabel = h > 0 && m > 0 ? `${h}h ${m}m` : h > 0 ? `${h}h` : `${m}m`;
+      return `${_formatMinutesToAMPM(startMin)} – ${_formatMinutesToAMPM(endMin)} · ${dLabel}`;
+    }
+
+    // ── Proportional pixel-per-minute mapping ─────────────────────────────────
+    function _calcPxPerMin(cardElement, durationMins) {
+      const cardH = cardElement.offsetHeight || 72;
+      return Math.max(1.0, cardH / 60);
+    }
+
+    // ── Ghost factory ─────────────────────────────────────────────────────────
+    function _spawnResizeGhost(cardElem, startMin, endMin) {
+      const ghost = document.createElement('div');
+      ghost.id = 'sf-resize-ghost';
+      ghost.className = 'sf-resize-ghost';
+      ghost.style.cssText = [
+        `height:${cardElem.offsetHeight}px`,
+        'position:absolute',
+        'left:0', 'right:0', 'top:0',
+        'z-index:60',
+        'box-sizing:border-box',
+        'overflow:hidden',
+        'border-radius:1rem',
+        'border:2px dashed rgba(192,132,252,0.85)',
+        'background:rgba(168,85,247,0.05)',
+        'box-shadow:0 0 20px rgba(168,85,247,0.18), inset 0 0 12px rgba(168,85,247,0.08)',
+        'pointer-events:none',
+        'transition:none !important',
+      ].join(';');
+      ghost.innerHTML = _makeGhostLabel(_formatResizeDurationLabel(startMin, endMin), false);
+      return ghost;
+    }
+
+    function _makeGhostLabel(text, isConflict) {
+      const color = isConflict ? '#FCA5A5' : '#E9D5FF';
+      const borderCol = isConflict ? 'rgba(239,68,68,0.55)' : 'rgba(192,132,252,0.5)';
+      const bgCol = isConflict ? 'rgba(35,15,22,0.88)' : 'rgba(18,18,28,0.85)';
+      return `<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;display:block;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:monospace;font-size:11px;font-weight:700;color:${color};letter-spacing:0.025em;text-align:center;line-height:1.2;padding:5px 14px;border-radius:9999px;background:${bgCol};backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid ${borderCol};box-shadow:0 6px 20px rgba(0,0,0,0.65);z-index:61;">${text}</span>`;
+    }
+
+    // ── Card cleanup ──────────────────────────────────────────────────────────
+    function _cleanupResizeCard(cardElement) {
+      document.body.classList.remove('sf-resizing');
+      if (!cardElement) return;
+      cardElement.style.opacity = '';
+      cardElement.style.position = '';
+      cardElement.style.zIndex = '';
+      cardElement.style.transform = '';
+      const innerCard = cardElement.querySelector('.sf-card-inner');
+      if (innerCard) {
+        innerCard.style.opacity = '';
+        innerCard.style.transform = '';
+        innerCard.style.transition = '';
+      }
+    }
+
+    // ── initPlannerBlockResize ────────────────────────────────────────────────
+    function initPlannerBlockResize(e, blockId, edge) {
+      e.stopPropagation();
+      e.preventDefault();
+      if (_plannerDragState && _plannerDragState.active) return;
+      if (e.button !== undefined && e.button !== 0 && e.pointerType === 'mouse') return;
+
+      const handleElem = e.currentTarget;
+      const cardElem = handleElem.closest('.sf-planner-card');
+      if (!cardElem) return;
+
+      const origStartMin = parseInt(cardElem.getAttribute('data-start-min'), 10) || 0;
+      const origEndMin = parseInt(cardElem.getAttribute('data-end-min'), 10) || 60;
+      const origDuration = Math.max(RESIZE_MIN_DURATION_MINS, origEndMin - origStartMin);
+
+      const pxPerMin = _calcPxPerMin(cardElem, origDuration);
+
+      if (handleElem.setPointerCapture && e.pointerId !== undefined) {
+        try { handleElem.setPointerCapture(e.pointerId); } catch (_err) {}
+      }
+
+      // DORMANT state — ghost not spawned, card not dimmed, no side effects
+      _plannerDragState = {
+        active: true,
+        mode: edge === 'top' ? 'resize-top' : 'resize-bottom',
+        blockId: blockId,
+        pointerId: e.pointerId,
+        startY: e.clientY,
+        originalStartMin: origStartMin,
+        originalEndMin: origEndMin,
+        currentStartMin: origStartMin,
+        currentEndMin: origEndMin,
+        duration: origDuration,
+        pxPerMin: pxPerMin,
+        cardElement: cardElem,
+        handleElement: handleElem,
+        ghostElement: null,
+        animationFrame: null,
+        deltaY: 0,
+        isConflict: false,
+        hasMovedBeyondThreshold: false,
+        lastRenderedStartMin: null,
+        lastRenderedEndMin: null,
+        lastRenderedConflict: null
+      };
+
+      window.addEventListener('pointermove', _onPlannerResizeMove);
+      window.addEventListener('pointerup', _onPlannerResizeEnd);
+      window.addEventListener('pointercancel', _onPlannerResizeEnd);
+    }
+
+    // ── pointermove handler ───────────────────────────────────────────────────
+    function _onPlannerResizeMove(e) {
+      if (!_plannerDragState || !_plannerDragState.active) return;
+      if (!['resize-top', 'resize-bottom'].includes(_plannerDragState.mode)) return;
+      if (e.pointerId !== undefined && _plannerDragState.pointerId !== undefined && e.pointerId !== _plannerDragState.pointerId) return;
+
+      const rawDeltaY = e.clientY - _plannerDragState.startY;
+
+      // Stay dormant until 5px threshold crossed — prevents accidental resize on clicks
+      if (!_plannerDragState.hasMovedBeyondThreshold) {
+        if (Math.abs(rawDeltaY) <= RESIZE_ACTIVATION_THRESHOLD) return;
+        // Threshold crossed: elevate card stacking context, dim card, spawn ghost
+        _plannerDragState.hasMovedBeyondThreshold = true;
+        document.body.classList.add('sf-resizing');
+        const { cardElement, originalStartMin, originalEndMin } = _plannerDragState;
+        const innerCard = cardElement.querySelector('.sf-card-inner');
+        if (innerCard) {
+          innerCard.style.opacity = RESIZE_CARD_DIM_OPACITY;
+          innerCard.style.transform = 'scale(0.985)';
+          innerCard.style.transition = 'transform 0.15s ease, opacity 0.15s ease';
+        } else {
+          cardElement.style.opacity = RESIZE_CARD_DIM_OPACITY;
+          cardElement.style.transform = 'scale(0.985)';
+        }
+        cardElement.style.position = 'relative'; // establishes coordinate system for ghost
+        cardElement.style.zIndex = '50';         // Elevates active card above all siblings
+        const ghost = _spawnResizeGhost(cardElement, originalStartMin, originalEndMin);
+        cardElement.appendChild(ghost);
+        _plannerDragState.ghostElement = ghost;
+        document.body.style.cursor = 'ns-resize';
+      }
+
+      _plannerDragState.deltaY = rawDeltaY;
+      if (_plannerDragState.animationFrame) cancelAnimationFrame(_plannerDragState.animationFrame);
+      _plannerDragState.animationFrame = requestAnimationFrame(_mutatePlannerResizeVisuals);
+    }
+
+    // ── rAF visual mutator (ghost-only, NO real card mutations) ───────────────
+    function _mutatePlannerResizeVisuals() {
+      if (!_plannerDragState || !_plannerDragState.active || !_plannerDragState.ghostElement) return;
+      const {
+        blockId, mode, ghostElement, cardElement,
+        originalStartMin, originalEndMin, duration, pxPerMin, deltaY
+      } = _plannerDragState;
+
+      // ── Convert raw pixel delta → snapped minute delta ────────────────────
+      const rawDeltaMins = deltaY / pxPerMin;
+      const snappedDeltaMins = Math.round(rawDeltaMins / 15) * 15;
+
+      // ── Compute proposed snapped boundaries ───────────────────────────────
+      let currentStartMin = originalStartMin;
+      let currentEndMin = originalEndMin;
+
+      if (mode === 'resize-bottom') {
+        currentEndMin = Math.max(
+          originalStartMin + RESIZE_MIN_DURATION_MINS,
+          Math.min(1440, originalEndMin + snappedDeltaMins)
+        );
+        currentStartMin = originalStartMin;
+      } else {
+        currentStartMin = Math.max(
+          0,
+          Math.min(originalEndMin - RESIZE_MIN_DURATION_MINS, originalStartMin + snappedDeltaMins)
+        );
+        currentEndMin = originalEndMin;
+      }
+
+      _plannerDragState.currentStartMin = currentStartMin;
+      _plannerDragState.currentEndMin = currentEndMin;
+
+      // ── Conflict detection (Unified helper) ───────────────────────────────
+      const isConflict = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin);
+      _plannerDragState.isConflict = isConflict;
+
+      // Deduplicate DOM writes if snapped boundaries and conflict status haven't changed
+      if (
+        currentStartMin === _plannerDragState.lastRenderedStartMin &&
+        currentEndMin === _plannerDragState.lastRenderedEndMin &&
+        isConflict === _plannerDragState.lastRenderedConflict
+      ) {
+        return;
+      }
+      _plannerDragState.lastRenderedStartMin = currentStartMin;
+      _plannerDragState.lastRenderedEndMin = currentEndMin;
+      _plannerDragState.lastRenderedConflict = isConflict;
+
+      // ── Ghost geometry ─────────────────────────────────────────────────────
+      const durationDeltaMins = (currentEndMin - currentStartMin) - duration;
+      const newH = Math.max(32, cardElement.offsetHeight + durationDeltaMins * pxPerMin);
+
+      if (mode === 'resize-bottom') {
+        ghostElement.style.top = '0';
+        ghostElement.style.transform = '';
+        ghostElement.style.height = `${newH}px`;
+      } else {
+        const topOffsetMins = currentStartMin - originalStartMin;
+        const topOffsetPx = topOffsetMins * pxPerMin;
+        ghostElement.style.transform = `translate3d(0, ${topOffsetPx}px, 0)`;
+        ghostElement.style.top = '0';
+        ghostElement.style.height = `${newH}px`;
+      }
+
+      // ── Ghost label & styling ──────────────────────────────────────────────
+      const label = _formatResizeDurationLabel(currentStartMin, currentEndMin);
+      if (isConflict) {
+        ghostElement.style.borderColor = 'rgba(239,68,68,0.9)';
+        ghostElement.style.background = 'rgba(239,68,68,0.08)';
+        ghostElement.style.boxShadow = '0 0 20px rgba(239,68,68,0.22), inset 0 0 12px rgba(239,68,68,0.08)';
+        ghostElement.innerHTML = _makeGhostLabel(`⚠ Conflict · ${_formatMinutesToAMPM(currentStartMin)} – ${_formatMinutesToAMPM(currentEndMin)}`, true);
+      } else {
+        ghostElement.style.borderColor = 'rgba(192,132,252,0.85)';
+        ghostElement.style.background = 'rgba(168,85,247,0.05)';
+        ghostElement.style.boxShadow = '0 0 20px rgba(168,85,247,0.18), inset 0 0 12px rgba(168,85,247,0.08)';
+        ghostElement.innerHTML = _makeGhostLabel(label, false);
+      }
+    }
+
+    // ── pointerup / pointercancel handler ─────────────────────────────────────
+    async function _onPlannerResizeEnd(e) {
+      if (!_plannerDragState || !_plannerDragState.active || !['resize-top', 'resize-bottom'].includes(_plannerDragState.mode)) return;
+      if (e && e.pointerId !== undefined && _plannerDragState.pointerId !== undefined && e.pointerId !== _plannerDragState.pointerId) return;
+
+      // Remove all listeners immediately to prevent duplicates
+      window.removeEventListener('pointermove', _onPlannerResizeMove);
+      window.removeEventListener('pointerup', _onPlannerResizeEnd);
+      window.removeEventListener('pointercancel', _onPlannerResizeEnd);
+
+      if (_plannerDragState.animationFrame) cancelAnimationFrame(_plannerDragState.animationFrame);
+
+      // Snapshot state before nulling
+      const {
+        blockId, cardElement, ghostElement, handleElement,
+        originalStartMin, originalEndMin, currentStartMin, currentEndMin,
+        isConflict, pointerId, hasMovedBeyondThreshold
+      } = _plannerDragState;
+      _plannerDragState.active = false;
+      _plannerDragState = null;
+
+      // ── Always cleanup (before any early return) ──────────────────────────
+      document.body.style.cursor = '';
+      if (handleElement && handleElement.releasePointerCapture && pointerId !== undefined) {
+        try { handleElement.releasePointerCapture(pointerId); } catch (_err) {}
+      }
+      if (ghostElement && ghostElement.parentNode) {
+        ghostElement.parentNode.removeChild(ghostElement);
+      }
+      _cleanupResizeCard(cardElement); // clears opacity + position + zIndex
+
+      // ── Early exits ───────────────────────────────────────────────────────
+      // Click without threshold crossing → no-op
+      if (!hasMovedBeyondThreshold) return;
+
+      // Conflict → cancel with toast, zero network requests
+      if (isConflict) {
+        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+          window.SF_COMPONENTS.showToast('Time conflict detected. Resize cancelled.', 'error');
+        }
+        return;
+      }
+
+      // No actual change → no-op
+      if (currentStartMin === originalStartMin && currentEndMin === originalEndMin) return;
+
+      // ── Commit: exactly ONE planner/UPDATE dispatch ───────────────────────
+      const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
+      const targetDateStr = (plannerState && plannerState.selectedDate) || _toLocalDateStr();
+
+      const toISO = (totalMins) => {
+        const hh = String(Math.floor(totalMins / 60)).padStart(2, '0');
+        const mm = String(totalMins % 60).padStart(2, '0');
+        return new Date(`${targetDateStr}T${hh}:${mm}:00`).toISOString();
+      };
+      const newStartISO = toISO(currentStartMin);
+      const newEndISO = toISO(currentEndMin);
+
+      const durationMins = currentEndMin - currentStartMin;
+      const dh = Math.floor(durationMins / 60);
+      const dm = durationMins % 60;
+      const newDurationStr = dh > 0 && dm > 0 ? `${dh}h ${dm}m` : dh > 0 ? `${dh}h` : `${dm}m`;
+
+      const patch = {
+        startTime: newStartISO,
+        endTime: newEndISO,
+        startTimeDisplay: _formatTimeDisplay(newStartISO),
+        endTimeDisplay: _formatTimeDisplay(newEndISO),
+        durationStr: newDurationStr
+      };
+
+      try {
+        if (window.SF_STORE) {
+          await window.SF_STORE.dispatch('planner/UPDATE', { id: blockId, patch });
+        } else if (window.plannerService) {
+          await window.plannerService.updateBlock(blockId, patch);
+        }
+        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+          window.SF_COMPONENTS.showToast(`Resized to ${newDurationStr}`, 'success');
+        }
+      } catch (err) {
+        console.error('[Planner] Error resizing block:', err);
+        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+          window.SF_COMPONENTS.showToast(err.message || 'Failed to resize block', 'error');
+        }
+        if (window.renderDailyPlanner) window.renderDailyPlanner();
+      }
+    }
+
     function _scheduleNextMinute() {
       if (_minuteSchedulerId) clearTimeout(_minuteSchedulerId);
       const now = Date.now();
       const delay = 60000 - (now % 60000);
+
+
       _minuteSchedulerId = setTimeout(() => {
         _requestTimeVisualsUpdate();
         _scheduleNextMinute();
