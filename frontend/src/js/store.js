@@ -84,10 +84,14 @@ window.SF_STORE = (function () {
 
     planner: {
       selectedDate:      new Date().toISOString().split('T')[0],
+      selectedView:      'day',
+      selectedRange:     { start: null, end: null },
+      plannerEvents:     [],
       dailyBlocks:       [],
       weeklyStats:       null,
       monthlyCalendar:   null,
       upcomingDeadlines: [],
+      kpiSnapshot:       null,
       loading:           false,
       error:             null
     },
@@ -187,6 +191,17 @@ window.SF_STORE = (function () {
     subs.forEach(fn => {
       try { fn(snapshot, sliceName); }
       catch (e) { console.error(`[SF_STORE] Subscriber error on slice "${sliceName}":`, e); }
+    });
+  }
+
+  function _deriveDailyBlocks(events, dateStr) {
+    if (!events || !Array.isArray(events)) return [];
+    if (_state.planner.selectedView === 'day') return events;
+    return events.filter(e => {
+      if (!e.startTime) return true;
+      const eDate = new Date(e.startTime).toLocaleDateString('en-CA');
+      const utcDate = new Date(e.startTime).toISOString().split('T')[0];
+      return eDate === dateStr || utcDate === dateStr;
     });
   }
 
@@ -359,11 +374,13 @@ window.SF_STORE = (function () {
     async 'planner/LOAD'(payload) {
       const dateStr = payload?.date || _state.planner.selectedDate || new Date().toISOString().split('T')[0];
       const isDateChangeOnly = payload && payload.date && payload.date !== _state.planner.selectedDate && _state.planner.weeklyStats !== null;
-      _patch('planner', { loading: true, error: null, selectedDate: dateStr });
+      console.log('[AUDIT: store.js] planner/LOAD started for date:', dateStr, '| isDateChangeOnly:', isDateChangeOnly);
+      _patch('planner', { loading: true, error: null, selectedDate: dateStr, selectedView: 'day' });
       try {
         if (isDateChangeOnly) {
           const dailyBlocks = await window.plannerService.getDailyBlocks(dateStr);
-          _patch('planner', { dailyBlocks, loading: false });
+          console.log('[AUDIT: store.js] planner/LOAD storing dailyBlocks (date change only). Count:', dailyBlocks ? dailyBlocks.length : 0, '| Data:', dailyBlocks);
+          _patch('planner', { plannerEvents: dailyBlocks, dailyBlocks, loading: false });
         } else {
           const [dailyBlocks, weeklyStats, monthlyCalendar, upcomingDeadlines] = await Promise.all([
             window.plannerService.getDailyBlocks(dateStr),
@@ -371,19 +388,71 @@ window.SF_STORE = (function () {
             window.plannerService.getMonthlyCalendar(),
             window.plannerService.getUpcomingDeadlines()
           ]);
-          _patch('planner', { dailyBlocks, weeklyStats, monthlyCalendar, upcomingDeadlines, loading: false });
+          console.log('[AUDIT: store.js] planner/LOAD storing dailyBlocks (full load). Count:', dailyBlocks ? dailyBlocks.length : 0, '| Data:', dailyBlocks);
+          _patch('planner', { plannerEvents: dailyBlocks, dailyBlocks, weeklyStats, monthlyCalendar, upcomingDeadlines, loading: false });
         }
       } catch (e) {
+        console.error('[AUDIT: store.js] planner/LOAD ERROR! Data will NOT be stored:', e);
         _patch('planner', { loading: false, error: e.message });
         console.error('[SF_STORE] planner/LOAD failed:', e);
+      }
+    },
+
+    async 'planner/LOAD_RANGE'(payload) {
+      const { start, end, view = _state.planner.selectedView || 'day' } = payload || {};
+      const dateStr = payload?.date || _state.planner.selectedDate || new Date().toISOString().split('T')[0];
+      console.log('[AUDIT: store.js] planner/LOAD_RANGE started for range:', start, 'to', end, '| view:', view);
+      _patch('planner', { loading: true, error: null, selectedView: view, selectedDate: dateStr, selectedRange: { start, end } });
+      try {
+        const events = await window.plannerService.getEventsByRange(start, end);
+        const dailyBlocks = _deriveDailyBlocks(events, dateStr);
+        console.log('[AUDIT: store.js] planner/LOAD_RANGE stored plannerEvents count:', events ? events.length : 0);
+        _patch('planner', { plannerEvents: events, dailyBlocks, loading: false });
+      } catch (e) {
+        console.error('[AUDIT: store.js] planner/LOAD_RANGE ERROR:', e);
+        _patch('planner', { loading: false, error: e.message });
       }
     },
 
     async 'planner/CREATE'(payload) {
       try {
         const newBlock = await window.plannerService.createBlock(payload);
-        const dailyBlocks = [...(_state.planner.dailyBlocks || []), newBlock];
-        _patch('planner', { dailyBlocks });
+        if (newBlock && !newBlock.id && !newBlock._id) {
+          const genId = payload?.id || payload?._id || ('blk-' + Date.now());
+          newBlock.id = genId;
+          newBlock._id = genId;
+        }
+        const blockToAdd = newBlock || payload;
+        const currentEvents = [...(_state.planner.plannerEvents || []), blockToAdd];
+        const currentDaily = [...(_state.planner.dailyBlocks || []), blockToAdd];
+        _patch('planner', { plannerEvents: currentEvents, dailyBlocks: currentDaily });
+
+        const activeView = _state.planner.selectedView || (typeof document !== 'undefined' && document.getElementById('weeklyView') && !document.getElementById('weeklyView').classList.contains('hidden') ? 'weekly' : 'day');
+        if (activeView === 'weekly' || activeView === 'monthly' || (_state.planner.selectedRange?.start && _state.planner.selectedRange?.end)) {
+          let start = _state.planner.selectedRange?.start;
+          let end = _state.planner.selectedRange?.end;
+          if (!start || !end) {
+            const baseDate = new Date(_state.planner.selectedDate || new Date());
+            const dayNum = baseDate.getDay();
+            const diffToMon = dayNum === 0 ? -6 : 1 - dayNum;
+            const mon = new Date(baseDate);
+            mon.setDate(baseDate.getDate() + diffToMon);
+            const sun = new Date(mon.getTime() + 6 * 86400000);
+            start = mon.toISOString().split('T')[0];
+            end = sun.toISOString().split('T')[0];
+          }
+          await dispatch('planner/LOAD_RANGE', { start, end, view: activeView });
+        } else {
+          await dispatch('planner/LOAD', { date: _state.planner.selectedDate });
+        }
+        // Ensure the new block remains present if LOAD/LOAD_RANGE did not return it yet
+        const afterEvents = _state.planner.plannerEvents || [];
+        if (blockToAdd && (blockToAdd.id || blockToAdd._id) && !afterEvents.some(b => (b.id && b.id === blockToAdd.id) || (b._id && b._id === blockToAdd._id))) {
+          _patch('planner', {
+            plannerEvents: [...afterEvents, blockToAdd],
+            dailyBlocks: [...(_state.planner.dailyBlocks || []), blockToAdd]
+          });
+        }
         return newBlock;
       } catch (e) {
         console.error('[SF_STORE] planner/CREATE failed:', e);
@@ -396,10 +465,24 @@ window.SF_STORE = (function () {
       const targetId = blockId || id;
       try {
         const updatedBlock = await window.plannerService.updateBlock(targetId, patch);
-        const dailyBlocks = (_state.planner.dailyBlocks || []).map(b =>
-          (b.id === targetId || b._id === targetId) ? { ...b, ...updatedBlock } : b
-        );
-        _patch('planner', { dailyBlocks });
+        const activeView = _state.planner.selectedView || (typeof document !== 'undefined' && document.getElementById('weeklyView') && !document.getElementById('weeklyView').classList.contains('hidden') ? 'weekly' : 'day');
+        if (activeView === 'weekly' || activeView === 'monthly' || (_state.planner.selectedRange?.start && _state.planner.selectedRange?.end)) {
+          let start = _state.planner.selectedRange?.start;
+          let end = _state.planner.selectedRange?.end;
+          if (!start || !end) {
+            const baseDate = new Date(_state.planner.selectedDate || new Date());
+            const dayNum = baseDate.getDay();
+            const diffToMon = dayNum === 0 ? -6 : 1 - dayNum;
+            const mon = new Date(baseDate);
+            mon.setDate(baseDate.getDate() + diffToMon);
+            const sun = new Date(mon.getTime() + 6 * 86400000);
+            start = mon.toISOString().split('T')[0];
+            end = sun.toISOString().split('T')[0];
+          }
+          await dispatch('planner/LOAD_RANGE', { start, end, view: activeView });
+        } else {
+          await dispatch('planner/LOAD', { date: _state.planner.selectedDate });
+        }
         return updatedBlock;
       } catch (e) {
         console.error('[SF_STORE] planner/UPDATE failed:', e);
@@ -408,12 +491,28 @@ window.SF_STORE = (function () {
     },
 
     async 'planner/DELETE'(payload) {
-      const { blockId, id } = payload;
+      const { blockId, id, editScope, exDate, seriesId } = payload;
       const targetId = blockId || id;
       try {
-        await window.plannerService.deleteBlock(targetId);
-        const dailyBlocks = (_state.planner.dailyBlocks || []).filter(b => b.id !== targetId && b._id !== targetId);
-        _patch('planner', { dailyBlocks });
+        await window.plannerService.deleteBlock(targetId, { editScope, exDate, seriesId });
+        const activeView = _state.planner.selectedView || (typeof document !== 'undefined' && document.getElementById('weeklyView') && !document.getElementById('weeklyView').classList.contains('hidden') ? 'weekly' : 'day');
+        if (activeView === 'weekly' || activeView === 'monthly' || (_state.planner.selectedRange?.start && _state.planner.selectedRange?.end)) {
+          let start = _state.planner.selectedRange?.start;
+          let end = _state.planner.selectedRange?.end;
+          if (!start || !end) {
+            const baseDate = new Date(_state.planner.selectedDate || new Date());
+            const dayNum = baseDate.getDay();
+            const diffToMon = dayNum === 0 ? -6 : 1 - dayNum;
+            const mon = new Date(baseDate);
+            mon.setDate(baseDate.getDate() + diffToMon);
+            const sun = new Date(mon.getTime() + 6 * 86400000);
+            start = mon.toISOString().split('T')[0];
+            end = sun.toISOString().split('T')[0];
+          }
+          await dispatch('planner/LOAD_RANGE', { start, end, view: activeView });
+        } else {
+          await dispatch('planner/LOAD', { date: _state.planner.selectedDate });
+        }
         return true;
       } catch (e) {
         console.error('[SF_STORE] planner/DELETE failed:', e);

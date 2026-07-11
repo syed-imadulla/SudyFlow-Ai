@@ -560,7 +560,7 @@
       const trashSvg = `<svg class="w-4 h-4 shrink-0 fill-current" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>`;
 
       const modalHtml = `
-        <div id="sf-confirm-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fadeIn transition-opacity duration-200" role="dialog" aria-modal="true" aria-labelledby="sf-confirm-title">
+        <div id="sf-confirm-modal" class="sf-confirm-overlay fixed inset-0 z-[200000] flex items-center justify-center bg-black/70 backdrop-blur-sm animate-fadeIn transition-opacity duration-200" role="dialog" aria-modal="true" aria-labelledby="sf-confirm-title">
           <div id="sf-confirm-card" class="bg-[#0E0E0E]/95 border border-[#2A2A2A] rounded-2xl p-6 max-w-md w-full mx-4 shadow-[0_0_50px_rgba(168,85,247,0.15)] relative transform transition-all duration-200 scale-95 opacity-0">
             <div class="flex items-start space-x-4">
               <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500 shrink-0 shadow-[0_0_15px_rgba(239,68,68,0.2)]">
@@ -659,7 +659,7 @@
       if (!container) {
         container = document.createElement('div');
         container.id = 'sf-toast-container';
-        container.className = 'fixed bottom-5 right-5 z-[9999] flex flex-col gap-2.5 pointer-events-none max-w-xs w-full px-4 md:px-0';
+        container.className = 'sf-toast-container fixed bottom-5 right-5 z-[300000] flex flex-col gap-2.5 pointer-events-none max-w-xs w-full px-4 md:px-0';
         document.body.appendChild(container);
       }
 

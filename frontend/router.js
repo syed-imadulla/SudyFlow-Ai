@@ -826,47 +826,149 @@ function initializeStudyFlowRouter() {
     };
   }
 
-  // Universal Pure Black Glassmorphism Tooltip Engine
-  const existingTooltip = document.getElementById('studyflow-custom-tooltip');
-  if (!existingTooltip) {
-    const tooltipEl = document.createElement('div');
-    tooltipEl.id = 'studyflow-custom-tooltip';
-    tooltipEl.className = 'fixed z-[99999] px-3 py-1.5 rounded-xl bg-[#0E0E0E]/95 backdrop-blur-md border border-[#A855F7]/50 text-xs font-bold text-[#FAFAFA] shadow-[0_0_20px_rgba(168,85,247,0.3)] pointer-events-none transition-all duration-150 opacity-0 scale-95 tracking-wide font-sans';
-    document.body.appendChild(tooltipEl);
+  // Universal Pure Black Glassmorphism Tooltip Engine (Targeted Debugging & Lifecycle Polish)
+  if (!window._sfTooltipEngineInitialized) {
+    window._sfTooltipEngineInitialized = true;
 
-    document.addEventListener('mouseover', (e) => {
-      const target = e.target.closest('[title], [data-tooltip]');
-      if (target) {
-        const text = target.getAttribute('title') || target.getAttribute('data-tooltip');
-        if (text) {
-          target.setAttribute('data-tooltip', text);
-          target.removeAttribute('title');
-          tooltipEl.textContent = text;
-          tooltipEl.style.opacity = '1';
-          tooltipEl.style.transform = 'scale(1)';
+    let activeTooltipEl = null;
+    let activeTriggerEl = null;
+    let mousemoveListener = null;
+    let domCheckInterval = null;
+
+    function getActivePopupCount() {
+      return document.querySelectorAll('#studyflow-custom-tooltip, .sf-floating-tooltip').length;
+    }
+
+    function destroyTooltip(reason = '') {
+      const allTooltips = document.querySelectorAll('#studyflow-custom-tooltip, .sf-floating-tooltip');
+      const hadTooltips = allTooltips.length > 0 || activeTooltipEl !== null;
+
+      allTooltips.forEach(el => {
+        if (el && el.parentNode) {
+          el.parentNode.removeChild(el);
+        }
+      });
+
+      if (mousemoveListener) {
+        document.removeEventListener('mousemove', mousemoveListener);
+        mousemoveListener = null;
+      }
+      if (domCheckInterval) {
+        clearInterval(domCheckInterval);
+        domCheckInterval = null;
+      }
+
+      activeTooltipEl = null;
+      activeTriggerEl = null;
+
+      if (hadTooltips) {
+        console.log('popup destroyed | active popup count:', getActivePopupCount());
+      }
+    }
+    window._destroySfTooltip = destroyTooltip;
+
+    function createTooltip(target, text, initialEvent) {
+      // If currently dragging or resizing or holding down mouse button, do not create tooltip
+      if ((initialEvent && initialEvent.buttons !== 0) || window._sfIsDraggingOrResizing) {
+        return;
+      }
+      // If already active for this exact target and element is in DOM, just return
+      if (activeTriggerEl === target && activeTooltipEl && document.body.contains(activeTooltipEl)) {
+        return;
+      }
+
+      destroyTooltip('re-create');
+
+      activeTriggerEl = target;
+      activeTooltipEl = document.createElement('div');
+      activeTooltipEl.id = 'studyflow-custom-tooltip';
+      activeTooltipEl.className = 'sf-floating-tooltip fixed z-[99999] px-3 py-1.5 rounded-xl bg-[#0E0E0E]/95 backdrop-blur-md border border-[#A855F7]/50 text-xs font-bold text-[#FAFAFA] shadow-[0_0_20px_rgba(168,85,247,0.3)] pointer-events-none transition-all duration-150 opacity-100 scale-100 tracking-wide font-sans';
+      activeTooltipEl.textContent = text;
+      document.body.appendChild(activeTooltipEl);
+
+      console.log('popup created | active popup count:', getActivePopupCount());
+
+      function positionTooltip(x, y) {
+        if (!activeTooltipEl || !document.body.contains(activeTooltipEl)) return;
+        const rect = activeTooltipEl.getBoundingClientRect();
+        const finalX = x + 12 + rect.width > window.innerWidth ? x - rect.width - 8 : x + 12;
+        const finalY = y + 14 + rect.height > window.innerHeight ? y - rect.height - 8 : y + 14;
+        if (activeTooltipEl.style.left !== `${finalX}px` || activeTooltipEl.style.top !== `${finalY}px`) {
+          activeTooltipEl.style.left = `${finalX}px`;
+          activeTooltipEl.style.top = `${finalY}px`;
+          console.log('popup repositioned');
         }
       }
+
+      if (initialEvent) {
+        positionTooltip(initialEvent.clientX, initialEvent.clientY);
+      }
+
+      mousemoveListener = (e) => {
+        if (!activeTriggerEl || !document.body.contains(activeTriggerEl) || !activeTriggerEl.isConnected) {
+          destroyTooltip('trigger removed on mousemove');
+          return;
+        }
+        if (e.buttons !== 0 || window._sfIsDraggingOrResizing) {
+          destroyTooltip('mouse button held or dragging');
+          return;
+        }
+        positionTooltip(e.clientX, e.clientY);
+      };
+      document.addEventListener('mousemove', mousemoveListener);
+
+      // Automatically destroy if trigger element is removed from DOM
+      domCheckInterval = setInterval(() => {
+        if (!activeTriggerEl || !document.body.contains(activeTriggerEl) || !activeTriggerEl.isConnected) {
+          destroyTooltip('trigger removed from DOM');
+        } else if (window._sfIsDraggingOrResizing) {
+          destroyTooltip('dragging active');
+        }
+      }, 150);
+    }
+
+    // 1. Enter events (mouseenter, mouseover, pointerenter)
+    ['mouseover', 'mouseenter', 'pointerenter'].forEach(evt => {
+      document.addEventListener(evt, (e) => {
+        if (e.buttons !== 0 || window._sfIsDraggingOrResizing) return;
+        const target = e.target.closest('[title], [data-tooltip]');
+        if (target) {
+          const text = target.getAttribute('title') || target.getAttribute('data-tooltip');
+          if (text) {
+            target.setAttribute('data-tooltip', text);
+            target.removeAttribute('title');
+            createTooltip(target, text, e);
+          }
+        }
+      }, true);
     });
 
-    document.addEventListener('mousemove', (e) => {
-      if (tooltipEl.style.opacity === '1') {
-        const x = e.clientX + 12;
-        const y = e.clientY + 14;
-        const rect = tooltipEl.getBoundingClientRect();
-        const finalX = x + rect.width > window.innerWidth ? e.clientX - rect.width - 8 : x;
-        const finalY = y + rect.height > window.innerHeight ? e.clientY - rect.height - 8 : y;
-        tooltipEl.style.left = `${finalX}px`;
-        tooltipEl.style.top = `${finalY}px`;
-      }
+    // 2. Leave events (mouseleave, mouseout, pointerleave)
+    ['mouseout', 'mouseleave', 'pointerleave'].forEach(evt => {
+      document.addEventListener(evt, (e) => {
+        if (!activeTriggerEl) return;
+        if (activeTriggerEl === e.target || activeTriggerEl.contains(e.target)) {
+          if (!e.relatedTarget || !activeTriggerEl.contains(e.relatedTarget)) {
+            destroyTooltip('leave event: ' + evt);
+          }
+        }
+      }, true);
     });
 
-    document.addEventListener('mouseout', (e) => {
-      const target = e.target.closest('[data-tooltip]');
-      if (target) {
-        tooltipEl.style.opacity = '0';
-        tooltipEl.style.transform = 'scale(0.95)';
-      }
+    // 3. Click, drag, and mouse button events (click, mousedown, mouseup, dragstart, dragend)
+    ['click', 'mousedown', 'mouseup', 'dragstart', 'dragend', 'pointerdown', 'pointerup', 'blur'].forEach(evt => {
+      document.addEventListener(evt, () => {
+        destroyTooltip('cancel event: ' + evt);
+      }, true);
     });
+
+    // 4. Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') destroyTooltip('Escape key');
+    }, true);
+  } else {
+    // If router initialized again, ensure any stale tooltip is cleaned up
+    if (window._destroySfTooltip) window._destroySfTooltip('re-init');
   }
 
   // Dispatch modular route handler

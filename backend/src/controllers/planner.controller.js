@@ -40,7 +40,7 @@ export class PlannerController {
   });
 
   static deleteEvent = catchAsync(async (req, res) => {
-    await PlannerService.deleteEvent(req.user._id, req.params.id);
+    await PlannerService.deleteEvent(req.user._id, req.params.id, req.query);
     res.status(HTTP_STATUS.OK).json({
       status: 'success',
       statusCode: HTTP_STATUS.OK,
@@ -59,8 +59,12 @@ export class PlannerController {
 
   static getWeek = catchAsync(async (req, res) => {
     const now = new Date();
-    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-    const endOfWeek = new Date(now.setDate(now.getDate() - now.getDay() + 6));
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const date = now.getDate();
+    const day = now.getDay();
+    const startOfWeek = new Date(Date.UTC(year, month, date - day, 0, 0, 0));
+    const endOfWeek = new Date(Date.UTC(year, month, date - day + 6, 23, 59, 59, 999));
     const events = await PlannerService.getEventsByRange(req.user._id, startOfWeek.toISOString(), endOfWeek.toISOString());
     res.status(HTTP_STATUS.OK).json({
       status: 'success',
@@ -71,8 +75,11 @@ export class PlannerController {
 
   static getMonth = catchAsync(async (req, res) => {
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    const year = now.getFullYear();
+    const monthIndex = now.getMonth();
+    const daysInMonth = new Date(Date.UTC(year, monthIndex + 1, 0)).getUTCDate();
+    const startOfMonth = new Date(Date.UTC(year, monthIndex, 1, 0, 0, 0));
+    const endOfMonth = new Date(Date.UTC(year, monthIndex, daysInMonth, 23, 59, 59, 999));
     const events = await PlannerService.getEventsByRange(req.user._id, startOfMonth.toISOString(), endOfMonth.toISOString());
     res.status(HTTP_STATUS.OK).json({
       status: 'success',
@@ -83,9 +90,11 @@ export class PlannerController {
 
   // UI compatibility endpoints
   static getDailyBlocks = catchAsync(async (req, res) => {
+    console.log('[AUDIT: Controller] GET /planner/daily called with query date:', req.query.date);
     const events = req.query.date
       ? await PlannerService.getEventsForDate(req.user._id, req.query.date)
       : await PlannerService.getTodayEvents(req.user._id);
+    console.log('[AUDIT: Controller] GET /planner/daily returning events count:', events ? events.length : 0);
     res.status(HTTP_STATUS.OK).json({
       status: 'success',
       statusCode: HTTP_STATUS.OK,
@@ -119,4 +128,15 @@ export class PlannerController {
       data: calendar
     });
   });
+
+  static getEventsByRange = catchAsync(async (req, res) => {
+    const { start, end } = req.query;
+    const events = await PlannerService.getEventsByRange(req.user._id, start, end);
+    res.status(HTTP_STATUS.OK).json({
+      status: 'success',
+      statusCode: HTTP_STATUS.OK,
+      data: events
+    });
+  });
 }
+

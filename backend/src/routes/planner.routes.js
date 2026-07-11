@@ -17,6 +17,7 @@ router.get('/monthly', PlannerController.getMonthlyCalendar);
 router.get('/today', PlannerController.getToday);
 router.get('/week', PlannerController.getWeek);
 router.get('/month', PlannerController.getMonth);
+router.get('/events', PlannerController.getEventsByRange);
 
 // Event CRUD
 router.route('/')

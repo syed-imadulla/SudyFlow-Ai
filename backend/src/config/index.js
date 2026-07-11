@@ -63,6 +63,6 @@
     },
     rateLimit: {
       windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS || '900000', 10), // 15 mins default
-      max: parseInt(process.env.RATE_LIMIT_MAX || '100', 10)
+      max: parseInt(process.env.RATE_LIMIT_MAX || ((process.env.NODE_ENV || 'development') === 'development' ? '3000' : '100'), 10)
     }
   };

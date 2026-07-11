@@ -8,16 +8,30 @@ import mongoose from 'mongoose';
 const normalizePlannerPayload = (body) => {
   if (!body || typeof body !== 'object') return;
 
+  const rec = body.recurrence || body.recurrenceRule;
+  if (rec && typeof rec === 'object') {
+    if (rec.daysOfWeek && !rec.repeatDays) rec.repeatDays = rec.daysOfWeek;
+    if (rec.repeatDays && !rec.daysOfWeek) rec.daysOfWeek = rec.repeatDays;
+    if (rec.untilDate && !rec.repeatUntil) rec.repeatUntil = rec.untilDate;
+    if (rec.repeatUntil && !rec.untilDate) rec.untilDate = rec.repeatUntil;
+    body.recurrence = rec;
+    body.recurrenceRule = rec;
+  }
+
   if (body.type && typeof body.type === 'string') {
     const lower = body.type.toLowerCase().trim();
     const map = {
       'focus': PLANNER_EVENT_TYPE.STUDY,
       'study': PLANNER_EVENT_TYPE.STUDY,
+      'practice': PLANNER_EVENT_TYPE.PRACTICE,
+      'exam': PLANNER_EVENT_TYPE.EXAM,
       'review': PLANNER_EVENT_TYPE.REVIEW,
       'deep': PLANNER_EVENT_TYPE.DEEP_WORK,
       'deep_work': PLANNER_EVENT_TYPE.DEEP_WORK,
+      'meeting': PLANNER_EVENT_TYPE.MEETING,
       'class': PLANNER_EVENT_TYPE.CLASS,
       'personal': PLANNER_EVENT_TYPE.PERSONAL,
+      'coding': PLANNER_EVENT_TYPE.CODING,
       'other': PLANNER_EVENT_TYPE.OTHER
     };
     if (map[lower]) {
@@ -52,7 +66,7 @@ export const validateCreatePlannerEvent = (req, res, next) => {
   }
 
   if (type !== undefined && !Object.values(PLANNER_EVENT_TYPE).includes(type)) {
-    return next(new AppError('Invalid planner event type.\nAllowed values:\nSTUDY, REVIEW, DEEP_WORK, CLASS, PERSONAL, OTHER', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Invalid planner event type.\nAllowed values:\nSTUDY, PRACTICE, EXAM, REVIEW, DEEP_WORK, MEETING, PERSONAL, CODING, CLASS, TASK, OTHER', HTTP_STATUS.BAD_REQUEST));
   }
 
   if (goalId && !mongoose.Types.ObjectId.isValid(goalId)) {
@@ -90,7 +104,7 @@ export const validateUpdatePlannerEvent = (req, res, next) => {
   }
 
   if (type !== undefined && !Object.values(PLANNER_EVENT_TYPE).includes(type)) {
-    return next(new AppError('Invalid planner event type.\nAllowed values:\nSTUDY, REVIEW, DEEP_WORK, CLASS, PERSONAL, OTHER', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Invalid planner event type.\nAllowed values:\nSTUDY, PRACTICE, EXAM, REVIEW, DEEP_WORK, MEETING, PERSONAL, CODING, CLASS, TASK, OTHER', HTTP_STATUS.BAD_REQUEST));
   }
 
   if (goalId !== undefined && goalId !== null && !mongoose.Types.ObjectId.isValid(goalId)) {
