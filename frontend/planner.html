@@ -658,7 +658,7 @@
                 </label>
                 <input type="time" id="sf-add-block-start" required value="09:00" class="hidden">
                 <button type="button" id="sf-btn-start" onclick="toggleCustomSelect('start')" class="w-full px-3 py-2 rounded-xl bg-[#15151A] border border-[#2A2A38] hover:border-[#A855F7]/60 text-white text-xs font-mono font-semibold focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#A855F7] transition-all duration-200 flex items-center justify-between shadow-[0_4px_15px_rgba(0,0,0,0.3)] group">
-                  <span id="sf-display-start" class="flex items-center gap-2 text-white">09:00:00 AM</span>
+                  <span id="sf-display-start" class="flex items-center gap-2 text-white">09:00 AM</span>
                   <svg class="w-3.5 h-3.5 text-[#A1A1AA] group-hover:text-white transition-transform duration-200 shrink-0" id="sf-arrow-start" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </button>
                 <div id="sf-menu-start" class="hidden absolute left-0 mt-1 w-[220px] bg-[#12121A]/95 backdrop-blur-xl border border-[#2A2A38] rounded-xl shadow-[0_12px_35px_rgba(0,0,0,0.85)] p-1.5 z-[999999999] font-mono text-xs"></div>
@@ -671,7 +671,7 @@
                 </label>
                 <input type="time" id="sf-add-block-end" required value="10:00" class="hidden">
                 <button type="button" id="sf-btn-end" onclick="toggleCustomSelect('end')" class="w-full px-3 py-2 rounded-xl bg-[#15151A] border border-[#2A2A38] hover:border-[#A855F7]/60 text-white text-xs font-mono font-semibold focus:outline-none focus:ring-2 focus:ring-[#A855F7]/40 focus:border-[#A855F7] transition-all duration-200 flex items-center justify-between shadow-[0_4px_15px_rgba(0,0,0,0.3)] group">
-                  <span id="sf-display-end" class="flex items-center gap-2 text-white">10:00:00 AM</span>
+                  <span id="sf-display-end" class="flex items-center gap-2 text-white">10:00 AM</span>
                   <svg class="w-3.5 h-3.5 text-[#A1A1AA] group-hover:text-white transition-transform duration-200 shrink-0" id="sf-arrow-end" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </button>
                 <div id="sf-menu-end" class="hidden absolute right-0 mt-1 w-[220px] bg-[#12121A]/95 backdrop-blur-xl border border-[#2A2A38] rounded-xl shadow-[0_12px_35px_rgba(0,0,0,0.85)] p-1.5 z-[999999999] font-mono text-xs"></div>
@@ -791,7 +791,9 @@
 
     function _formatTimeDisplay(val) {
       if (!val) return '';
-      if (typeof val === 'string' && (val.includes('AM') || val.includes('PM'))) return val;
+      if (typeof val === 'string' && (val.includes('AM') || val.includes('PM'))) {
+        return val.replace(/(\d{1,2}:\d{2}):\d{2}(\s*[AP]M)/i, '$1$2');
+      }
       const dt = new Date(val);
       if (!isNaN(dt.getTime())) {
         return dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -804,7 +806,7 @@
       if (typeof str === 'number' && !isNaN(str)) return str;
       let s = String(str).trim();
       if (/^\d+$/.test(s)) return parseInt(s, 10);
-      const match = s.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
+      const match = s.match(/^(\d{1,2}):(\d{2})(?::\d{2})?\s*(AM|PM)?$/i);
       if (match) {
         let h = parseInt(match[1], 10);
         const m = parseInt(match[2], 10);
@@ -1470,7 +1472,7 @@
         ghostElem.innerHTML = `<span class="font-bold text-xs font-mono">🕒 ${formattedStart} – ${formattedEnd}</span>`;
 
         if (cardElem.parentNode) {
-          if (cardElem.style.position === 'absolute' || cardElem.parentNode.classList?.contains('weekly-event-layer')) {
+          if (cardElem.style.position === 'absolute' || cardElem.parentNode.classList?.contains('weekly-event-layer') || cardElem.parentNode.classList?.contains('daily-event-layer')) {
             ghostElem.style.position = 'absolute';
             ghostElem.style.top = cardElem.style.top;
             ghostElem.style.left = cardElem.style.left;
@@ -1516,6 +1518,8 @@
       if (window._currentPlannerView === 'weekly' || (ghostElement && ghostElement.parentNode && ghostElement.parentNode.classList?.contains('weekly-event-layer'))) {
         const scale = typeof _getWeeklyMinScale === 'function' ? _getWeeklyMinScale() : (100 / 60);
         PIXELS_PER_15_MIN = scale * 15;
+      } else if (ghostElement && ghostElement.parentNode && ghostElement.parentNode.classList?.contains('daily-event-layer')) {
+        PIXELS_PER_15_MIN = _DAILY_FLEX_PX_PER_MIN * 15;
       }
 
       const deltaSteps = Math.round(deltaY / PIXELS_PER_15_MIN);
@@ -2160,11 +2164,12 @@
       });
 
       if (window.plannerSettings?.schedulingMode === 'flexible') {
-        const eventLayer = container.querySelector('.flex-1.relative');
-        if (eventLayer) {
-          const topPadMin = parseFloat(eventLayer.getAttribute('data-top-pad-min')) || 510;
-          const topPx = Math.round((currentMin - topPadMin) * _DAILY_FLEX_PX_PER_MIN);
-          const maxH = eventLayer.clientHeight || 1440;
+        const gridCol = container.querySelector('#dailyFlexibleGridCol') || container.querySelector('.flex-1.relative');
+        if (gridCol) {
+          const topPadAttr = gridCol.getAttribute('data-top-pad-min');
+          const effectiveTopPad = (topPadAttr !== null && topPadAttr !== '') ? parseFloat(topPadAttr) : (container.querySelector('#dailyFlexibleGridCol') ? 0 : 510);
+          const topPx = Math.round((currentMin - effectiveTopPad) * _DAILY_FLEX_PX_PER_MIN);
+          const maxH = gridCol.clientHeight || 1800;
           if (topPx >= 0 && topPx <= maxH) {
             const indicatorHtml = `
               <div id="sf-now-indicator" class="absolute left-0 right-0 z-40 pointer-events-none flex items-center group" style="top: ${topPx}px;">
@@ -2173,7 +2178,7 @@
                   <span class="absolute -top-1 left-0 w-2.5 h-2.5 rounded-full bg-[#A855F7] shadow-[0_0_8px_rgba(168,85,247,1)]"></span>
                 </div>
               </div>`;
-            eventLayer.insertAdjacentHTML('beforeend', indicatorHtml);
+            gridCol.insertAdjacentHTML('beforeend', indicatorHtml);
           }
         }
         return;
@@ -2246,6 +2251,12 @@
       const sortedBlocks = _sortPlannerBlocks(filteredBlocks);
       console.log('[AUDIT: planner.html] renderDailyPlanner after filter & sort count:', sortedBlocks ? sortedBlocks.length : 0);
 
+      // Flexible Mode: render 24h grid timeline with overlap engine regardless of whether sortedBlocks is empty
+      if (window.plannerSettings?.schedulingMode === 'flexible') {
+        _renderDailyFlexible(container, sortedBlocks || [], goals);
+        return;
+      }
+
       if (!sortedBlocks || sortedBlocks.length === 0) {
         const isFiltering = _plannerSearchQuery || _plannerActiveFilter !== 'ALL';
         if (isFiltering && dailyBlocks.length > 0) {
@@ -2273,18 +2284,14 @@
         return;
       }
 
-      // Flexible Mode: render side-by-side using the same overlap engine as Weekly
-      if (window.plannerSettings?.schedulingMode === 'flexible') {
-        _renderDailyFlexible(container, sortedBlocks, goals);
-      } else {
-        container.style.overflowY = 'visible';
-        container.style.maxHeight = 'none';
-        container.style.height = 'auto';
-        container.style.paddingLeft = '3.5rem';
-        container.classList.add('space-y-4', 'before:absolute', 'before:left-12', 'before:top-2', 'before:bottom-2', 'before:w-px', 'before:bg-[#1C1C24]');
-        container.innerHTML = _renderPlannerCards(sortedBlocks, goals);
-        _requestTimeVisualsUpdate();
-      }
+      container.style.overflowY = 'visible';
+      container.style.maxHeight = 'none';
+      container.style.height = 'auto';
+      container.style.paddingLeft = '3.5rem';
+      container.classList.remove('overflow-y-auto', 'max-h-[660px]', 'max-h-[520px]', 'custom-scroll');
+      container.classList.add('space-y-4', 'before:absolute', 'before:left-12', 'before:top-2', 'before:bottom-2', 'before:w-px', 'before:bg-[#1C1C24]');
+      container.innerHTML = _renderPlannerCards(sortedBlocks, goals);
+      _requestTimeVisualsUpdate();
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -2296,7 +2303,7 @@
     // ─────────────────────────────────────────────────────────────────
     const _DAILY_FLEX_PX_PER_MIN = 75 / 60;  // 1.25 px per minute (exactly 75px per hour, matching Focus Mode card height)
 
-    function _renderFlexibleCardHtml(block, goals, layoutMap, totalColsCluster, isOverlapRow, clusterStartMin = 0) {
+    function _renderFlexibleCardHtml(block, goals, layoutMap, totalColsCluster, isOverlapRow, clusterStartMin = 0, isDailyGrid = false) {
       const id = block.id || block._id || '';
       const title = block.title || 'Untitled Block';
       const desc = block.description || block.subject || '';
@@ -2321,10 +2328,35 @@
       const effectiveCols = Math.max(1, totalCols || totalColsCluster || 1);
 
       let widthOrFlexStyle = '', cardContainerClasses = '', baseZIndex = 10;
-      if (!isOverlapRow || effectiveCols <= 1) {
+      if (isDailyGrid) {
+        const topPx = Math.round(sMin * _DAILY_FLEX_PX_PER_MIN);
+        const heightPx = Math.max(75, Math.round((eMin - sMin) * _DAILY_FLEX_PX_PER_MIN));
+        if (effectiveCols <= 1) {
+          // Requirement: If only ONE event exists, render exactly like Focus Mode width/styling. 100% width. No stack. No offset.
+          widthOrFlexStyle = `position: absolute; top: ${topPx}px; height: ${heightPx}px; --sf-card-h: ${heightPx}px; left: 4px; width: calc(100% - 12px); z-index: 20;`;
+          cardContainerClasses = 'absolute group sf-planner-card pointer-events-auto transition-[transform,filter,box-shadow,z-index,border-color,left,width,top,height] duration-200 ease-out hover:z-[35] hover:scale-[1.01] hover:brightness-115 hover:shadow-xl cursor-grab active:cursor-grabbing select-none rounded-2xl';
+          baseZIndex = 20;
+        } else {
+          let leftCalc, widthCalc, minW = '140px';
+          const staggerStep = Math.min(28, Math.floor(64 / (effectiveCols - 1)));
+          if (effectiveCols >= 4) {
+            minW = `${Math.max(80, Math.floor(180 / effectiveCols))}px`;
+          }
+          if (colSpan > 1 || colIndex + colSpan >= effectiveCols) {
+            leftCalc = `calc(${colIndex * staggerStep}px + 4px)`;
+            widthCalc = `calc(100% - ${colIndex * staggerStep}px - 12px)`;
+          } else {
+            leftCalc = `calc(${colIndex * staggerStep}px + 4px)`;
+            widthCalc = `calc(100% - ${colIndex * staggerStep + 16}px - 12px)`;
+          }
+          baseZIndex = 20 + colIndex;
+          widthOrFlexStyle = `position: absolute; top: ${topPx}px; height: ${heightPx}px; --sf-card-h: ${heightPx}px; left: ${leftCalc}; width: ${widthCalc}; min-width: ${minW}; z-index: ${baseZIndex};`;
+          cardContainerClasses = 'absolute group sf-planner-card pointer-events-auto transition-[transform,filter,box-shadow,z-index,border-color,left,width,top,height] duration-200 ease-out hover:z-[35] hover:scale-[1.01] hover:brightness-115 hover:shadow-xl cursor-grab active:cursor-grabbing select-none rounded-2xl';
+        }
+      } else if (!isOverlapRow || effectiveCols <= 1) {
         // Requirement: If only ONE event exists, render exactly like Focus Mode. 100% width. No stack. No offset.
         widthOrFlexStyle = 'position: relative; width: 100%;';
-        cardContainerClasses = 'relative group sf-planner-card transition-all duration-200 cursor-grab active:cursor-grabbing select-none rounded-2xl';
+        cardContainerClasses = 'relative group sf-planner-card pointer-events-auto transition-all duration-200 cursor-grab active:cursor-grabbing select-none rounded-2xl';
       } else {
         // Requirement: Reuse exact Weekly Planner stacking algorithm & offsets (createWeeklyEventCard)
         const topPx = Math.round((sMin - (clusterStartMin || sMin)) * _DAILY_FLEX_PX_PER_MIN);
@@ -2344,7 +2376,7 @@
         }
         baseZIndex = 20 + colIndex;
         widthOrFlexStyle = `position: absolute; top: ${topPx}px; height: ${heightPx}px; --sf-card-h: ${heightPx}px; left: ${leftCalc}; width: ${widthCalc}; min-width: ${minW}; z-index: ${baseZIndex};`;
-        cardContainerClasses = 'absolute group sf-planner-card transition-[transform,filter,box-shadow,z-index,border-color,left,width,top,height] duration-200 ease-out hover:z-[35] hover:scale-[1.01] hover:brightness-115 hover:shadow-xl cursor-grab active:cursor-grabbing select-none rounded-2xl';
+        cardContainerClasses = 'absolute group sf-planner-card pointer-events-auto transition-[transform,filter,box-shadow,z-index,border-color,left,width,top,height] duration-200 ease-out hover:z-[35] hover:scale-[1.01] hover:brightness-115 hover:shadow-xl cursor-grab active:cursor-grabbing select-none rounded-2xl';
       }
 
       const theme = window.getPlannerTheme ? window.getPlannerTheme(block) : { cardBg: 'bg-[#1E1035]/90', border: 'border-[#A855F7]/40 group-hover:border-[#A855F7]', glow: '', bar: 'bg-[#A855F7]', text: 'text-[#D8B4FE]', hexColor: '#A855F7' };
@@ -2357,7 +2389,7 @@
         goalHtml = `<div class="mt-1.5"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#A855F7]/10 border border-[#A855F7]/30 text-[10px] text-[#D8B4FE] font-medium">🎯 ${goalTitle}</span></div>`;
       }
 
-      const timestampHtml = !isOverlapRow ? `<span class="absolute -left-14 top-3 font-mono text-[11px] text-[#6B7280]">${startTime}</span>` : '';
+      const timestampHtml = (!isOverlapRow && !isDailyGrid) ? `<span class="absolute -left-14 top-3 font-mono text-[11px] text-[#6B7280]">${startTime}</span>` : '';
 
       return `
         <div class="${cardContainerClasses}" style="${widthOrFlexStyle}" data-id="${id}" data-start-min="${sMin}" data-end-min="${eMin}" data-overlap-col="${colIndex}" data-overlap-total="${effectiveCols}" data-overlap-span="${colSpan || 1}" data-original-z="${baseZIndex}" onpointerdown="initPlannerBlockDrag(event, '${id}')">
@@ -2401,7 +2433,7 @@
             </div>
           </div>
           <!-- Bottom Resize Handle -->
-          <div class="sf-resize-handle absolute -bottom-1.5 inset-x-6 h-3.5 flex items-center justify-center z-20 cursor-ns-resize opacity-0 group-hover:opacity-100 transition-opacity duration-150" onpointerdown="initPlannerBlockResize(event, '${id}', 'bottom')">
+          <div class="sf-resize-handle absolute -bottom-1.5 inset-x-6 h-3.5 flex items-center justify-center z-20 cursor-ns-resize opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-auto" onpointerdown="initPlannerBlockResize(event, '${id}', 'bottom')">
             <div class="w-8 h-1 bg-[#A855F7]/80 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.7)] hover:bg-[#C084FC] hover:shadow-[0_0_12px_rgba(168,85,247,1)] transition-all duration-150"></div>
             <span class="sf-resize-tooltip absolute top-full mt-1 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-[#12121A]/95 border border-[#2A2A38] rounded text-[10px] font-semibold text-[#D8B4FE] whitespace-nowrap shadow-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-30">Resize end time</span>
           </div>
@@ -2410,86 +2442,101 @@
     }
 
     function _renderDailyFlexible(container, sortedBlocks, goals) {
-      container.style.overflowY = 'visible';
-      container.style.maxHeight = 'none';
+      container.style.overflowY = 'auto';
+      container.style.maxHeight = '520px';
       container.style.height = 'auto';
-      container.style.paddingLeft = '3.5rem';
-      container.classList.remove('overflow-y-auto', 'max-h-[660px]', 'custom-scrollbar');
-      container.classList.add('space-y-4', 'before:absolute', 'before:left-12', 'before:top-2', 'before:bottom-2', 'before:w-px', 'before:bg-[#1C1C24]');
-
-      if (!sortedBlocks || sortedBlocks.length === 0) {
-        container.innerHTML = '';
-        _requestTimeVisualsUpdate();
-        return;
-      }
+      container.style.paddingLeft = '0px';
+      container.classList.remove('overflow-y-visible', 'max-h-none', 'space-y-4', 'before:absolute', 'before:left-12', 'before:top-2', 'before:bottom-2', 'before:w-px', 'before:bg-[#1C1C24]');
+      container.classList.add('overflow-y-auto', 'max-h-[520px]', 'custom-scroll');
 
       const layoutMap = (typeof calculateOverlapGroups === 'function')
-        ? calculateOverlapGroups(sortedBlocks)
+        ? calculateOverlapGroups(sortedBlocks || [])
         : new Map();
 
-      const clusters = [];
-      let currentCluster = [];
-      let clusterMaxEnd = -1;
-      sortedBlocks.forEach(b => {
-        const sMin = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '09:00 AM');
-        let eMin = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '10:00 AM');
-        if (!eMin || eMin <= sMin) eMin = sMin + 60;
-        if (currentCluster.length > 0 && sMin >= clusterMaxEnd) {
-          clusters.push(currentCluster);
-          currentCluster = [];
-          clusterMaxEnd = -1;
-        }
-        currentCluster.push(b);
-        if (eMin > clusterMaxEnd) clusterMaxEnd = eMin;
-      });
-      if (currentCluster.length > 0) clusters.push(currentCluster);
+      const hrHeight = 75; // exactly 60 mins * _DAILY_FLEX_PX_PER_MIN (1.25)
+      const todayStr = typeof _toLocalDateStr === 'function' ? _toLocalDateStr() : new Date().toLocaleDateString('en-CA');
+      const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
+      const selectedDateStr = (plannerState && plannerState.selectedDate) || todayStr;
+      const isToday = (selectedDateStr === todayStr);
 
-      const htmlParts = clusters.map(cluster => {
-        if (cluster.length === 1) {
-          return _renderFlexibleCardHtml(cluster[0], goals, layoutMap, 1, false, 0);
-        } else {
-          const totalCols = Math.max(...cluster.map(b => {
-            const info = layoutMap.get(b._instanceId || b.id || '') || (b._id ? layoutMap.get(b._id) : null);
-            return info?.totalCols || cluster.length;
-          }));
-          const earliestStartTime = _formatTimeDisplay(cluster[0].startTimeDisplay || cluster[0].startTime || '09:00 AM');
-          const clusterStartMin = Math.min(...cluster.map(b => _timeStrToMinutes(b.startTimeDisplay || b.startTime || '09:00 AM')));
-          const clusterEndMin = Math.max(...cluster.map(b => {
-            let e = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '10:00 AM');
-            if (!e || e <= _timeStrToMinutes(b.startTimeDisplay || b.startTime || '09:00 AM')) e = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '09:00 AM') + 60;
-            return e;
-          }));
-          const clusterDuration = Math.max(60, clusterEndMin - clusterStartMin);
-          const clusterHeightPx = Math.max(75, Math.round(clusterDuration * _DAILY_FLEX_PX_PER_MIN));
-          const cardsHtml = cluster.map(b => _renderFlexibleCardHtml(b, goals, layoutMap, totalCols, true, clusterStartMin)).join('');
-          return `
-            <div class="relative w-full sf-overlap-row sf-overlap-stack group/row transition-all duration-200" style="height: ${clusterHeightPx}px;" data-top-pad-min="${clusterStartMin}">
-              <span class="absolute -left-14 top-3 font-mono text-[11px] text-[#6B7280]">${earliestStartTime}</span>
+      let timeAxisHtml = '';
+      let gridCellsHtml = '';
+
+      for (let hour = 0; hour < 24; hour++) {
+        const label = hour === 0 ? '12 AM' : (hour < 12 ? `${hour} AM` : (hour === 12 ? '12 PM' : `${hour - 12} PM`));
+        timeAxisHtml += `
+          <div style="height: ${hrHeight}px; min-height: ${hrHeight}px; max-height: ${hrHeight}px;" class="border-b border-[#1C1C24]/60 flex flex-col justify-start items-end pr-2.5 pt-1 text-right select-none">
+            <span class="text-[11px] font-mono font-bold text-[#E4E4E7] leading-none tracking-wider">${label}</span>
+          </div>
+        `;
+
+        const dividerBorder = isToday ? 'border-[#A855F7]/25' : 'border-[#1C1C24]/60';
+        const dashedBorder = isToday ? 'border-[#A855F7]/25' : 'border-[#1C1C24]/30';
+        gridCellsHtml += `
+          <div onclick="openAddBlockModalForDailySlot(${hour}, false)" style="height: ${hrHeight}px; min-height: ${hrHeight}px; max-height: ${hrHeight}px;" class="border-b ${dividerBorder} relative group hover:bg-[#1E1035]/25 transition-all duration-150 select-none cursor-pointer">
+            <div onclick="event.stopPropagation(); openAddBlockModalForDailySlot(${hour}, true)" class="absolute inset-x-0 top-1/2 bottom-0 border-t border-dashed ${dashedBorder} group-hover:bg-[#A855F7]/10 transition"></div>
+            <div class="absolute inset-x-1.5 top-1 h-4 rounded border border-[#A855F7]/30 bg-[#1E1035]/85 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center pointer-events-none shadow-sm z-10">
+              <span class="text-[9px] font-semibold text-[#D8B4FE] font-mono flex items-center gap-1 tracking-wide">
+                <span class="text-xs leading-none font-bold">+</span> <span>Create</span>
+              </span>
+            </div>
+          </div>
+        `;
+      }
+
+      let cardsHtml = '';
+      if (sortedBlocks && sortedBlocks.length > 0) {
+        cardsHtml = sortedBlocks.map(b => _renderFlexibleCardHtml(b, goals, layoutMap, 1, true, 0, true)).join('');
+      }
+
+      container.innerHTML = `
+        <div class="relative flex min-h-[1800px] w-full bg-[#0A0A0E]">
+          <div class="w-14 shrink-0 border-r border-[#1C1C24]/60 select-none z-10 bg-[#0A0A0E]">
+            ${timeAxisHtml}
+          </div>
+          <div class="flex-1 relative border-r border-[#1C1C24]/60 bg-[#0A0A0E] min-w-0" id="dailyFlexibleGridCol">
+            ${gridCellsHtml}
+            <div class="daily-event-layer absolute inset-0 pointer-events-none z-10" id="dailyFlexibleEventLayer" data-top-pad-min="0">
               ${cardsHtml}
             </div>
-          `;
-        }
-      });
-
-      container.innerHTML = htmlParts.join('');
+          </div>
+        </div>
+      `;
 
       const blockMapById = new Map();
-      sortedBlocks.forEach(b => {
-        if (b.id) blockMapById.set(b.id, b);
-        if (b._id) blockMapById.set(b._id, b);
-        if (b._instanceId) blockMapById.set(b._instanceId, b);
-      });
+      if (sortedBlocks && sortedBlocks.length > 0) {
+        sortedBlocks.forEach(b => {
+          if (b.id) blockMapById.set(b.id, b);
+          if (b._id) blockMapById.set(b._id, b);
+          if (b._instanceId) blockMapById.set(b._instanceId, b);
+        });
+      }
       container.querySelectorAll('.sf-planner-card').forEach(card => {
         const id = card.getAttribute('data-id');
         if (!id) return;
         const b = blockMapById.get(id) || {};
         card._sfEventData = b;
       });
+
       if (typeof attachWeeklyEventInteractions === 'function') {
         attachWeeklyEventInteractions(container);
       }
-
       _requestTimeVisualsUpdate();
+
+      if (!window._dailyFlexDidInitialScroll && container && isToday) {
+        window._dailyFlexDidInitialScroll = true;
+        setTimeout(() => {
+          if (container && window.plannerSettings?.schedulingMode === 'flexible') {
+            const currentHour = new Date().getHours();
+            const scrollTarget = Math.max(0, (currentHour - 2) * hrHeight);
+            if (typeof container.scrollTo === 'function') {
+              container.scrollTo({ top: scrollTarget, behavior: 'smooth' });
+            } else {
+              container.scrollTop = scrollTarget;
+            }
+          }
+        }, 60);
+      }
     }
 
 
@@ -3039,8 +3086,70 @@
         } else if (endHour >= 24) {
           endHour = endHour % 24;
         }
-        startVal = `${String(nextHour).padStart(2, '0')}:00`;
-        endVal = `${String(endHour).padStart(2, '0')}:00`;
+
+        if (window.plannerSettings?.schedulingMode !== 'flexible') {
+          const targetDateStr = window._selectedSlotDate || (window.SF_STORE?.getSlice('planner')?.selectedDate) || _toLocalDateStr();
+          const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
+          const allRaw = [...(plannerState?.plannerEvents || []), ...(plannerState?.dailyBlocks || [])];
+          const startOfDate = new Date(`${targetDateStr}T00:00:00.000Z`);
+          const endOfDate = new Date(`${targetDateStr}T23:59:59.999Z`);
+          const dayInstances = typeof expandWeeklyRecurrences === 'function'
+            ? expandWeeklyRecurrences(allRaw, startOfDate, endOfDate, targetDateStr)
+            : allRaw.filter(b => (b.date || (b.startTime && b.startTime.split('T')[0])) === targetDateStr);
+
+          const occupied = dayInstances.map(b => {
+            const bs = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '');
+            let be = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '');
+            if (!be || be <= bs) be = bs + 60;
+            return { start: bs, end: be };
+          }).sort((a, b) => a.start - b.start);
+
+          let startSearch = (targetDateStr === _toLocalDateStr()) ? Math.min(23 * 60, nextHour * 60) : 9 * 60;
+          let foundSlot = null;
+
+          let candidateMin = startSearch;
+          while (candidateMin + 60 <= 24 * 60) {
+            const conflict = occupied.find(o => Math.max(candidateMin, o.start) < Math.min(candidateMin + 60, o.end));
+            if (!conflict) {
+              foundSlot = { startMin: candidateMin, endMin: candidateMin + 60 };
+              break;
+            } else {
+              let nextCand = Math.ceil(conflict.end / 60) * 60;
+              if (nextCand <= candidateMin) nextCand = candidateMin + 60;
+              candidateMin = nextCand;
+            }
+          }
+
+          if (!foundSlot && startSearch > 0) {
+            candidateMin = (targetDateStr !== _toLocalDateStr()) ? 0 : 8 * 60;
+            while (candidateMin + 60 <= startSearch) {
+              const conflict = occupied.find(o => Math.max(candidateMin, o.start) < Math.min(candidateMin + 60, o.end));
+              if (!conflict) {
+                foundSlot = { startMin: candidateMin, endMin: candidateMin + 60 };
+                break;
+              } else {
+                let nextCand = Math.ceil(conflict.end / 60) * 60;
+                if (nextCand <= candidateMin) nextCand = candidateMin + 60;
+                candidateMin = nextCand;
+              }
+            }
+          }
+
+          if (foundSlot) {
+            const sH = Math.floor(foundSlot.startMin / 60);
+            const sM = foundSlot.startMin % 60;
+            const eH = Math.floor(foundSlot.endMin / 60);
+            const eM = foundSlot.endMin % 60;
+            startVal = `${String(sH).padStart(2, '0')}:${String(sM).padStart(2, '0')}`;
+            endVal = `${String(eH).padStart(2, '0')}:${String(eM).padStart(2, '0')}`;
+          } else {
+            startVal = `${String(nextHour).padStart(2, '0')}:00`;
+            endVal = `${String(endHour).padStart(2, '0')}:00`;
+          }
+        } else {
+          startVal = `${String(nextHour).padStart(2, '0')}:00`;
+          endVal = `${String(endHour).padStart(2, '0')}:00`;
+        }
       }
 
       if (startVal && document.getElementById('sf-add-block-start')) {
@@ -3233,26 +3342,24 @@
     }
 
     function _formatAMPM(timeStr) {
-      if (!timeStr) return '09:00:00 AM';
+      if (!timeStr) return '09:00 AM';
       const parts = timeStr.split(':');
       let h = parseInt(parts[0], 10);
       if (isNaN(h)) h = 9;
       const m = String(parts[1] !== undefined ? parts[1] : '00').padStart(2, '0');
-      const s = String(parts[2] !== undefined ? parts[2] : '00').padStart(2, '0');
       const ampm = h >= 12 ? 'PM' : 'AM';
       h = h % 12;
       h = h ? h : 12;
-      return `${String(h).padStart(2, '0')}:${m}:${s} ${ampm}`;
+      return `${String(h).padStart(2, '0')}:${m} ${ampm}`;
     }
 
     function updateCustomTimeSelection(kind, field, val) {
       const input = document.getElementById(`sf-add-block-${kind}`);
       if (!input) return;
-      let currentVal = input.value || '09:00:00';
+      let currentVal = input.value || '09:00';
       const parts = currentVal.split(':').map(v => parseInt(v, 10));
       let h24 = !isNaN(parts[0]) ? parts[0] : 9;
       let m = !isNaN(parts[1]) ? parts[1] : 0;
-      let s = !isNaN(parts[2]) ? parts[2] : 0;
 
       let isPM = h24 >= 12;
       let h12 = h24 % 12;
@@ -3263,14 +3370,12 @@
         h24 = isPM ? (h12 === 12 ? 12 : h12 + 12) : (h12 === 12 ? 0 : h12);
       } else if (field === 'min') {
         m = parseInt(val, 10);
-      } else if (field === 'sec') {
-        s = parseInt(val, 10);
       } else if (field === 'ampm') {
         isPM = (val === 'PM');
         h24 = isPM ? (h12 === 12 ? 12 : h12 + 12) : (h12 === 12 ? 0 : h12);
       }
 
-      const formatted = `${String(h24).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      const formatted = `${String(h24).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
       input.value = formatted;
 
       const display = document.getElementById(`sf-display-${kind}`);
@@ -3285,10 +3390,6 @@
         menu.querySelectorAll('[data-col="min"]').forEach(el => {
           const v = parseInt(el.getAttribute('data-val'), 10);
           el.className = `py-0.5 rounded text-[11px] cursor-pointer transition-all duration-150 text-center ${v === m ? 'bg-[#A855F7] text-white font-bold shadow-[0_0_10px_rgba(168,85,247,0.4)]' : 'hover:bg-[#20202A] text-[#A1A1AA] hover:text-white'}`;
-        });
-        menu.querySelectorAll('[data-col="sec"]').forEach(el => {
-          const v = parseInt(el.getAttribute('data-val'), 10);
-          el.className = `py-0.5 rounded text-[11px] cursor-pointer transition-all duration-150 text-center ${v === s ? 'bg-[#A855F7] text-white font-bold shadow-[0_0_10px_rgba(168,85,247,0.4)]' : 'hover:bg-[#20202A] text-[#A1A1AA] hover:text-white'}`;
         });
         menu.querySelectorAll('[data-col="ampm"]').forEach(el => {
           const v = el.getAttribute('data-val');
@@ -3344,7 +3445,7 @@
 
       ['start', 'end'].forEach(kind => {
         const input = document.getElementById(`sf-add-block-${kind}`);
-        const val = input ? input.value : (kind === 'start' ? '09:00:00' : '10:00:00');
+        const val = input ? input.value : (kind === 'start' ? '09:00' : '10:00');
         const display = document.getElementById(`sf-display-${kind}`);
         if (display) display.textContent = _formatAMPM(val);
 
@@ -3358,17 +3459,13 @@
           for (let m = 0; m < 60; m += 1) {
             minHtml += `<div data-col="min" data-val="${m}" onclick="updateCustomTimeSelection('${kind}', 'min', ${m})" class="py-0.5 rounded text-[11px] cursor-pointer transition-all duration-150 text-center">${String(m).padStart(2, '0')}</div>`;
           }
-          let secHtml = '';
-          for (let s = 0; s < 60; s += 1) {
-            secHtml += `<div data-col="sec" data-val="${s}" onclick="updateCustomTimeSelection('${kind}', 'sec', ${s})" class="py-0.5 rounded text-[11px] cursor-pointer transition-all duration-150 text-center">${String(s).padStart(2, '0')}</div>`;
-          }
           let ampmHtml = `
             <div data-col="ampm" data-val="AM" onclick="updateCustomTimeSelection('${kind}', 'ampm', 'AM')" class="py-1 rounded text-xs cursor-pointer transition-all duration-150 text-center">AM</div>
             <div data-col="ampm" data-val="PM" onclick="updateCustomTimeSelection('${kind}', 'ampm', 'PM')" class="py-1 rounded text-xs cursor-pointer transition-all duration-150 text-center">PM</div>
           `;
 
           menu.innerHTML = `
-            <div class="grid grid-cols-4 gap-1 text-center h-36 select-none" onclick="event.stopPropagation()">
+            <div class="grid grid-cols-3 gap-1 text-center h-36 select-none" onclick="event.stopPropagation()">
               <div class="flex flex-col border-r border-[#2A2A38]/60 pr-1 overflow-hidden">
                 <div class="text-[9px] font-bold text-[#A855F7] pb-1 sticky top-0 bg-[#12121A]">HR</div>
                 <div class="overflow-y-auto space-y-0.5 flex-1 sf-scrollbar pr-0.5">${hrHtml}</div>
@@ -3376,10 +3473,6 @@
               <div class="flex flex-col border-r border-[#2A2A38]/60 px-1 overflow-hidden">
                 <div class="text-[9px] font-bold text-[#A855F7] pb-1 sticky top-0 bg-[#12121A]">MIN</div>
                 <div class="overflow-y-auto space-y-0.5 flex-1 sf-scrollbar pr-0.5">${minHtml}</div>
-              </div>
-              <div class="flex flex-col border-r border-[#2A2A38]/60 px-1 overflow-hidden">
-                <div class="text-[9px] font-bold text-[#A855F7] pb-1 sticky top-0 bg-[#12121A]">SEC</div>
-                <div class="overflow-y-auto space-y-0.5 flex-1 sf-scrollbar pr-0.5">${secHtml}</div>
               </div>
               <div class="flex flex-col pl-1 overflow-hidden">
                 <div class="text-[9px] font-bold text-[#A855F7] pb-1 sticky top-0 bg-[#12121A]">AM/PM</div>
@@ -3392,7 +3485,6 @@
           const parts = val.split(':').map(v => parseInt(v, 10));
           const h24 = !isNaN(parts[0]) ? parts[0] : 9;
           const m = !isNaN(parts[1]) ? parts[1] : 0;
-          const s = !isNaN(parts[2]) ? parts[2] : 0;
           const isPM = h24 >= 12;
           let h12 = h24 % 12;
           if (h12 === 0) h12 = 12;
@@ -3404,10 +3496,6 @@
           menu.querySelectorAll('[data-col="min"]').forEach(el => {
             const v = parseInt(el.getAttribute('data-val'), 10);
             el.className = `py-0.5 rounded text-[11px] cursor-pointer transition-all duration-150 text-center ${v === m ? 'bg-[#A855F7] text-white font-bold shadow-[0_0_10px_rgba(168,85,247,0.4)]' : 'hover:bg-[#20202A] text-[#A1A1AA] hover:text-white'}`;
-          });
-          menu.querySelectorAll('[data-col="sec"]').forEach(el => {
-            const v = parseInt(el.getAttribute('data-val'), 10);
-            el.className = `py-0.5 rounded text-[11px] cursor-pointer transition-all duration-150 text-center ${v === s ? 'bg-[#A855F7] text-white font-bold shadow-[0_0_10px_rgba(168,85,247,0.4)]' : 'hover:bg-[#20202A] text-[#A1A1AA] hover:text-white'}`;
           });
           menu.querySelectorAll('[data-col="ampm"]').forEach(el => {
             const v = el.getAttribute('data-val');
@@ -3438,10 +3526,8 @@
         if (!menu.classList.contains('hidden') && (type === 'start' || type === 'end')) {
           const selHr = menu.querySelector('[data-col="hr"].bg-\\[\\#A855F7\\]');
           const selMin = menu.querySelector('[data-col="min"].bg-\\[\\#A855F7\\]');
-          const selSec = menu.querySelector('[data-col="sec"].bg-\\[\\#A855F7\\]');
           if (selHr) selHr.scrollIntoView({ block: 'center' });
           if (selMin) selMin.scrollIntoView({ block: 'center' });
-          if (selSec) selSec.scrollIntoView({ block: 'center' });
         }
       }
     }
@@ -3693,24 +3779,31 @@
 
           const sMinEdit = _timeStrToMinutes(payload.startTimeDisplay || '09:00 AM');
           const eMinEdit = _timeStrToMinutes(payload.endTimeDisplay || '10:00 AM');
-          const isFocusEdit = window.plannerSettings?.schedulingMode !== 'flexible';
-          if (isFocusEdit && _checkPlannerTimeConflict(editingBlockId, sMinEdit, eMinEdit, targetDateStr)) {
-            const plannerStateEdit = window.SF_STORE && window.SF_STORE.getSlice('planner');
-            const allRawEdit = [...(plannerStateEdit?.plannerEvents || []), ...(plannerStateEdit?.dailyBlocks || [])];
-            const dayInstancesEdit = typeof expandWeeklyRecurrences === 'function' 
-              ? expandWeeklyRecurrences(allRawEdit, new Date(`${targetDateStr}T00:00:00.000Z`), new Date(`${targetDateStr}T23:59:59.999Z`), targetDateStr)
-              : allRawEdit.filter(b => (b.date || (b.startTime && b.startTime.split('T')[0])) === targetDateStr);
-            const overlapsEdit = dayInstancesEdit.filter(b => {
-              const bId = b.id || b._id || b.virtualId || b.masterId;
-              if (bId === editingBlockId || b.id === editingBlockId || b._id === editingBlockId) return false;
-              const bsMin = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '');
-              let beMin = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '');
-              if (!beMin || beMin <= bsMin) beMin = bsMin + 60;
-              return Math.max(sMinEdit, bsMin) < Math.min(eMinEdit, beMin);
-            });
-            if (overlapsEdit.length > 0) {
-              window._isSavingBlock = false;
-              if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Save Block'; }
+          const isFocusModeEdit = window.plannerSettings?.schedulingMode !== 'flexible';
+          
+          const plannerStateEdit = window.SF_STORE && window.SF_STORE.getSlice('planner');
+          const allRawEdit = [...(plannerStateEdit?.plannerEvents || []), ...(plannerStateEdit?.dailyBlocks || [])];
+          const dayInstancesEdit = typeof expandWeeklyRecurrences === 'function' 
+            ? expandWeeklyRecurrences(allRawEdit, new Date(`${targetDateStr}T00:00:00.000Z`), new Date(`${targetDateStr}T23:59:59.999Z`), targetDateStr)
+            : allRawEdit.filter(b => (b.date || (b.startTime && b.startTime.split('T')[0])) === targetDateStr);
+          const overlapsEdit = dayInstancesEdit.filter(b => {
+            const bId = b.id || b._id || b.virtualId || b.masterId;
+            if (bId === editingBlockId || b.id === editingBlockId || b._id === editingBlockId) return false;
+            const bsMin = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '');
+            let beMin = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '');
+            if (!beMin || beMin <= bsMin) beMin = bsMin + 60;
+            return Math.max(sMinEdit, bsMin) < Math.min(eMinEdit, beMin);
+          });
+
+          if (overlapsEdit.length > 0) {
+            window._isSavingBlock = false;
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Save Block'; }
+            if (isFocusModeEdit) {
+              if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+                window.SF_COMPONENTS.showToast('This time slot is already occupied.', 'error');
+              }
+              return;
+            } else {
               showPlannerConflictDialog({
                 timeStr: `${payload.startTimeDisplay || '09:00 AM'} – ${payload.endTimeDisplay || '10:00 AM'}`,
                 existingTitles: Array.from(new Set(overlapsEdit.map(t => t.title || t.subject || 'Untitled Block'))),
@@ -3756,14 +3849,13 @@
           const sMin = _timeStrToMinutes(payload.startTimeDisplay || '09:00 AM');
           const eMin = _timeStrToMinutes(payload.endTimeDisplay || '10:00 AM');
 
-          const isFocusCreate = window.plannerSettings?.schedulingMode !== 'flexible';
-          const hasOverlapCreate = _checkPlannerTimeConflict(null, sMin, eMin, targetDateStr);
-          const overlaps = (isFocusCreate && hasOverlapCreate) ? dayInstances.filter(b => {
+          const isFocusModeCreate = window.plannerSettings?.schedulingMode !== 'flexible';
+          const overlaps = dayInstances.filter(b => {
             const bsMin = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '');
             let beMin = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '');
             if (!beMin || beMin <= bsMin) beMin = bsMin + 60;
             return Math.max(sMin, bsMin) < Math.min(eMin, beMin);
-          }) : [];
+          });
 
           if (overlaps.length > 0) {
             window._isSavingBlock = false;
@@ -3771,37 +3863,43 @@
               submitBtn.disabled = false;
               submitBtn.textContent = 'Save Block';
             }
-            showPlannerConflictDialog({
-              timeStr: `${payload.startTimeDisplay || '09:00 AM'} – ${payload.endTimeDisplay || '10:00 AM'}`,
-              existingTitles: Array.from(new Set(overlaps.map(t => t.title || t.subject || 'Untitled Block'))),
-              onCancel: () => {},
-              onConfirm: async () => {
-                window._isSavingBlock = true;
-                if (submitBtn) {
-                  submitBtn.disabled = true;
-                  submitBtn.textContent = 'Saving...';
-                }
-                try {
-                  if (!payload.goalId || payload.goalId === 'none' || typeof payload.goalId !== 'string' || payload.goalId.trim() === '' || !/^[0-9a-fA-F]{24}$/.test(payload.goalId.trim())) {
-                    delete payload.goalId;
+            if (isFocusModeCreate) {
+              if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+                window.SF_COMPONENTS.showToast('This time slot is already occupied.', 'error');
+              }
+              return;
+            } else {
+              showPlannerConflictDialog({
+                timeStr: `${payload.startTimeDisplay || '09:00 AM'} – ${payload.endTimeDisplay || '10:00 AM'}`,
+                existingTitles: Array.from(new Set(overlaps.map(t => t.title || t.subject || 'Untitled Block'))),
+                onCancel: () => {},
+                onConfirm: async () => {
+                  window._isSavingBlock = true;
+                  if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Saving...';
                   }
-                  if (window.SF_STORE) {
-                    await window.SF_STORE.dispatch('planner/CREATE', payload);
-                  } else if (window.plannerService) {
-                    await window.plannerService.createBlock(payload);
-                    if (typeof _refreshWeeklyDataImmediately === 'function') _refreshWeeklyDataImmediately();
-                  }
-                  if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-                    window.SF_COMPONENTS.showToast('Time block scheduled successfully!', 'success');
-                  }
-                  window._selectedSlotDate = null;
-                  closeAddBlockModal();
-                } catch (err) {
-                  console.error('[Planner] Error saving after conflict confirm:', err);
-                  if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-                    window.SF_COMPONENTS.showToast(err.message || 'Failed to save time block', 'error');
-                  }
-                } finally {
+                  try {
+                    if (!payload.goalId || payload.goalId === 'none' || typeof payload.goalId !== 'string' || payload.goalId.trim() === '' || !/^[0-9a-fA-F]{24}$/.test(payload.goalId.trim())) {
+                      delete payload.goalId;
+                    }
+                    if (window.SF_STORE) {
+                      await window.SF_STORE.dispatch('planner/CREATE', payload);
+                    } else if (window.plannerService) {
+                      await window.plannerService.createBlock(payload);
+                      if (typeof _refreshWeeklyDataImmediately === 'function') _refreshWeeklyDataImmediately();
+                    }
+                    if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+                      window.SF_COMPONENTS.showToast('Time block scheduled successfully!', 'success');
+                    }
+                    window._selectedSlotDate = null;
+                    closeAddBlockModal();
+                  } catch (err) {
+                    console.error('[Planner] Error saving after conflict confirm:', err);
+                    if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+                      window.SF_COMPONENTS.showToast(err.message || 'Failed to save time block', 'error');
+                    }
+                  } finally {
                   window._isSavingBlock = false;
                   if (submitBtn) {
                     submitBtn.disabled = false;
@@ -3812,20 +3910,21 @@
             });
             return;
           }
-
-          if (!payload.goalId || payload.goalId === 'none' || typeof payload.goalId !== 'string' || payload.goalId.trim() === '' || !/^[0-9a-fA-F]{24}$/.test(payload.goalId.trim())) {
-            delete payload.goalId;
-          }
-          if (window.SF_STORE) {
-            await window.SF_STORE.dispatch('planner/CREATE', payload);
-          } else if (window.plannerService) {
-            await window.plannerService.createBlock(payload);
-            if (typeof _refreshWeeklyDataImmediately === 'function') _refreshWeeklyDataImmediately();
-          }
-          if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-            window.SF_COMPONENTS.showToast('Time block scheduled successfully!', 'success');
-          }
         }
+
+        if (!payload.goalId || payload.goalId === 'none' || typeof payload.goalId !== 'string' || payload.goalId.trim() === '' || !/^[0-9a-fA-F]{24}$/.test(payload.goalId.trim())) {
+          delete payload.goalId;
+        }
+        if (window.SF_STORE) {
+          await window.SF_STORE.dispatch('planner/CREATE', payload);
+        } else if (window.plannerService) {
+          await window.plannerService.createBlock(payload);
+          if (typeof _refreshWeeklyDataImmediately === 'function') _refreshWeeklyDataImmediately();
+        }
+        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+          window.SF_COMPONENTS.showToast('Time block scheduled successfully!', 'success');
+        }
+      }
         window._selectedSlotDate = null;
         closeAddBlockModal();
       } catch (err) {
@@ -4510,6 +4609,47 @@
       }
       timeAxis.innerHTML = html;
     }
+
+    function openAddBlockModalForDailySlot(hour, isHalfHour = false) {
+      const todayStr = typeof _toLocalDateStr === 'function' ? _toLocalDateStr() : new Date().toLocaleDateString('en-CA');
+      const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
+      let dateStr = (plannerState && plannerState.selectedDate) || todayStr;
+      const now = new Date();
+      let startHr = String(hour).padStart(2, '0');
+      let startMin = isHalfHour ? '30' : '00';
+      let endHr = String((hour + 1) % 24).padStart(2, '0');
+      let endMin = '00';
+
+      const validation = typeof validatePlannerTime === 'function' ? validatePlannerTime(dateStr, `${startHr}:${startMin}`, { showToast: dateStr < todayStr }) : { valid: true };
+      if (!validation.valid && dateStr < todayStr) {
+        return;
+      }
+
+      if (!validation.valid && dateStr === todayStr) {
+        let nextHour = now.getHours() + (now.getMinutes() > 0 ? 1 : 0);
+        let nextEndHour = nextHour + 1;
+        if (nextHour >= 24) {
+          nextHour = nextHour % 24;
+          nextEndHour = (nextHour + 1) % 24;
+          dateStr = _toLocalDateStr(new Date(now.getTime() + 86400000));
+        } else if (nextEndHour >= 24) {
+          nextEndHour = nextEndHour % 24;
+        }
+        startHr = String(nextHour).padStart(2, '0');
+        startMin = '00';
+        endHr = String(nextEndHour).padStart(2, '0');
+        endMin = '00';
+        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+          window.SF_COMPONENTS.showToast('Selected time has already passed. Defaulted to the next available hour.', 'info');
+        }
+      }
+      window._selectedSlotDate = dateStr;
+
+      if (typeof openAddBlockModal === 'function') {
+        openAddBlockModal(dateStr, `${startHr}:${startMin}`, `${endHr}:${endMin}`);
+      }
+    }
+    window.openAddBlockModalForDailySlot = openAddBlockModalForDailySlot;
 
     function openAddBlockModalForSlot(dayIndex, hour, isHalfHour = false) {
       if (!_weeklyStartDate) return;
