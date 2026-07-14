@@ -107,7 +107,7 @@
             <button onclick="window.location.href='focus.html'" class="px-5 py-2.5 rounded-xl bg-[#A855F7] hover:bg-[#9333EA] text-white font-bold text-xs shadow-[0_0_20px_rgba(168,85,247,0.4)] transition shrink-0 flex items-center gap-2">
               <span>Start First Block</span> <span>→</span>
             </button>
-            <sf-scheduling-mode-select class="shrink-0"></sf-scheduling-mode-select>
+            <sf-planning-style-indicator class="shrink-0"></sf-planning-style-indicator>
           </div>
         </div>
 
@@ -340,7 +340,7 @@
               <button onclick="alert('✨ AI Schedule Optimizer is balancing your study blocks and allocating free buffer hours...')" class="px-3.5 py-2 rounded-[13px] bg-[#13131A] border border-[#A855F7]/30 hover:bg-[#1E1035] text-white font-semibold text-[11px] sm:text-xs shadow-[0_0_15px_rgba(168,85,247,0.2)] transition flex items-center gap-2 group">
                 <span>✨ Optimise Schedule →</span>
               </button>
-              <sf-scheduling-mode-select class="shrink-0"></sf-scheduling-mode-select>
+              <sf-planning-style-indicator class="shrink-0"></sf-planning-style-indicator>
             </div>
           </div>
         </div>
@@ -822,100 +822,66 @@
       return 0;
     }
 
-    window.plannerSettings = JSON.parse(localStorage.getItem('studyflow_planner_settings') || '{"schedulingMode":"focus"}');
-    if (!window.plannerSettings.schedulingMode) window.plannerSettings.schedulingMode = 'focus';
+    window.PLANNING_STYLES = {
+      FOCUS: 'focus',
+      FLEXIBLE: 'flexible'
+    };
 
-    class SfSchedulingModeSelect extends HTMLElement {
+    window.plannerStyleConfig = {
+      focus: {
+        title: 'Focus Planner',
+        subtitle: 'One task at a time. Ideal for students who want deep focus.',
+        description: 'One task at a time. No overlapping tasks. Great for deep work and focused study.',
+        allowOverlap: false,
+        themeColor: '#A855F7',
+        icon: '🟣',
+        onboardingDescription: 'One task at a time. Avoid overlaps. Stay focused.'
+      },
+      flexible: {
+        title: 'Flexible Planner',
+        subtitle: 'Allow overlapping tasks. Ideal for meetings, classes and multitasking.',
+        description: 'Allows overlapping tasks. Perfect for multitasking, meetings, classes and dynamic schedules.',
+        allowOverlap: true,
+        themeColor: '#06B6D4',
+        icon: '🔵',
+        onboardingDescription: 'Allow overlapping tasks. Perfect for multitasking.'
+      }
+    };
+
+    function _getPlanningStyle() {
+      if (!window.plannerSettings) return 'focus';
+      return window.plannerSettings.planningStyle || window.plannerSettings.schedulingMode || 'focus';
+    }
+    window._getPlanningStyle = _getPlanningStyle;
+
+    let _rawPSettings = {};
+    try { _rawPSettings = JSON.parse(localStorage.getItem('studyflow_planner_settings') || '{}'); } catch(e) {}
+    window.plannerSettings = _rawPSettings;
+    if (!window.plannerSettings.planningStyle) {
+      window.plannerSettings.planningStyle = window.plannerSettings.schedulingMode || 'focus';
+    }
+    if ('schedulingMode' in window.plannerSettings) {
+      delete window.plannerSettings.schedulingMode;
+      try { localStorage.setItem('studyflow_planner_settings', JSON.stringify(window.plannerSettings)); } catch(e) {}
+    }
+
+    class SfPlanningStyleIndicator extends HTMLElement {
       connectedCallback() {
         this.render();
-        if (!window._sfModeSelectDocListener) {
-          window._sfModeSelectDocListener = true;
-          document.addEventListener('click', (e) => {
-            if (!e.target.closest('sf-scheduling-mode-select')) {
-              document.querySelectorAll('sf-scheduling-mode-select').forEach(el => {
-                if (el._closeMenu) el._closeMenu();
-              });
-            }
-          });
-        }
-      }
-      _toggleMenu(e) {
-        if (e) {
-          e.stopPropagation();
-          e.preventDefault();
-        }
-        const menu = this.querySelector('.sf-mode-menu');
-        const chevron = this.querySelector('.sf-chevron');
-        if (!menu) return;
-        const isHidden = menu.classList.contains('hidden');
-        document.querySelectorAll('sf-scheduling-mode-select').forEach(el => {
-          if (el !== this && el._closeMenu) el._closeMenu();
-        });
-        if (isHidden) {
-          menu.classList.remove('hidden');
-          if (chevron) chevron.style.transform = 'rotate(180deg)';
-        } else {
-          this._closeMenu();
-        }
-      }
-      _closeMenu() {
-        const menu = this.querySelector('.sf-mode-menu');
-        const chevron = this.querySelector('.sf-chevron');
-        if (menu && !menu.classList.contains('hidden')) {
-          menu.classList.add('hidden');
-          if (chevron) chevron.style.transform = 'rotate(0deg)';
-        }
       }
       render() {
-        const m = window.plannerSettings?.schedulingMode || 'focus';
-        this.style.cssText = 'display:inline-block;position:relative;z-index:999999;';
+        const m = _getPlanningStyle();
+        const cfg = window.plannerStyleConfig?.[m] || window.plannerStyleConfig.focus;
+        const styleLabel = cfg.title;
+        const colorClass = m === 'flexible' ? 'text-[#06B6D4]' : 'text-[#A855F7]';
+        this.style.cssText = 'display:inline-block;position:relative;z-index:30;';
         this.innerHTML = `
-          <div class="relative inline-block text-left select-none">
-            <button type="button" onclick="this.closest('sf-scheduling-mode-select')._toggleMenu(event)" 
-                    class="px-3 py-2 rounded-xl bg-[#13131A] border border-[#24242E] hover:border-[#A855F7]/50 text-white font-semibold text-[11px] sm:text-xs shadow-sm hover:shadow-[0_0_18px_rgba(168,85,247,0.2)] transition-all duration-200 flex items-center justify-between gap-3 min-w-[155px]">
-              <div class="flex items-center gap-2 min-w-0">
-                ${m === 'focus' ? `
-                  <svg class="w-3.5 h-3.5 text-[#A855F7] shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                  <span class="truncate font-bold tracking-tight text-white">Focus Mode</span>
-                ` : `
-                  <svg class="w-3.5 h-3.5 text-[#06B6D4] shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                  <span class="truncate font-bold tracking-tight text-white">Flexible Mode</span>
-                `}
-              </div>
-              <svg class="w-3.5 h-3.5 text-[#A1A1AA] shrink-0 transition-transform duration-200 sf-chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>
+          <span class="inline-flex items-center gap-1.5 text-[11px] text-[#8E8E93] font-medium tracking-normal select-none">
+            <span class="${colorClass} font-semibold pointer-events-none">${styleLabel}</span>
+            <button type="button" onclick="if (typeof window.openPlannerSettingsModal === 'function') window.openPlannerSettingsModal();" class="text-[#8E8E93] hover:text-[#FAFAFA] transition p-0.5 rounded focus:outline-none cursor-pointer" title="Planner Settings">
+              ⚙
             </button>
-            <div class="sf-mode-menu hidden absolute right-0 top-full mt-1.5 w-64 !bg-[#0D0D14] !bg-opacity-100 border border-[#2A2A38] rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.98),0_0_35px_rgba(168,85,247,0.35)] p-2 z-[9999999] animate-fadeIn text-left">
-              <div class="px-2.5 py-1.5 text-[10px] font-bold text-[#A1A1AA] uppercase tracking-wider font-mono border-b border-[#24242E] mb-1.5">
-                Scheduling Mode
-              </div>
-              <button type="button" onclick="window.setPlannerSchedulingMode('focus')" 
-                      class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#A855F7]/15 hover:border-[#A855F7]/30 border border-transparent transition-all duration-150 flex items-start gap-2.5 group ${m === 'focus' ? 'bg-[#1E1035]/70 border-[#A855F7]/30' : ''}">
-                <div class="p-1.5 rounded-lg bg-[#A855F7]/15 text-[#A855F7] group-hover:bg-[#A855F7]/25 transition mt-0.5 shrink-0 shadow-sm">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-xs font-bold text-white flex items-center justify-between">
-                    <span>Focus Mode</span>
-                    ${m === 'focus' ? '<span class="text-[#A855F7] text-xs font-extrabold">✓</span>' : ''}
-                  </div>
-                  <div class="text-[10px] text-[#A1A1AA] font-normal mt-0.5 leading-snug">No overlapping tasks</div>
-                </div>
-              </button>
-              <button type="button" onclick="window.setPlannerSchedulingMode('flexible')" 
-                      class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#06B6D4]/15 hover:border-[#06B6D4]/30 border border-transparent transition-all duration-150 flex items-start gap-2.5 group mt-1 ${m === 'flexible' ? 'bg-[#113238]/70 border-[#06B6D4]/30' : ''}">
-                <div class="p-1.5 rounded-lg bg-[#06B6D4]/15 text-[#06B6D4] group-hover:bg-[#06B6D4]/25 transition mt-0.5 shrink-0 shadow-sm">
-                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
-                </div>
-                <div class="flex-1 min-w-0">
-                  <div class="text-xs font-bold text-white flex items-center justify-between">
-                    <span>Flexible Mode</span>
-                    ${m === 'flexible' ? '<span class="text-[#06B6D4] text-xs font-extrabold">✓</span>' : ''}
-                  </div>
-                  <div class="text-[10px] text-[#A1A1AA] font-normal mt-0.5 leading-snug">Allow overlapping tasks</div>
-                </div>
-              </button>
-            </div>
-          </div>
+          </span>
         `;
       }
       sync() {
@@ -923,21 +889,23 @@
       }
     }
     if (!customElements.get('sf-scheduling-mode-select')) {
-      customElements.define('sf-scheduling-mode-select', SfSchedulingModeSelect);
+      customElements.define('sf-scheduling-mode-select', class extends SfPlanningStyleIndicator {});
+    }
+    if (!customElements.get('sf-planning-style-indicator')) {
+      customElements.define('sf-planning-style-indicator', class extends SfPlanningStyleIndicator {});
     }
 
-    function setPlannerSchedulingMode(mode) {
+
+    function setPlanningStyle(style, skipConfirm = false) {
       if (!window.plannerSettings) window.plannerSettings = {};
-      window.plannerSettings.schedulingMode = mode;
+      window.plannerSettings.planningStyle = style;
+      if ('schedulingMode' in window.plannerSettings) delete window.plannerSettings.schedulingMode;
       try {
         localStorage.setItem('studyflow_planner_settings', JSON.stringify(window.plannerSettings));
       } catch (err) {}
       
-      document.querySelectorAll('sf-scheduling-mode-select').forEach(el => {
+      document.querySelectorAll('sf-scheduling-mode-select, sf-planning-style-indicator').forEach(el => {
         if (typeof el.sync === 'function') el.sync();
-      });
-      document.querySelectorAll('.sf-scheduling-mode-select').forEach(select => {
-        if (select.value !== mode) select.value = mode;
       });
 
       if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
@@ -945,8 +913,13 @@
         const dailyState = window.SF_STORE ? window.SF_STORE.getSlice('planner') : null;
         renderDailyPlanner(dailyState);
       }
+      if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+        const label = style === 'flexible' ? 'Flexible Planner' : 'Focus Planner';
+        window.SF_COMPONENTS.showToast(`Planning Style updated. You're now using ${label}.`, 'success');
+      }
     }
-    window.setPlannerSchedulingMode = setPlannerSchedulingMode;
+    window.setPlanningStyle = setPlanningStyle;
+    window.setPlannerSchedulingMode = setPlanningStyle;
 
     function _checkPlannerTimeConflict(targetBlockId, startMin, endMin, targetDateStr = null) {
       const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
@@ -1328,13 +1301,14 @@
                   <div class="w-8 h-1 bg-[#A855F7]/80 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.7)] hover:bg-[#C084FC] hover:shadow-[0_0_12px_rgba(168,85,247,1)] transition-all duration-150"></div>
                   <span class="sf-resize-tooltip absolute bottom-full mb-1 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-[#12121A]/95 border border-[#2A2A38] rounded text-[10px] font-semibold text-[#D8B4FE] whitespace-nowrap shadow-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-30">Resize start time</span>
                 </div>
-                <div class="${theme.cardBg} border ${theme.border} p-4 rounded-2xl flex items-center justify-between shadow-[0_4px_15px_rgba(0,0,0,0.15)] transition-all duration-200 sf-card-inner">
+                <div class="${theme.cardBg} border ${theme.border} p-4 rounded-2xl flex items-center justify-between shadow-[0_4px_15px_rgba(0,0,0,0.15)] transition-all duration-200 sf-card-inner${typeof _hasConflictStyle === 'function' ? _hasConflictStyle(block) : ''}">
                   <div class="flex items-center space-x-3.5">
                     <div class="w-1.5 h-10 ${theme.bar} rounded-full transition-all duration-200 sf-card-bar"></div>
                     <div>
                       <h4 class="font-bold text-sm text-white flex items-center gap-2">
                         <span>${title}</span>
                         ${_renderRecurrenceBadge(block)}
+                        ${typeof _renderConflictBadgeIfAny === 'function' ? _renderConflictBadgeIfAny(block) : ''}
                         <span class="sf-now-badge hidden inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-[#A855F7] text-white shadow-[0_0_8px_rgba(168,85,247,0.8)] animate-pulse">NOW</span>
                       </h4>
                       ${desc ? `<p class="text-xs text-[#A1A1AA] mt-0.5">${desc}</p>` : ''}
@@ -1412,6 +1386,7 @@
         try { cardElem.setPointerCapture(e.pointerId); } catch (_err) {}
       }
 
+      const origRect = cardElem.getBoundingClientRect();
       _plannerDragState = {
         active: true,
         hasMovedBeyondThreshold: false,
@@ -1430,6 +1405,7 @@
         duration: duration,
         cardElement: cardElem,
         ghostElement: null,
+        origRect: origRect,
         origLeft: cardElem.style.left || '4px',
         origWidth: cardElem.style.width || 'calc(100% - 12px)',
         animationFrame: null,
@@ -1468,12 +1444,12 @@
 
         const ghostElem = document.createElement('div');
         ghostElem.id = 'sf-drag-ghost';
-        ghostElem.className = 'border-2 border-dashed border-[#A855F7]/70 rounded-2xl bg-[#A855F7]/10 p-4 flex items-center justify-between text-[#D8B4FE]';
-        ghostElem.style.transition = 'top 0.18s cubic-bezier(0.16, 1, 0.3, 1), left 0.18s cubic-bezier(0.16, 1, 0.3, 1), height 0.18s cubic-bezier(0.16, 1, 0.3, 1), width 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.18s ease, border-color 0.18s ease !important';
+        ghostElem.className = 'border-2 border-dashed border-[#A855F7]/80 rounded-2xl bg-gradient-to-br from-[#A855F7]/15 via-[#A855F7]/8 to-transparent p-4 flex items-center justify-between text-[#D8B4FE] shadow-[0_0_30px_rgba(168,85,247,0.2),inset_0_0_15px_rgba(168,85,247,0.08)] backdrop-blur-md overflow-hidden z-40 transition-all duration-200 ease-out';
+        ghostElem.style.transition = 'top 0.16s cubic-bezier(0.16, 1, 0.3, 1), left 0.16s cubic-bezier(0.16, 1, 0.3, 1), height 0.16s cubic-bezier(0.16, 1, 0.3, 1), width 0.16s cubic-bezier(0.16, 1, 0.3, 1), transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease !important';
         ghostElem.style.height = `${cardElem.offsetHeight}px`;
         const formattedStart = _formatMinutesToAMPM(origStartMin);
         const formattedEnd = _formatMinutesToAMPM(origEndMin);
-        ghostElem.innerHTML = `<span class="font-bold text-xs font-mono">🕒 ${formattedStart} – ${formattedEnd}</span>`;
+        ghostElem.innerHTML = `<span class="font-bold text-xs font-mono tracking-wide px-2.5 py-1 rounded-full bg-[#12121A]/85 border border-[#A855F7]/40 shadow-sm text-[#D8B4FE]">🕒 ${formattedStart} – ${formattedEnd}</span>`;
 
         if (cardElem.parentNode) {
           if (cardElem.style.position === 'absolute' || cardElem.parentNode.classList?.contains('weekly-event-layer') || cardElem.parentNode.classList?.contains('daily-event-layer')) {
@@ -1489,15 +1465,17 @@
         _plannerDragState.origLeft = ghostElem.style.left || cardElem.style.left || '4px';
         _plannerDragState.origWidth = ghostElem.style.width || cardElem.style.width || 'calc(100% - 12px)';
 
-        const rect = cardElem.getBoundingClientRect();
+        const rect = _plannerDragState.origRect || cardElem.getBoundingClientRect();
         cardElem.style.transition = 'none';
-        cardElem.classList.add('scale-[1.02]', 'opacity-95', 'z-50', 'shadow-[0_20px_50px_rgba(168,85,247,0.35)]', 'cursor-grabbing');
+        cardElem.classList.add('scale-[1.015]', 'opacity-[0.98]', 'z-[999999]', 'shadow-[0_20px_50px_-12px_rgba(168,85,247,0.45),0_0_30px_rgba(0,0,0,0.6)]', 'cursor-grabbing');
+        cardElem.style.filter = 'brightness(1.1)';
         cardElem.style.willChange = 'transform';
         cardElem.style.position = 'fixed';
         cardElem.style.left = `${rect.left}px`;
         cardElem.style.top = `${rect.top}px`;
         cardElem.style.width = `${rect.width}px`;
         cardElem.style.margin = '0';
+        cardElem.style.transformOrigin = 'center center';
         document.body.appendChild(cardElem);
       }
 
@@ -1516,7 +1494,7 @@
       if (!_plannerDragState || !_plannerDragState.active) return;
       const { blockId, cardElement, ghostElement, originalStartMin, duration, deltaX, deltaY, currentX, currentY } = _plannerDragState;
 
-      cardElement.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0)`;
+      cardElement.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0) scale(1.015)`;
 
       let PIXELS_PER_15_MIN = 24;
       if (window._currentPlannerView === 'weekly' || (ghostElement && ghostElement.parentNode && ghostElement.parentNode.classList?.contains('weekly-event-layer'))) {
@@ -1524,6 +1502,8 @@
         PIXELS_PER_15_MIN = scale * 15;
       } else if (ghostElement && ghostElement.parentNode && ghostElement.parentNode.classList?.contains('daily-event-layer')) {
         PIXELS_PER_15_MIN = _DAILY_FLEX_PX_PER_MIN * 15;
+      } else if (ghostElement && ghostElement.parentNode) {
+        PIXELS_PER_15_MIN = 18;
       }
 
       const deltaSteps = Math.round(deltaY / PIXELS_PER_15_MIN);
@@ -1561,18 +1541,18 @@
       }
 
       const hasOverlap = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin, _plannerDragState.currentDateStr);
-      const isConflict = (window.plannerSettings?.schedulingMode !== 'flexible') && hasOverlap;
+      const isConflict = (_getPlanningStyle() !== 'flexible') && hasOverlap;
       _plannerDragState.isConflict = isConflict;
 
       if (ghostElement) {
         const formattedStart = _formatMinutesToAMPM(currentStartMin);
         const formattedEnd = _formatMinutesToAMPM(currentEndMin);
         if (isConflict) {
-          ghostElement.className = 'border-2 border-dashed border-red-500/80 rounded-2xl bg-red-500/15 p-4 flex items-center justify-between text-red-300';
-          ghostElement.innerHTML = `<span class="font-bold text-xs">⚠️ Time Conflict: ${formattedStart} – ${formattedEnd}</span>`;
+          ghostElement.className = 'border-2 border-dashed border-red-500/85 rounded-2xl bg-red-500/15 p-4 flex items-center justify-between text-red-300 shadow-[0_0_30px_rgba(239,68,68,0.3),inset_0_0_15px_rgba(239,68,68,0.1)] backdrop-blur-md overflow-hidden z-40 transition-all duration-150';
+          ghostElement.innerHTML = `<span class="font-bold text-xs font-mono tracking-wide px-2.5 py-1 rounded-full bg-[#12121A]/90 border border-red-500/50 shadow-sm text-red-300">⚠️ Conflict: ${formattedStart} – ${formattedEnd}</span>`;
         } else {
-          ghostElement.className = 'border-2 border-dashed border-[#A855F7]/70 rounded-2xl bg-[#A855F7]/10 p-4 flex items-center justify-between text-[#D8B4FE]';
-          ghostElement.innerHTML = `<span class="font-bold text-xs font-mono">🕒 ${formattedStart} – ${formattedEnd}</span>`;
+          ghostElement.className = 'border-2 border-dashed border-[#A855F7]/80 rounded-2xl bg-gradient-to-br from-[#A855F7]/15 via-[#A855F7]/8 to-transparent p-4 flex items-center justify-between text-[#D8B4FE] shadow-[0_0_30px_rgba(168,85,247,0.2),inset_0_0_15px_rgba(168,85,247,0.08)] backdrop-blur-md overflow-hidden z-40 transition-all duration-150';
+          ghostElement.innerHTML = `<span class="font-bold text-xs font-mono tracking-wide px-2.5 py-1 rounded-full bg-[#12121A]/85 border border-[#A855F7]/40 shadow-sm text-[#D8B4FE]">🕒 ${formattedStart} – ${formattedEnd}</span>`;
         }
 
         if (ghostElement.parentNode && ghostElement.parentNode.classList?.contains('weekly-event-layer')) {
@@ -1586,6 +1566,34 @@
           ghostElement.style.left = '4px';
           ghostElement.style.width = 'calc(100% - 12px)';
           ghostElement.style.margin = '0';
+        } else if (ghostElement.parentNode && ghostElement.parentNode.classList?.contains('daily-event-layer')) {
+          const scale = _DAILY_FLEX_PX_PER_MIN;
+          const topPadMin = parseFloat(ghostElement.parentNode.getAttribute('data-top-pad-min')) || 0;
+          const topPx = Math.round((currentStartMin - topPadMin) * scale);
+          const heightPx = Math.max(75, Math.round(duration * scale));
+          ghostElement.style.position = 'absolute';
+          ghostElement.style.top = `${topPx}px`;
+          ghostElement.style.height = `${heightPx}px`;
+          ghostElement.style.left = _plannerDragState.origLeft || '4px';
+          ghostElement.style.width = _plannerDragState.origWidth || 'calc(100% - 12px)';
+          ghostElement.style.margin = '0';
+        } else if (ghostElement.parentNode && !ghostElement.parentNode.classList?.contains('weekly-event-layer') && !ghostElement.parentNode.classList?.contains('daily-event-layer')) {
+          const container = ghostElement.parentNode;
+          const siblings = Array.from(container.children).filter(el => el !== ghostElement && el !== cardElement && el.classList?.contains('sf-planner-card'));
+          let inserted = false;
+          for (let i = 0; i < siblings.length; i++) {
+            const siblingStart = parseInt(siblings[i].getAttribute('data-start-min'), 10);
+            if (!isNaN(siblingStart) && siblingStart > currentStartMin) {
+              if (ghostElement.nextElementSibling !== siblings[i]) {
+                container.insertBefore(ghostElement, siblings[i]);
+              }
+              inserted = true;
+              break;
+            }
+          }
+          if (!inserted && siblings.length > 0 && ghostElement !== container.lastElementChild) {
+            container.appendChild(ghostElement);
+          }
         }
       }
     }
@@ -1613,36 +1621,35 @@
         return;
       }
 
-      if (ghostElement && ghostElement.parentNode) {
-        ghostElement.parentNode.removeChild(ghostElement);
-      }
-
-      if (cardElement) {
-        // The card was appended to document.body with position:fixed during drag.
-        // Remove it from wherever it currently lives FIRST so it is never
-        // rendered as an orphan floating element during the transition frame.
-        if (cardElement.parentNode) {
-          cardElement.parentNode.removeChild(cardElement);
+      const finishDragCleanup = () => {
+        if (ghostElement && ghostElement.parentNode) {
+          ghostElement.parentNode.removeChild(ghostElement);
         }
-        // Style cleanup (no longer visible, but be tidy)
-        cardElement.style.transition = '';
-        cardElement.style.transform = '';
-        cardElement.style.willChange = '';
-        cardElement.style.position = '';
-        cardElement.style.left = '';
-        cardElement.style.top = '';
-        cardElement.style.width = '';
-        cardElement.style.margin = '';
-        cardElement.classList.remove('scale-[1.02]', 'opacity-95', 'z-50', 'shadow-[0_20px_50px_rgba(168,85,247,0.35)]', 'cursor-grabbing');
-      }
+        if (cardElement) {
+          if (cardElement.parentNode) {
+            cardElement.parentNode.removeChild(cardElement);
+          }
+          cardElement.style.transition = '';
+          cardElement.style.transform = '';
+          cardElement.style.willChange = '';
+          cardElement.style.position = '';
+          cardElement.style.left = '';
+          cardElement.style.top = '';
+          cardElement.style.width = '';
+          cardElement.style.margin = '';
+          cardElement.style.filter = '';
+          cardElement.classList.remove('scale-[1.035]', 'scale-[1.015]', 'opacity-[0.96]', 'opacity-[0.98]', 'z-[999999]', 'shadow-[0_25px_60px_-15px_rgba(168,85,247,0.45),0_0_35px_rgba(168,85,247,0.25)]', 'shadow-[0_20px_50px_-12px_rgba(168,85,247,0.45),0_0_30px_rgba(0,0,0,0.6)]', 'cursor-grabbing');
+        }
+      };
 
       const hasOverlapOnDrop = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin, currentDateStr || originalDateStr);
-      const isConflictOnDrop = (window.plannerSettings?.schedulingMode !== 'flexible') && (isConflict || hasOverlapOnDrop);
+      const isConflictOnDrop = (_getPlanningStyle() !== 'flexible') && (isConflict || hasOverlapOnDrop);
 
       if (isConflictOnDrop) {
         if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
           window.SF_COMPONENTS.showToast('Time conflict detected. Choose another slot.', 'error');
         }
+        finishDragCleanup();
         if (window.renderDailyPlanner) window.renderDailyPlanner();
         if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
         return;
@@ -1650,15 +1657,33 @@
 
       const targetDateStr = currentDateStr || originalDateStr || _toLocalDateStr();
       if (!validatePlannerTime(targetDateStr, currentStartMin, { isEditing: true, origDateStr: originalDateStr, origStartTime: originalStartMin }).valid) {
+        finishDragCleanup();
         if (window.renderDailyPlanner) window.renderDailyPlanner();
         if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
         return;
       }
-      if (currentStartMin === originalStartMin && currentEndMin === originalEndMin && targetDateStr === originalDateStr) {
-        if (window.renderDailyPlanner) window.renderDailyPlanner();
-        if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+
+      const duration = originalEndMin - originalStartMin;
+      const newStartMin = currentStartMin;
+      const newEndMin = newStartMin + duration;
+
+      if (newStartMin === originalStartMin && (targetDateStr === originalDateStr || !targetDateStr)) {
+        finishDragCleanup();
         return;
       }
+
+      if (ghostElement && cardElement && document.body.contains(cardElement) && document.body.contains(ghostElement)) {
+        const ghostRect = ghostElement.getBoundingClientRect();
+        cardElement.style.transition = 'left 0.14s cubic-bezier(0.16, 1, 0.3, 1), top 0.14s cubic-bezier(0.16, 1, 0.3, 1), width 0.14s cubic-bezier(0.16, 1, 0.3, 1), height 0.14s cubic-bezier(0.16, 1, 0.3, 1), transform 0.14s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.14s ease, box-shadow 0.14s ease';
+        cardElement.style.left = `${ghostRect.left}px`;
+        cardElement.style.top = `${ghostRect.top}px`;
+        cardElement.style.width = `${ghostRect.width}px`;
+        cardElement.style.transform = 'translate3d(0px, 0px, 0px) scale(1.0) rotate(0deg)';
+        cardElement.style.boxShadow = '0 4px 15px rgba(0,0,0,0.15)';
+        cardElement.style.opacity = '0.9';
+        await new Promise(resolve => setTimeout(resolve, 140));
+      }
+      finishDragCleanup();
 
       const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
       const newStartHH = Math.floor(currentStartMin / 60);
@@ -1777,8 +1802,10 @@
         'overflow:hidden',
         'border-radius:1rem',
         'border:2px dashed rgba(192,132,252,0.85)',
-        'background:rgba(168,85,247,0.05)',
-        'box-shadow:0 0 20px rgba(168,85,247,0.18), inset 0 0 12px rgba(168,85,247,0.08)',
+        'background:linear-gradient(135deg, rgba(168,85,247,0.14) 0%, rgba(192,132,252,0.06) 100%)',
+        'box-shadow:0 0 30px rgba(168,85,247,0.22), inset 0 0 16px rgba(168,85,247,0.1)',
+        'backdrop-filter:blur(6px)',
+        '-webkit-backdrop-filter:blur(6px)',
         'pointer-events:none',
         'transition: height 0.16s cubic-bezier(0.16, 1, 0.3, 1), top 0.16s cubic-bezier(0.16, 1, 0.3, 1), transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.16s ease, background-color 0.16s ease !important',
       ].join(';');
@@ -1788,9 +1815,9 @@
 
     function _makeGhostLabel(text, isConflict) {
       const color = isConflict ? '#FCA5A5' : '#E9D5FF';
-      const borderCol = isConflict ? 'rgba(239,68,68,0.55)' : 'rgba(192,132,252,0.5)';
-      const bgCol = isConflict ? 'rgba(35,15,22,0.88)' : 'rgba(18,18,28,0.85)';
-      return `<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;display:block;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:monospace;font-size:11px;font-weight:700;color:${color};letter-spacing:0.025em;text-align:center;line-height:1.2;padding:5px 14px;border-radius:9999px;background:${bgCol};backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid ${borderCol};box-shadow:0 6px 20px rgba(0,0,0,0.65);z-index:61;">${text}</span>`;
+      const borderCol = isConflict ? 'rgba(239,68,68,0.6)' : 'rgba(192,132,252,0.55)';
+      const bgCol = isConflict ? 'rgba(35,15,22,0.92)' : 'rgba(18,18,28,0.90)';
+      return `<span style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;display:block;max-width:calc(100% - 16px);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-family:monospace;font-size:11px;font-weight:700;color:${color};letter-spacing:0.025em;text-align:center;line-height:1.2;padding:6px 16px;border-radius:9999px;background:${bgCol};backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid ${borderCol};box-shadow:0 6px 20px rgba(0,0,0,0.65);z-index:61;">${text}</span>`;
     }
 
     // ── Card cleanup ──────────────────────────────────────────────────────────
@@ -1943,7 +1970,7 @@
 
       // ── Conflict detection (Unified helper) ───────────────────────────────
       const hasOverlap = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin, _plannerDragState.currentDateStr);
-      const isConflict = (window.plannerSettings?.schedulingMode !== 'flexible') && hasOverlap;
+      const isConflict = (_getPlanningStyle() !== 'flexible') && hasOverlap;
       _plannerDragState.isConflict = isConflict;
 
       // Deduplicate DOM writes if snapped boundaries and conflict status haven't changed
@@ -2030,7 +2057,7 @@
       if (!hasMovedBeyondThreshold) return;
 
       const hasOverlapOnDrop = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin, _plannerDragState?.currentDateStr);
-      const isConflictOnDrop = (window.plannerSettings?.schedulingMode !== 'flexible') && (isConflict || hasOverlapOnDrop);
+      const isConflictOnDrop = (_getPlanningStyle() !== 'flexible') && (isConflict || hasOverlapOnDrop);
 
       // Conflict → cancel with toast, zero network requests
       if (isConflictOnDrop) {
@@ -2167,7 +2194,7 @@
         }
       });
 
-      if (window.plannerSettings?.schedulingMode === 'flexible') {
+      if (_getPlanningStyle() === 'flexible') {
         const gridCol = container.querySelector('#dailyFlexibleGridCol') || container.querySelector('.flex-1.relative');
         if (gridCol) {
           const topPadAttr = gridCol.getAttribute('data-top-pad-min');
@@ -2256,7 +2283,7 @@
       console.log('[AUDIT: planner.html] renderDailyPlanner after filter & sort count:', sortedBlocks ? sortedBlocks.length : 0);
 
       // Flexible Mode: render 24h grid timeline with overlap engine regardless of whether sortedBlocks is empty
-      if (window.plannerSettings?.schedulingMode === 'flexible') {
+      if (_getPlanningStyle() === 'flexible') {
         _renderDailyFlexible(container, sortedBlocks || [], goals);
         return;
       }
@@ -2404,13 +2431,14 @@
             <div class="w-8 h-1 bg-[#A855F7]/80 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.7)] hover:bg-[#C084FC] hover:shadow-[0_0_12px_rgba(168,85,247,1)] transition-all duration-150"></div>
             <span class="sf-resize-tooltip absolute bottom-full mb-1 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-[#12121A]/95 border border-[#2A2A38] rounded text-[10px] font-semibold text-[#D8B4FE] whitespace-nowrap shadow-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-30">Resize start time</span>
           </div>
-          <div class="${theme.cardBg} border ${theme.border} p-4 rounded-2xl flex items-center justify-between shadow-[0_4px_15px_rgba(0,0,0,0.15)] transition-all duration-200 sf-card-inner h-full">
+          <div class="${theme.cardBg} border ${theme.border} p-4 rounded-2xl flex items-center justify-between shadow-[0_4px_15px_rgba(0,0,0,0.15)] transition-all duration-200 sf-card-inner h-full${typeof _hasConflictStyle === 'function' ? _hasConflictStyle(block) : ''}">
             <div class="flex items-center space-x-3.5 min-w-0 flex-1">
               <div class="w-1.5 h-10 ${theme.bar} rounded-full transition-all duration-200 sf-card-bar shrink-0"></div>
               <div class="min-w-0 flex-1">
                 <h4 class="font-bold text-sm text-white flex items-center gap-2 truncate">
                   <span class="truncate">${title}</span>
                   ${_renderRecurrenceBadge(block)}
+                  ${typeof _renderConflictBadgeIfAny === 'function' ? _renderConflictBadgeIfAny(block) : ''}
                   <span class="sf-now-badge hidden inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-[#A855F7] text-white shadow-[0_0_8px_rgba(168,85,247,0.8)] animate-pulse shrink-0">NOW</span>
                 </h4>
                 ${desc ? `<p class="text-xs text-[#A1A1AA] mt-0.5 truncate">${desc}</p>` : ''}
@@ -2535,7 +2563,7 @@
       if (!window._dailyFlexDidInitialScroll && container && isToday) {
         window._dailyFlexDidInitialScroll = true;
         setTimeout(() => {
-          if (container && window.plannerSettings?.schedulingMode === 'flexible') {
+          if (container && _getPlanningStyle() === 'flexible') {
             const currentHour = new Date().getHours();
             const scrollTarget = Math.max(0, (currentHour - 2) * hrHeight);
             if (typeof container.scrollTo === 'function') {
@@ -3113,7 +3141,7 @@
           endHour = endHour % 24;
         }
 
-        if (window.plannerSettings?.schedulingMode !== 'flexible') {
+        if (_getPlanningStyle() !== 'flexible') {
           const targetDateStr = window._selectedSlotDate || (window.SF_STORE?.getSlice('planner')?.selectedDate) || _toLocalDateStr();
           const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
           const allRaw = [...(plannerState?.plannerEvents || []), ...(plannerState?.dailyBlocks || [])];
@@ -3805,7 +3833,7 @@
 
           const sMinEdit = _timeStrToMinutes(payload.startTimeDisplay || '09:00 AM');
           const eMinEdit = _timeStrToMinutes(payload.endTimeDisplay || '10:00 AM');
-          const isFocusModeEdit = window.plannerSettings?.schedulingMode !== 'flexible';
+          const isFocusModeEdit = _getPlanningStyle() !== 'flexible';
           
           const plannerStateEdit = window.SF_STORE && window.SF_STORE.getSlice('planner');
           const allRawEdit = [...(plannerStateEdit?.plannerEvents || []), ...(plannerStateEdit?.dailyBlocks || [])];
@@ -3875,7 +3903,7 @@
           const sMin = _timeStrToMinutes(payload.startTimeDisplay || '09:00 AM');
           const eMin = _timeStrToMinutes(payload.endTimeDisplay || '10:00 AM');
 
-          const isFocusModeCreate = window.plannerSettings?.schedulingMode !== 'flexible';
+          const isFocusModeCreate = _getPlanningStyle() !== 'flexible';
           const overlaps = dayInstances.filter(b => {
             const bsMin = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '');
             let beMin = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '');
@@ -4174,6 +4202,12 @@
           body.sf-planner-fullscreen-active > div[id="sf-weekly-context-menu"] {
             z-index: 200001 !important;
           }
+          body.sf-planner-fullscreen-active #weeklySummaryToolbar,
+          body.sf-planner-fullscreen-active #monthlySummaryToolbar,
+          #weeklyView.sf-fs-active #weeklySummaryToolbar,
+          #monthlyView.sf-fs-active #monthlySummaryToolbar {
+            display: none !important;
+          }
         `;
         document.head.appendChild(styleEl);
       }
@@ -4187,6 +4221,10 @@
         const mView = document.getElementById('monthlyView');
         if (wView) wView.classList.add('sf-fs-active');
         if (mView) mView.classList.add('sf-fs-active');
+        const wToolbar = document.getElementById('weeklySummaryToolbar');
+        const mToolbar = document.getElementById('monthlySummaryToolbar');
+        if (wToolbar) wToolbar.style.display = 'none';
+        if (mToolbar) mToolbar.style.display = 'none';
 
         // Move sf-add-block-modal to body so it isn't clipped by the fixed fullscreen calendar
         const modal = document.getElementById('sf-add-block-modal');
@@ -4208,6 +4246,10 @@
         const mView = document.getElementById('monthlyView');
         if (wView) wView.classList.remove('sf-fs-active');
         if (mView) mView.classList.remove('sf-fs-active');
+        const wToolbar = document.getElementById('weeklySummaryToolbar');
+        const mToolbar = document.getElementById('monthlySummaryToolbar');
+        if (wToolbar) wToolbar.style.display = '';
+        if (mToolbar) mToolbar.style.display = '';
 
         // Restore modal back into main content so it inherits correct stacking context
         const modal = document.getElementById('sf-add-block-modal');
@@ -5381,7 +5423,7 @@
 
       const card = document.createElement('div');
       // Requirement 8: Hover slightly scale (scale-[1.01]), slightly brighten (brightness-115), increase shadow (shadow-xl), DO NOT animate position
-      card.className = `weekly-event-card absolute rounded-xl ${theme.cardBg} border ${theme.border} ${theme.glow} backdrop-blur-md overflow-hidden pointer-events-auto transition-[transform,filter,box-shadow,z-index,border-color] duration-150 ease-out hover:z-[35] hover:scale-[1.01] hover:brightness-115 hover:shadow-xl border-l-4 flex flex-col justify-between p-1 select-none group cursor-pointer animate-[weeklyEventAppear_200ms_ease-out_forwards]`;
+      card.className = `weekly-event-card absolute rounded-xl ${theme.cardBg} border ${theme.border} ${theme.glow} backdrop-blur-md overflow-hidden pointer-events-auto transition-[transform,filter,box-shadow,z-index,border-color] duration-150 ease-out hover:z-[35] hover:scale-[1.01] hover:brightness-115 hover:shadow-xl border-l-4 flex flex-col justify-between p-1 select-none group cursor-pointer animate-[weeklyEventAppear_200ms_ease-out_forwards]${typeof _hasConflictStyle === 'function' ? _hasConflictStyle(event) : ''}`;
       card.style.top = `${position.top}px`;
       card.style.height = `${position.height}px`;
       card.style.left = leftCalc;
@@ -5397,6 +5439,8 @@
       card.dataset.overlapSpan = colSpan || 1;
       card.dataset.originalTop = position.top;
 
+      const conflictBadgeHtml = typeof _renderConflictBadgeIfAny === 'function' ? _renderConflictBadgeIfAny(event) : '';
+
       // Layout buckets based on height (with 54px-66px per hour scale)
       // Layout 4: Extremely small single-line layout (< 24px)
       if (position.height < 24) {
@@ -5404,6 +5448,7 @@
           <div class="flex items-center gap-1.5 h-full overflow-hidden px-1 sm:px-1.5 min-w-0">
             <span class="w-2 h-2 rounded-full shrink-0" style="background-color: ${theme.hexColor}"></span>
             <span class="font-bold text-[10px] sm:text-[11px] text-white overflow-hidden text-ellipsis whitespace-nowrap leading-none min-w-0 flex-1 sf-card-title">${title}</span>
+            ${conflictBadgeHtml}
             <span class="font-mono text-[9px] sm:text-[10px] ${theme.text} font-semibold shrink-0 leading-none sf-card-time">${startTime}</span>
           </div>
         `;
@@ -5412,7 +5457,7 @@
       else if (position.height < 36) {
         card.innerHTML = `
           <div class="flex items-center justify-between gap-1 h-full overflow-hidden px-1 sm:px-1.5 min-w-0">
-            <span class="font-bold text-[11px] text-white overflow-hidden text-ellipsis whitespace-nowrap leading-none min-w-0 flex-1 sf-card-title">${title}</span>
+            <span class="font-bold text-[11px] text-white overflow-hidden text-ellipsis whitespace-nowrap leading-none min-w-0 flex-1 sf-card-title">${title} ${conflictBadgeHtml}</span>
             <span class="font-mono text-[9px] sm:text-[10px] ${theme.text} font-semibold shrink-0 leading-none ml-1 sf-card-time">${startTime}</span>
           </div>
         `;
@@ -5421,7 +5466,7 @@
       else if (position.height < 50) {
         card.innerHTML = `
           <div class="flex flex-col justify-center h-full overflow-hidden px-1.5 py-0.5 gap-0.5 min-w-0">
-            <div class="font-bold text-xs text-white overflow-hidden text-ellipsis whitespace-nowrap leading-tight sf-card-title">${title}</div>
+            <div class="font-bold text-xs text-white overflow-hidden text-ellipsis whitespace-nowrap leading-tight sf-card-title">${title} ${conflictBadgeHtml}</div>
             <div class="font-mono text-[10px] ${theme.text} font-semibold overflow-hidden text-ellipsis whitespace-nowrap leading-tight sf-card-time">${durationStr}</div>
           </div>
         `;
@@ -5431,7 +5476,7 @@
         card.innerHTML = `
           <div class="flex flex-col justify-between h-full overflow-hidden p-1 sm:p-1.5 min-w-0">
             <div class="flex flex-col gap-0.5 min-w-0 overflow-hidden">
-              <div class="font-bold text-xs sm:text-sm text-white overflow-hidden text-ellipsis whitespace-nowrap leading-tight sf-card-title">${title}</div>
+              <div class="font-bold text-xs sm:text-sm text-white overflow-hidden text-ellipsis whitespace-nowrap leading-tight sf-card-title">${title} ${conflictBadgeHtml}</div>
               <div class="font-mono text-[10px] sm:text-[11px] ${theme.text} font-semibold overflow-hidden text-ellipsis whitespace-nowrap leading-tight sf-card-time">${durationStr}</div>
             </div>
             <div class="flex items-center gap-1.5 flex-wrap overflow-hidden mt-1 pt-1 border-t border-white/10 shrink-0">
@@ -6065,7 +6110,7 @@
       _weeklyDragResizeState.currentDateStr = targetDateStr;
 
       const hasOverlap = _checkPlannerTimeConflict(_weeklyDragResizeState.blockId, currentStartMin, currentEndMin, targetDateStr);
-      const isConflict = (window.plannerSettings?.schedulingMode !== 'flexible') && hasOverlap;
+      const isConflict = (_getPlanningStyle() !== 'flexible') && hasOverlap;
       _weeklyDragResizeState.isConflict = isConflict;
 
       const ghost = _weeklyDragResizeState.ghostElement;
@@ -6125,7 +6170,7 @@
       }
 
       const hasOverlapOnDrop = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin, currentDateStr || originalDateStr);
-      const isConflictOnDrop = (window.plannerSettings?.schedulingMode !== 'flexible') && hasOverlapOnDrop;
+      const isConflictOnDrop = (_getPlanningStyle() !== 'flexible') && hasOverlapOnDrop;
 
       if (isConflictOnDrop) {
         const msg = mode !== 'drag' 
@@ -6496,7 +6541,7 @@
       newBlock.startTimeDisplay = typeof _formatTimeDisplay === 'function' ? _formatTimeDisplay(newStartISO) : toHHMM(newStartMin);
       newBlock.endTimeDisplay = typeof _formatTimeDisplay === 'function' ? _formatTimeDisplay(newEndISO) : toHHMM(newEndMin);
 
-      const isFocusDup = window.plannerSettings?.schedulingMode !== 'flexible';
+      const isFocusDup = _getPlanningStyle() !== 'flexible';
       const hasConflict = _checkPlannerTimeConflict(null, newStartMin, newEndMin, dateStr);
 
       const runCreateDuplicate = async () => {
@@ -6726,6 +6771,427 @@
     }
 
     // ── End Sprint 5.1 ───────────────────────────────────────
+
+    // ── Global Planning Style Management & Modals ──
+    window._isReviewingConflicts = false;
+
+    function _findAllOverlappingTasks() {
+      const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
+      const allRaw = [...(plannerState?.plannerEvents || []), ...(plannerState?.dailyBlocks || [])];
+      const byDate = {};
+      allRaw.forEach(ev => {
+        if (!ev) return;
+        const dateStr = ev.date || (ev.startTime && typeof ev.startTime === 'string' && ev.startTime.split('T')[0]);
+        if (!dateStr) return;
+        if (!byDate[dateStr]) byDate[dateStr] = [];
+        byDate[dateStr].push(ev);
+      });
+      
+      const overlappingBlocksSet = new Set();
+      const dateOverlaps = [];
+      
+      Object.keys(byDate).sort().forEach(dateStr => {
+        const dayBlocks = typeof expandWeeklyRecurrences === 'function'
+          ? expandWeeklyRecurrences(byDate[dateStr], new Date(`${dateStr}T00:00:00.000Z`), new Date(`${dateStr}T23:59:59.999Z`), dateStr)
+          : byDate[dateStr];
+          
+        const dayOverlaps = new Set();
+        for (let i = 0; i < dayBlocks.length; i++) {
+          for (let j = i + 1; j < dayBlocks.length; j++) {
+            const a = dayBlocks[i];
+            const b = dayBlocks[j];
+            const aStart = typeof _parseTimeToMinutes === 'function' ? _parseTimeToMinutes(a.startTime || a.start || '') : 0;
+            const aEnd   = typeof _parseTimeToMinutes === 'function' ? _parseTimeToMinutes(a.endTime || a.end || '') : 0;
+            const bStart = typeof _parseTimeToMinutes === 'function' ? _parseTimeToMinutes(b.startTime || b.start || '') : 0;
+            const bEnd   = typeof _parseTimeToMinutes === 'function' ? _parseTimeToMinutes(b.endTime || b.end || '') : 0;
+            
+            if (aStart < bEnd && aEnd > bStart) {
+              dayOverlaps.add(a);
+              dayOverlaps.add(b);
+              overlappingBlocksSet.add(a.id || a._id || a._instanceId);
+              overlappingBlocksSet.add(b.id || b._id || b._instanceId);
+            }
+          }
+        }
+        if (dayOverlaps.size > 0) {
+          dateOverlaps.push({ dateStr, blocks: Array.from(dayOverlaps) });
+        }
+      });
+      
+      return {
+        totalOverlapsCount: overlappingBlocksSet.size,
+        dateOverlaps,
+        overlappingIds: Array.from(overlappingBlocksSet)
+      };
+    }
+    window._findAllOverlappingTasks = _findAllOverlappingTasks;
+
+    function _checkBlockOverlapsOnDay(block, targetDateStr) {
+      if (!block) return false;
+      const blockId = block.id || block._id || block._instanceId;
+      if (!blockId) return false;
+      const startMin = typeof _timeStrToMinutes === 'function' ? _timeStrToMinutes(block.startTimeDisplay || block.startTime || '09:00 AM') : 0;
+      let endMin = typeof _timeStrToMinutes === 'function' ? _timeStrToMinutes(block.endTimeDisplay || block.endTime || '10:00 AM') : startMin + 60;
+      if (!endMin || endMin <= startMin) endMin = startMin + 60;
+
+      const dateStr = targetDateStr || block.date || (block.startTime && typeof block.startTime === 'string' && block.startTime.split('T')[0]) || window._selectedSlotDate || '';
+      if (!dateStr) return false;
+      
+      const plannerState = window.SF_STORE ? window.SF_STORE.getSlice('planner') : null;
+      const allRaw = [...(plannerState?.plannerEvents || []), ...(plannerState?.dailyBlocks || [])];
+      const byDate = allRaw.filter(ev => {
+        const d = ev.date || (ev.startTime && typeof ev.startTime === 'string' && ev.startTime.split('T')[0]);
+        return d === dateStr;
+      });
+      const dayBlocks = typeof expandWeeklyRecurrences === 'function'
+        ? expandWeeklyRecurrences(byDate, new Date(`${dateStr}T00:00:00.000Z`), new Date(`${dateStr}T23:59:59.999Z`), dateStr)
+        : byDate;
+        
+      for (let i = 0; i < dayBlocks.length; i++) {
+        const b = dayBlocks[i];
+        const bId = b.id || b._id || b._instanceId;
+        if (bId === blockId) continue;
+        const bStart = typeof _parseTimeToMinutes === 'function' ? _parseTimeToMinutes(b.startTime || b.start || '') : 0;
+        const bEnd   = typeof _parseTimeToMinutes === 'function' ? _parseTimeToMinutes(b.endTime || b.end || '') : 0;
+        if (startMin < bEnd && endMin > bStart) {
+          return true;
+        }
+      }
+      return false;
+    }
+    window._checkBlockOverlapsOnDay = _checkBlockOverlapsOnDay;
+
+    function _renderConflictBadgeIfAny(block) {
+      const currentStyle = _getPlanningStyle();
+      if (currentStyle === 'focus' || window._isReviewingConflicts) {
+        if (_checkBlockOverlapsOnDay(block, block.date || window._selectedSlotDate)) {
+          return `<span class="sf-conflict-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30 text-[10px] font-semibold tracking-normal select-none shrink-0" title="Existing task overlap on schedule.">⚠ Existing Conflict</span>`;
+        }
+      }
+      return '';
+    }
+    window._renderConflictBadgeIfAny = _renderConflictBadgeIfAny;
+
+    function _hasConflictStyle(block) {
+      const currentStyle = _getPlanningStyle();
+      if (currentStyle === 'focus' || window._isReviewingConflicts) {
+        if (_checkBlockOverlapsOnDay(block, block.date || window._selectedSlotDate)) {
+          return ' ring-2 !ring-[#F59E0B]/80 shadow-[0_0_18px_rgba(245,158,11,0.25)]';
+        }
+      }
+      return '';
+    }
+    window._hasConflictStyle = _hasConflictStyle;
+
+    function openPlannerSettingsModal() {
+      const modal = document.getElementById('plannerSettingsModal');
+      if (!modal) return;
+      const label = document.getElementById('plannerSettingsStyleLabel');
+      if (label) {
+        const m = _getPlanningStyle();
+        label.textContent = m === 'flexible' ? 'Flexible Planner' : 'Focus Planner';
+      }
+      modal.classList.remove('hidden');
+    }
+    window.openPlannerSettingsModal = openPlannerSettingsModal;
+
+    function openPlanningStyleModal() {
+      const modal = document.getElementById('planningStyleModal');
+      if (!modal) return;
+      window._tempSelectedPlanningStyle = _getPlanningStyle();
+      _updatePlanningStyleModalUI();
+      modal.classList.remove('hidden');
+    }
+    window.openPlanningStyleModal = openPlanningStyleModal;
+
+    function _updatePlanningStyleModalUI() {
+      const focusOpt = document.getElementById('styleOptionFocus');
+      const flexOpt = document.getElementById('styleOptionFlexible');
+      const focusChk = document.getElementById('styleCheckFocus');
+      const flexChk = document.getElementById('styleCheckFlexible');
+      if (!focusOpt || !flexOpt) return;
+      
+      if (window._tempSelectedPlanningStyle === 'flexible') {
+        flexOpt.className = flexOpt.className.replace(/border-\[#[0-9A-Fa-f]+\](\/[0-9]+)?/g, '').trim() + ' border-[#06B6D4] bg-[#06B6D4]/10';
+        focusOpt.className = focusOpt.className.replace(/border-\[#[0-9A-Fa-f]+\](\/[0-9]+)?/g, '').trim() + ' border-[#24242E] bg-[#13131A]';
+        if (flexChk) flexChk.classList.remove('hidden');
+        if (focusChk) focusChk.classList.add('hidden');
+      } else {
+        focusOpt.className = focusOpt.className.replace(/border-\[#[0-9A-Fa-f]+\](\/[0-9]+)?/g, '').trim() + ' border-[#A855F7] bg-[#A855F7]/10';
+        flexOpt.className = flexOpt.className.replace(/border-\[#[0-9A-Fa-f]+\](\/[0-9]+)?/g, '').trim() + ' border-[#24242E] bg-[#13131A]';
+        if (focusChk) focusChk.classList.remove('hidden');
+        if (flexChk) flexChk.classList.add('hidden');
+      }
+    }
+    window._updatePlanningStyleModalUI = _updatePlanningStyleModalUI;
+
+    function _saveSelectedPlanningStyle() {
+      const oldStyle = _getPlanningStyle();
+      const newStyle = window._tempSelectedPlanningStyle || 'focus';
+      
+      const styleModal = document.getElementById('planningStyleModal');
+      if (styleModal) styleModal.classList.add('hidden');
+
+      if (oldStyle === newStyle) return;
+
+      if (oldStyle === 'flexible' && newStyle === 'focus') {
+        const overlapInfo = _findAllOverlappingTasks();
+        if (overlapInfo.totalOverlapsCount > 0) {
+          const countText = document.getElementById('switchOverlapCountText');
+          if (countText) countText.textContent = `${overlapInfo.totalOverlapsCount} overlapping task${overlapInfo.totalOverlapsCount === 1 ? '' : 's'}`;
+          window._pendingSwitchOverlaps = overlapInfo;
+          const confirmModal = document.getElementById('switchPlanningStyleConfirmModal');
+          if (confirmModal) confirmModal.classList.remove('hidden');
+          return;
+        }
+      }
+
+      window._isReviewingConflicts = false;
+      setPlanningStyle(newStyle);
+    }
+    window._saveSelectedPlanningStyle = _saveSelectedPlanningStyle;
+
+    function _reviewConflictsOnSwitch() {
+      const confirmModal = document.getElementById('switchPlanningStyleConfirmModal');
+      if (confirmModal) confirmModal.classList.add('hidden');
+      window._isReviewingConflicts = true;
+      
+      const overlapInfo = window._pendingSwitchOverlaps || _findAllOverlappingTasks();
+      if (overlapInfo.dateOverlaps && overlapInfo.dateOverlaps.length > 0) {
+        const firstConflictDate = overlapInfo.dateOverlaps[0].dateStr;
+        window._selectedSlotDate = firstConflictDate;
+        if (window.SF_STORE) {
+          window.SF_STORE.dispatch('planner/SET_SELECTED_DATE', firstConflictDate);
+        }
+      }
+      if (typeof renderDailyPlanner === 'function') {
+        const dailyState = window.SF_STORE ? window.SF_STORE.getSlice('planner') : null;
+        renderDailyPlanner(dailyState || {});
+      }
+      if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+      setTimeout(() => {
+        const firstEl = document.querySelector('.sf-conflict-badge, [class*="ring-2"]');
+        if (firstEl && typeof firstEl.scrollIntoView === 'function') {
+          firstEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 150);
+      if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+        window.SF_COMPONENTS.showToast('Resolve highlighted conflicts before switching.', 'warning');
+      }
+    }
+    window._reviewConflictsOnSwitch = _reviewConflictsOnSwitch;
+
+    function _proceedSwitchAnyway() {
+      const confirmModal = document.getElementById('switchPlanningStyleConfirmModal');
+      if (confirmModal) confirmModal.classList.add('hidden');
+      window._isReviewingConflicts = false;
+      setPlanningStyle('focus');
+    }
+    window._proceedSwitchAnyway = _proceedSwitchAnyway;
+
+    function showFirstLaunchWelcomeModal() {
+      const modal = document.getElementById('firstLaunchWelcomeModal');
+      if (!modal) return;
+      window._welcomeSelectedStyle = 'focus';
+      _updateWelcomeModalUI();
+      modal.classList.remove('hidden');
+    }
+    window.showFirstLaunchWelcomeModal = showFirstLaunchWelcomeModal;
+
+    function _updateWelcomeModalUI() {
+      const focusOpt = document.getElementById('welcomeOptionFocus');
+      const flexOpt = document.getElementById('welcomeOptionFlexible');
+      const focusChk = document.getElementById('welcomeCheckFocus');
+      const flexChk = document.getElementById('welcomeCheckFlexible');
+      if (!focusOpt || !flexOpt) return;
+      
+      if (window._welcomeSelectedStyle === 'flexible') {
+        flexOpt.className = flexOpt.className.replace(/border-\[#[0-9A-Fa-f]+\](\/[0-9]+)?/g, '').trim() + ' border-[#06B6D4] bg-[#06B6D4]/10';
+        focusOpt.className = focusOpt.className.replace(/border-\[#[0-9A-Fa-f]+\](\/[0-9]+)?/g, '').trim() + ' border-[#24242E] bg-[#13131A]';
+        if (flexChk) flexChk.classList.remove('hidden');
+        if (focusChk) focusChk.classList.add('hidden');
+      } else {
+        focusOpt.className = focusOpt.className.replace(/border-\[#[0-9A-Fa-f]+\](\/[0-9]+)?/g, '').trim() + ' border-[#A855F7] bg-[#A855F7]/10';
+        flexOpt.className = flexOpt.className.replace(/border-\[#[0-9A-Fa-f]+\](\/[0-9]+)?/g, '').trim() + ' border-[#24242E] bg-[#13131A]';
+        if (focusChk) focusChk.classList.remove('hidden');
+        if (flexChk) flexChk.classList.add('hidden');
+      }
+    }
+    window._updateWelcomeModalUI = _updateWelcomeModalUI;
+
+    function _finishWelcomeOnboarding() {
+      const chosen = window._welcomeSelectedStyle || 'focus';
+      localStorage.setItem('studyflow_planning_style_onboarded', 'true');
+      const modal = document.getElementById('firstLaunchWelcomeModal');
+      if (modal) modal.classList.add('hidden');
+      setPlanningStyle(chosen);
+      if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+        window.SF_COMPONENTS.showToast(`Welcome! ${chosen === 'flexible' ? 'Flexible' : 'Focus'} Planner configured.`, 'success');
+      }
+    }
+    window._finishWelcomeOnboarding = _finishWelcomeOnboarding;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!document.getElementById('sfPlanningStyleModalsRoot')) {
+        const modalsContainer = document.createElement('div');
+        modalsContainer.id = 'sfPlanningStyleModalsRoot';
+        modalsContainer.innerHTML = `
+          <div id="plannerSettingsModal" class="hidden fixed inset-0 z-[9999999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div class="bg-[#0E0E14] border border-[#2A2A38] rounded-3xl max-w-md w-full shadow-[0_25px_60px_rgba(0,0,0,0.98),0_0_40px_rgba(168,85,247,0.25)] p-6 text-left animate-fadeIn">
+              <div class="flex items-center justify-between pb-4 border-b border-[#24242E]">
+                <h3 class="text-lg font-extrabold text-white">Planner Settings</h3>
+                <button type="button" onclick="document.getElementById('plannerSettingsModal').classList.add('hidden')" class="text-[#A1A1AA] hover:text-white transition">✕</button>
+              </div>
+              <div class="py-3 divide-y divide-[#24242E] text-xs font-semibold">
+                <div onclick="document.getElementById('plannerSettingsModal').classList.add('hidden'); window.openPlanningStyleModal();" class="py-3.5 flex items-center justify-between cursor-pointer group">
+                  <span class="text-[#D4D4D8]">Planning Style</span>
+                  <div class="flex items-center gap-1.5 text-[#A855F7] font-bold">
+                    <span id="plannerSettingsStyleLabel">Focus Planner</span>
+                    <span class="text-[#A1A1AA] group-hover:text-white transition">&gt;</span>
+                  </div>
+                </div>
+                <div class="py-3.5 flex items-center justify-between cursor-pointer group" onclick="alert('Week start preference configured.')">
+                  <span class="text-[#D4D4D8]">Week Starts On</span>
+                  <div class="flex items-center gap-1.5 text-white">
+                    <span>Sunday</span>
+                    <span class="text-[#A1A1AA]">&gt;</span>
+                  </div>
+                </div>
+                <div class="py-3.5 flex items-center justify-between cursor-pointer group" onclick="alert('Default duration preference configured.')">
+                  <span class="text-[#D4D4D8]">Default Task Duration</span>
+                  <div class="flex items-center gap-1.5 text-white">
+                    <span>60 minutes</span>
+                    <span class="text-[#A1A1AA]">&gt;</span>
+                  </div>
+                </div>
+                <div class="py-3.5 flex items-center justify-between cursor-pointer group" onclick="alert('Working hours preference configured.')">
+                  <span class="text-[#D4D4D8]">Working Hours</span>
+                  <div class="flex items-center gap-1.5 text-white">
+                    <span>8:00 AM – 10:00 PM</span>
+                    <span class="text-[#A1A1AA]">&gt;</span>
+                  </div>
+                </div>
+                <div class="py-3.5 flex items-center justify-between cursor-pointer group" onclick="alert('Snap interval preference configured.')">
+                  <span class="text-[#D4D4D8]">Snap Interval</span>
+                  <div class="flex items-center gap-1.5 text-white">
+                    <span>15 minutes</span>
+                    <span class="text-[#A1A1AA]">&gt;</span>
+                  </div>
+                </div>
+                <div class="py-3.5 flex items-center justify-between">
+                  <span class="text-[#D4D4D8]">Show Weekends</span>
+                  <span class="text-emerald-400 font-bold">ON</span>
+                </div>
+              </div>
+              <div class="mt-4 pt-3 border-t border-[#24242E] flex justify-end">
+                <button type="button" onclick="document.getElementById('plannerSettingsModal').classList.add('hidden')" class="px-5 py-2.5 rounded-xl bg-[#A855F7] hover:bg-[#9333EA] text-white font-bold text-xs transition">Done</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="planningStyleModal" class="hidden fixed inset-0 z-[9999999] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+            <div class="bg-[#0E0E14] border border-[#2A2A38] rounded-3xl max-w-lg w-full shadow-[0_25px_60px_rgba(0,0,0,0.98),0_0_40px_rgba(168,85,247,0.3)] p-6 text-left animate-fadeIn">
+              <div class="pb-4 border-b border-[#24242E]">
+                <h3 class="text-xl font-extrabold text-white">Planning Style</h3>
+                <p class="text-xs text-[#A1A1AA] mt-1">Choose how you prefer to organize your schedule.</p>
+              </div>
+              <div class="py-5 space-y-3.5">
+                <div onclick="window._tempSelectedPlanningStyle = 'focus'; window._updatePlanningStyleModalUI();" id="styleOptionFocus" class="p-4 rounded-2xl border cursor-pointer transition flex items-start gap-3 bg-[#13131A] border-[#24242E]">
+                  <div class="text-[#A855F7] text-lg mt-0.5 shrink-0">🎯</div>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm font-extrabold text-white">Focus Planner <span class="text-xs text-[#A855F7] font-semibold ml-1">(Recommended)</span></span>
+                      <span id="styleCheckFocus" class="text-[#A855F7] font-bold text-sm hidden">✓</span>
+                    </div>
+                    <p class="text-xs text-[#A1A1AA] mt-1.5 leading-relaxed">One task at a time. No overlapping tasks. Great for deep work and focused study.</p>
+                  </div>
+                </div>
+                
+                <div onclick="window._tempSelectedPlanningStyle = 'flexible'; window._updatePlanningStyleModalUI();" id="styleOptionFlexible" class="p-4 rounded-2xl border cursor-pointer transition flex items-start gap-3 bg-[#13131A] border-[#24242E]">
+                  <div class="text-[#06B6D4] text-lg mt-0.5 shrink-0">🔀</div>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm font-extrabold text-white">Flexible Planner</span>
+                      <span id="styleCheckFlexible" class="text-[#06B6D4] font-bold text-sm hidden">✓</span>
+                    </div>
+                    <p class="text-xs text-[#A1A1AA] mt-1.5 leading-relaxed">Allows overlapping tasks. Perfect for multitasking, meetings, classes and dynamic schedules.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="pt-4 border-t border-[#24242E] flex items-center justify-end gap-3">
+                <button type="button" onclick="document.getElementById('planningStyleModal').classList.add('hidden')" class="px-5 py-2.5 rounded-xl bg-[#1C1C24] hover:bg-[#2A2A38] text-[#A1A1AA] hover:text-white font-bold text-xs transition">Cancel</button>
+                <button type="button" onclick="window._saveSelectedPlanningStyle()" class="px-5 py-2.5 rounded-xl bg-[#A855F7] hover:bg-[#9333EA] text-white font-bold text-xs shadow-lg transition">Save</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="firstLaunchWelcomeModal" class="hidden fixed inset-0 z-[9999999] flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
+            <div class="bg-[#0E0E14] border border-[#2A2A38] rounded-3xl max-w-lg w-full shadow-[0_25px_60px_rgba(0,0,0,0.98),0_0_45px_rgba(168,85,247,0.35)] p-6 text-left animate-fadeIn">
+              <div class="pb-4 border-b border-[#24242E] text-center">
+                <h3 class="text-xl font-extrabold text-white">Welcome to StudyFlow Planner</h3>
+                <p class="text-xs text-[#A1A1AA] mt-1">How do you want to plan?</p>
+              </div>
+              <div class="py-5 space-y-3.5">
+                <div onclick="window._welcomeSelectedStyle = 'focus'; window._updateWelcomeModalUI();" id="welcomeOptionFocus" class="p-4 rounded-2xl border cursor-pointer transition flex items-start gap-3 bg-[#13131A] border-[#24242E]">
+                  <div class="text-[#A855F7] text-lg mt-0.5 shrink-0">🎯</div>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm font-extrabold text-white">Focus Planner <span class="text-xs text-[#A855F7] font-semibold ml-1">(Recommended)</span></span>
+                      <span id="welcomeCheckFocus" class="text-[#A855F7] font-bold text-sm hidden">✓</span>
+                    </div>
+                    <p class="text-xs text-[#A1A1AA] mt-1.5 leading-relaxed">One task at a time. Avoid overlaps. Stay focused.</p>
+                  </div>
+                </div>
+                
+                <div onclick="window._welcomeSelectedStyle = 'flexible'; window._updateWelcomeModalUI();" id="welcomeOptionFlexible" class="p-4 rounded-2xl border cursor-pointer transition flex items-start gap-3 bg-[#13131A] border-[#24242E]">
+                  <div class="text-[#06B6D4] text-lg mt-0.5 shrink-0">🔀</div>
+                  <div class="flex-1">
+                    <div class="flex items-center justify-between">
+                      <span class="text-sm font-extrabold text-white">Flexible Planner</span>
+                      <span id="welcomeCheckFlexible" class="text-[#06B6D4] font-bold text-sm hidden">✓</span>
+                    </div>
+                    <p class="text-xs text-[#A1A1AA] mt-1.5 leading-relaxed">Allow overlapping tasks. Perfect for multitasking.</p>
+                  </div>
+                </div>
+              </div>
+              <div class="pt-4 border-t border-[#24242E] flex justify-end">
+                <button type="button" onclick="window._finishWelcomeOnboarding()" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#A855F7] hover:bg-[#9333EA] text-white font-extrabold text-xs shadow-lg transition">Continue</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="switchPlanningStyleConfirmModal" class="hidden fixed inset-0 z-[9999999] flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
+            <div class="bg-[#0E0E14] border border-[#2A2A38] rounded-3xl max-w-md w-full shadow-[0_25px_60px_rgba(0,0,0,0.98),0_0_45px_rgba(239,68,68,0.3)] p-6 text-left animate-fadeIn">
+              <div class="pb-4 border-b border-[#24242E]">
+                <h3 class="text-lg font-extrabold text-white">Switch to Focus Planner?</h3>
+              </div>
+              <div class="py-4 space-y-2.5 text-xs text-[#A1A1AA] leading-relaxed">
+                <p>Focus Planner doesn't allow overlapping tasks.</p>
+                <p>We found <strong id="switchOverlapCountText" class="text-[#EF4444] font-extrabold text-sm">0 overlapping tasks</strong>.</p>
+                <p>How would you like to continue?</p>
+              </div>
+              <div class="pt-4 border-t border-[#24242E] flex flex-wrap items-center justify-end gap-2.5">
+                <button type="button" onclick="window._reviewConflictsOnSwitch()" class="px-4 py-2 rounded-xl bg-[#F59E0B]/15 hover:bg-[#F59E0B]/25 text-[#F59E0B] border border-[#F59E0B]/30 font-bold text-xs transition">Review Conflicts</button>
+                <button type="button" onclick="document.getElementById('switchPlanningStyleConfirmModal').classList.add('hidden')" class="px-4 py-2 rounded-xl bg-[#1C1C24] hover:bg-[#2A2A38] text-[#A1A1AA] hover:text-white font-bold text-xs transition">Cancel</button>
+                <button type="button" onclick="window._proceedSwitchAnyway()" class="px-4 py-2 rounded-xl bg-[#A855F7] hover:bg-[#9333EA] text-white font-bold text-xs shadow-lg transition">Switch Anyway</button>
+              </div>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(modalsContainer);
+      }
+
+      if (sessionStorage.getItem('studyflow_review_conflicts') === 'true') {
+        sessionStorage.removeItem('studyflow_review_conflicts');
+        setTimeout(() => {
+          if (typeof window._reviewConflictsOnSwitch === 'function') window._reviewConflictsOnSwitch();
+        }, 250);
+      } else if (!localStorage.getItem('studyflow_planning_style_onboarded')) {
+        setTimeout(() => {
+          if (typeof window.showFirstLaunchWelcomeModal === 'function') window.showFirstLaunchWelcomeModal();
+        }, 150);
+      }
+    });
 
   </script>
 </body>
