@@ -80,10 +80,10 @@
       <!-- ========================================================= -->
       <section id="dailyView" class="space-y-6">
         <!-- AI Schedule Optimizer Banner -->
-        <div class="bg-[#0A0A0E] border border-[#A855F7]/30 p-6 rounded-[24px] flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-[0_0_35px_rgba(168,85,247,0.18)] relative overflow-hidden group hover:border-[#A855F7]/50 transition duration-300">
-          <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-[#A855F7]/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="bg-[#0A0A0E] border border-[#A855F7]/30 p-6 rounded-[24px] flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-[0_0_35px_rgba(168,85,247,0.18)] relative overflow-visible group hover:border-[#A855F7]/50 transition duration-300 z-[200]">
+          <div class="absolute inset-0 rounded-[24px] overflow-hidden pointer-events-none z-0"><div class="absolute -right-10 -bottom-10 w-48 h-48 bg-[#A855F7]/10 rounded-full blur-3xl"></div></div>
           
-          <div class="flex items-center space-x-4 pl-1">
+          <div class="flex items-center space-x-4 pl-1 relative z-10">
             <div class="w-12 h-12 rounded-2xl bg-[#1E1035] border border-[#A855F7]/30 flex items-center justify-center text-[#A855F7] shrink-0 shadow-[0_0_20px_rgba(168,85,247,0.3)] group-hover:scale-105 transition">
               <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 2A2 2 0 0 1 14 4C14 4.74 13.6 5.39 13 5.73V7H14A7 7 0 0 1 21 14H22A1 1 0 0 1 23 15V18A1 1 0 0 1 22 19H21V20A2 2 0 0 1 19 22H5A2 2 0 0 1 3 20V19H2A1 1 0 0 1 1 18V15A1 1 0 0 1 2 14H3A7 7 0 0 1 10 7H11V5.73C10.4 5.39 10 4.74 10 4A2 2 0 0 1 12 2M7.5 13A2.5 2.5 0 0 0 5 15.5A2.5 2.5 0 0 0 7.5 18A2.5 2.5 0 0 0 10 15.5A2.5 2.5 0 0 0 7.5 13M16.5 13A2.5 2.5 0 0 0 14 15.5A2.5 2.5 0 0 0 16.5 18A2.5 2.5 0 0 0 19 15.5A2.5 2.5 0 0 0 16.5 13Z"/></svg>
             </div>
@@ -95,7 +95,7 @@
           </div>
 
           <!-- Middle Wave Graphic Simulation -->
-          <div class="hidden xl:flex items-center gap-1.5 px-4">
+          <div class="hidden xl:flex items-center gap-1.5 px-4 relative z-10">
             <span class="w-2 h-2 rounded-full bg-[#A855F7]/40"></span>
             <span class="w-16 h-0.5 bg-gradient-to-r from-[#A855F7]/40 to-[#A855F7]"></span>
             <span class="w-3 h-3 rounded-full bg-[#A855F7] shadow-[0_0_10px_rgba(168,85,247,0.8)] animate-pulse"></span>
@@ -103,9 +103,12 @@
             <span class="w-2 h-2 rounded-full bg-[#A855F7]/40"></span>
           </div>
 
-          <button onclick="window.location.href='focus.html'" class="px-5 py-2.5 rounded-xl bg-[#A855F7] hover:bg-[#9333EA] text-white font-bold text-xs shadow-[0_0_20px_rgba(168,85,247,0.4)] transition shrink-0 flex items-center gap-2">
-            <span>Start First Block</span> <span>→</span>
-          </button>
+          <div class="flex flex-col items-end gap-2 shrink-0 relative z-30">
+            <button onclick="window.location.href='focus.html'" class="px-5 py-2.5 rounded-xl bg-[#A855F7] hover:bg-[#9333EA] text-white font-bold text-xs shadow-[0_0_20px_rgba(168,85,247,0.4)] transition shrink-0 flex items-center gap-2">
+              <span>Start First Block</span> <span>→</span>
+            </button>
+            <sf-scheduling-mode-select class="shrink-0"></sf-scheduling-mode-select>
+          </div>
         </div>
 
         <!-- Daily 2-Column Split -->
@@ -145,7 +148,7 @@
             </div>
 
             <!-- Timeline List -->
-            <div id="dailyTimelineContainer" class="relative pl-14 space-y-4 font-sans before:absolute before:left-12 before:top-2 before:bottom-2 before:w-px before:bg-[#1C1C24]">
+            <div id="dailyTimelineContainer" class="relative pl-14 space-y-4 font-sans before:absolute before:left-12 before:top-2 before:bottom-2 before:w-px before:bg-[#1C1C24] overflow-y-visible max-h-none pr-2">
               <!-- Dynamic planner blocks will render here via SF_STORE -->
             </div>
           </div>
@@ -273,8 +276,8 @@
       <section id="weeklyView" class="hidden space-y-4">
         <!-- Focus Summary Card (~120px height, KPI Cards & Optimize Button) -->
         <!-- Focus Summary Card (~120px height, KPI Cards & Optimize Button) -->
-        <div id="weeklySummaryToolbar" class="flex flex-col xl:flex-row items-center justify-between gap-6 p-5 sm:p-6 rounded-[24px] bg-[#0A0A0E] border border-[#A855F7]/30 shadow-[0_0_35px_rgba(168,85,247,0.18)] backdrop-blur-xl min-h-[120px] relative overflow-hidden group hover:border-[#A855F7]/50 transition duration-300">
-          <div class="absolute -right-10 -bottom-10 w-48 h-48 bg-[#A855F7]/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div id="weeklySummaryToolbar" class="flex flex-col xl:flex-row items-center justify-between gap-6 p-5 sm:p-6 rounded-[24px] bg-[#0A0A0E] border border-[#A855F7]/30 shadow-[0_0_35px_rgba(168,85,247,0.18)] backdrop-blur-xl min-h-[120px] relative overflow-visible group hover:border-[#A855F7]/50 transition duration-300 z-[999999]">
+          <div class="absolute inset-0 rounded-[24px] overflow-hidden pointer-events-none z-0"><div class="absolute -right-10 -bottom-10 w-48 h-48 bg-[#A855F7]/10 rounded-full blur-3xl"></div></div>
           <div class="flex items-center gap-3.5 w-full xl:w-auto justify-start relative z-10">
             <div class="w-11 h-11 rounded-[16px] bg-[#1E1035] flex items-center justify-center text-[#A855F7] shadow-[0_0_20px_rgba(168,85,247,0.3)] shrink-0 group-hover:scale-105 transition">
               <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M12 2A2 2 0 0 1 14 4C14 4.74 13.6 5.39 13 5.73V7H14A7 7 0 0 1 21 14H22A1 1 0 0 1 23 15V18A1 1 0 0 1 22 19H21V20A2 2 0 0 1 19 22H5A2 2 0 0 1 3 20V19H2A1 1 0 0 1 1 18V15A1 1 0 0 1 2 14H3A7 7 0 0 1 10 7H11V5.73C10.4 5.39 10 4.74 10 4A2 2 0 0 1 12 2M7.5 13A2.5 2.5 0 0 0 5 15.5A2.5 2.5 0 0 0 7.5 18A2.5 2.5 0 0 0 10 15.5A2.5 2.5 0 0 0 7.5 13M16.5 13A2.5 2.5 0 0 0 14 15.5A2.5 2.5 0 0 0 16.5 18A2.5 2.5 0 0 0 19 15.5A2.5 2.5 0 0 0 16.5 13Z"/></svg>
@@ -289,7 +292,7 @@
             </div>
           </div>
           
-          <div class="flex flex-wrap items-center gap-4 sm:gap-5 w-full xl:w-auto justify-end relative z-10">
+          <div class="flex flex-wrap items-center gap-4 sm:gap-5 w-full xl:w-auto justify-end relative z-[210] overflow-visible">
             <!-- KPI Card 1: Focus Time -->
             <div class="flex items-center gap-2.5">
               <div class="w-9 h-9 rounded-[11px] bg-[#1E1035] flex items-center justify-center text-[#A855F7] shrink-0 shadow-sm">
@@ -332,10 +335,13 @@
               </div>
             </div>
             
-            <!-- Primary Button: Optimise Schedule → -->
-            <button onclick="alert('✨ AI Schedule Optimizer is balancing your study blocks and allocating free buffer hours...')" class="px-3.5 py-2 rounded-[13px] bg-[#13131A] border border-[#A855F7]/30 hover:bg-[#1E1035] text-white font-semibold text-[11px] sm:text-xs shadow-[0_0_15px_rgba(168,85,247,0.2)] transition flex items-center gap-2 shrink-0 group">
-              <span>✨ Optimise Schedule →</span>
-            </button>
+            <!-- Optimise + Mode row -->
+            <div class="flex flex-col items-end gap-2 shrink-0 relative z-[999999] overflow-visible">
+              <button onclick="alert('✨ AI Schedule Optimizer is balancing your study blocks and allocating free buffer hours...')" class="px-3.5 py-2 rounded-[13px] bg-[#13131A] border border-[#A855F7]/30 hover:bg-[#1E1035] text-white font-semibold text-[11px] sm:text-xs shadow-[0_0_15px_rgba(168,85,247,0.2)] transition flex items-center gap-2 group">
+                <span>✨ Optimise Schedule →</span>
+              </button>
+              <sf-scheduling-mode-select class="shrink-0"></sf-scheduling-mode-select>
+            </div>
           </div>
         </div>
 
@@ -580,7 +586,7 @@
       </main>
 
       <!-- Add Time Block Modal -->
-      <div id="sf-add-block-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center bg-black/75 backdrop-blur-sm transition-opacity duration-200" role="dialog" aria-modal="true" aria-labelledby="sf-add-block-modal-title">
+      <div id="sf-add-block-modal" class="fixed inset-0 z-[99999999] hidden flex items-center justify-center bg-black/75 backdrop-blur-sm transition-opacity duration-200" role="dialog" aria-modal="true" aria-labelledby="sf-add-block-modal-title">
         <div id="sf-add-block-card" class="bg-[#0E0E0E]/95 border border-[#2A2A2A] rounded-2xl p-6 max-w-md w-full mx-4 shadow-[0_0_50px_rgba(168,85,247,0.15)] relative space-y-4">
           <div class="flex items-center justify-between pb-3 border-b border-[#1C1C1C]">
             <h3 id="sf-add-block-modal-title" class="text-base font-bold text-[#FAFAFA] flex items-center gap-2.5">
@@ -625,7 +631,7 @@
                   <span id="sf-display-type" class="flex items-center gap-2 text-white truncate">📖 Study</span>
                   <svg class="w-3.5 h-3.5 text-[#A1A1AA] group-hover:text-white transition-transform duration-200 shrink-0" id="sf-arrow-type" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </button>
-                <div id="sf-menu-type" class="hidden absolute left-0 right-0 mt-1 bg-[#12121A]/95 backdrop-blur-xl border border-[#2A2A38] rounded-xl shadow-[0_12px_35px_rgba(0,0,0,0.85)] p-1 z-[150] space-y-0.5 max-h-40 overflow-y-auto"></div>
+                <div id="sf-menu-type" class="hidden absolute left-0 right-0 mt-1 bg-[#12121A]/95 backdrop-blur-xl border border-[#2A2A38] rounded-xl shadow-[0_12px_35px_rgba(0,0,0,0.85)] p-1 z-[999999999] space-y-0.5 max-h-40 overflow-y-auto"></div>
               </div>
 
               <!-- Custom Goal Dropdown -->
@@ -640,7 +646,7 @@
                   <span id="sf-display-goal" class="flex items-center gap-2 text-[#A1A1AA] truncate">🎯 None</span>
                   <svg class="w-3.5 h-3.5 text-[#A1A1AA] group-hover:text-white transition-transform duration-200 shrink-0" id="sf-arrow-goal" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </button>
-                <div id="sf-menu-goal" class="hidden absolute left-0 right-0 mt-1 bg-[#12121A]/95 backdrop-blur-xl border border-[#2A2A38] rounded-xl shadow-[0_12px_35px_rgba(0,0,0,0.85)] p-1 z-[150] space-y-0.5 max-h-40 overflow-y-auto"></div>
+                <div id="sf-menu-goal" class="hidden absolute left-0 right-0 mt-1 bg-[#12121A]/95 backdrop-blur-xl border border-[#2A2A38] rounded-xl shadow-[0_12px_35px_rgba(0,0,0,0.85)] p-1 z-[999999999] space-y-0.5 max-h-40 overflow-y-auto"></div>
               </div>
             </div>
 
@@ -655,7 +661,7 @@
                   <span id="sf-display-start" class="flex items-center gap-2 text-white">09:00:00 AM</span>
                   <svg class="w-3.5 h-3.5 text-[#A1A1AA] group-hover:text-white transition-transform duration-200 shrink-0" id="sf-arrow-start" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </button>
-                <div id="sf-menu-start" class="hidden absolute left-0 mt-1 w-[220px] bg-[#12121A]/95 backdrop-blur-xl border border-[#2A2A38] rounded-xl shadow-[0_12px_35px_rgba(0,0,0,0.85)] p-1.5 z-[150] font-mono text-xs"></div>
+                <div id="sf-menu-start" class="hidden absolute left-0 mt-1 w-[220px] bg-[#12121A]/95 backdrop-blur-xl border border-[#2A2A38] rounded-xl shadow-[0_12px_35px_rgba(0,0,0,0.85)] p-1.5 z-[999999999] font-mono text-xs"></div>
               </div>
 
               <!-- Custom End Time -->
@@ -668,7 +674,7 @@
                   <span id="sf-display-end" class="flex items-center gap-2 text-white">10:00:00 AM</span>
                   <svg class="w-3.5 h-3.5 text-[#A1A1AA] group-hover:text-white transition-transform duration-200 shrink-0" id="sf-arrow-end" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
                 </button>
-                <div id="sf-menu-end" class="hidden absolute right-0 mt-1 w-[220px] bg-[#12121A]/95 backdrop-blur-xl border border-[#2A2A38] rounded-xl shadow-[0_12px_35px_rgba(0,0,0,0.85)] p-1.5 z-[150] font-mono text-xs"></div>
+                <div id="sf-menu-end" class="hidden absolute right-0 mt-1 w-[220px] bg-[#12121A]/95 backdrop-blur-xl border border-[#2A2A38] rounded-xl shadow-[0_12px_35px_rgba(0,0,0,0.85)] p-1.5 z-[999999999] font-mono text-xs"></div>
               </div>
             </div>
 
@@ -735,7 +741,7 @@
                       <span id="sf-repeat-until-date-label">Select Date</span>
                     </button>
                     <!-- Custom Datepicker Popup -->
-                    <div id="sf-custom-datepicker-popup" class="hidden absolute right-0 top-full mt-2 w-64 bg-[#181822]/95 backdrop-blur-xl border border-[#2A2A38] rounded-2xl shadow-[0_15px_50px_rgba(0,0,0,0.8)] p-3.5 z-[100] transition-all">
+                    <div id="sf-custom-datepicker-popup" class="hidden absolute right-0 top-full mt-2 w-64 bg-[#181822]/95 backdrop-blur-xl border border-[#2A2A38] rounded-2xl shadow-[0_15px_50px_rgba(0,0,0,0.8)] p-3.5 z-[999999999] transition-all">
                       <div class="flex items-center justify-between mb-2 pb-2 border-b border-[#2A2A38]">
                         <button type="button" onclick="sfDatepickerNav(-1)" class="p-1 rounded-lg hover:bg-white/10 text-[#A1A1AA] hover:text-white transition"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg></button>
                         <span id="sf-datepicker-month-year" class="text-xs font-bold text-white tracking-wide"></span>
@@ -814,16 +820,151 @@
       return 0;
     }
 
-    // ── Unified Conflict Detection Helper (Sprint 3C.3.5) ──────────────────────
-    function _checkPlannerTimeConflict(targetBlockId, startMin, endMin) {
+    window.plannerSettings = JSON.parse(localStorage.getItem('studyflow_planner_settings') || '{"schedulingMode":"focus"}');
+    if (!window.plannerSettings.schedulingMode) window.plannerSettings.schedulingMode = 'focus';
+
+    class SfSchedulingModeSelect extends HTMLElement {
+      connectedCallback() {
+        this.render();
+        if (!window._sfModeSelectDocListener) {
+          window._sfModeSelectDocListener = true;
+          document.addEventListener('click', (e) => {
+            if (!e.target.closest('sf-scheduling-mode-select')) {
+              document.querySelectorAll('sf-scheduling-mode-select').forEach(el => {
+                if (el._closeMenu) el._closeMenu();
+              });
+            }
+          });
+        }
+      }
+      _toggleMenu(e) {
+        if (e) {
+          e.stopPropagation();
+          e.preventDefault();
+        }
+        const menu = this.querySelector('.sf-mode-menu');
+        const chevron = this.querySelector('.sf-chevron');
+        if (!menu) return;
+        const isHidden = menu.classList.contains('hidden');
+        document.querySelectorAll('sf-scheduling-mode-select').forEach(el => {
+          if (el !== this && el._closeMenu) el._closeMenu();
+        });
+        if (isHidden) {
+          menu.classList.remove('hidden');
+          if (chevron) chevron.style.transform = 'rotate(180deg)';
+        } else {
+          this._closeMenu();
+        }
+      }
+      _closeMenu() {
+        const menu = this.querySelector('.sf-mode-menu');
+        const chevron = this.querySelector('.sf-chevron');
+        if (menu && !menu.classList.contains('hidden')) {
+          menu.classList.add('hidden');
+          if (chevron) chevron.style.transform = 'rotate(0deg)';
+        }
+      }
+      render() {
+        const m = window.plannerSettings?.schedulingMode || 'focus';
+        this.style.cssText = 'display:inline-block;position:relative;z-index:999999;';
+        this.innerHTML = `
+          <div class="relative inline-block text-left select-none">
+            <button type="button" onclick="this.closest('sf-scheduling-mode-select')._toggleMenu(event)" 
+                    class="px-3 py-2 rounded-xl bg-[#13131A] border border-[#24242E] hover:border-[#A855F7]/50 text-white font-semibold text-[11px] sm:text-xs shadow-sm hover:shadow-[0_0_18px_rgba(168,85,247,0.2)] transition-all duration-200 flex items-center justify-between gap-3 min-w-[155px]">
+              <div class="flex items-center gap-2 min-w-0">
+                ${m === 'focus' ? `
+                  <svg class="w-3.5 h-3.5 text-[#A855F7] shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                  <span class="truncate font-bold tracking-tight text-white">Focus Mode</span>
+                ` : `
+                  <svg class="w-3.5 h-3.5 text-[#06B6D4] shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                  <span class="truncate font-bold tracking-tight text-white">Flexible Mode</span>
+                `}
+              </div>
+              <svg class="w-3.5 h-3.5 text-[#A1A1AA] shrink-0 transition-transform duration-200 sf-chevron" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 9l6 6 6-6"/></svg>
+            </button>
+            <div class="sf-mode-menu hidden absolute right-0 top-full mt-1.5 w-64 !bg-[#0D0D14] !bg-opacity-100 border border-[#2A2A38] rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.98),0_0_35px_rgba(168,85,247,0.35)] p-2 z-[9999999] animate-fadeIn text-left">
+              <div class="px-2.5 py-1.5 text-[10px] font-bold text-[#A1A1AA] uppercase tracking-wider font-mono border-b border-[#24242E] mb-1.5">
+                Scheduling Mode
+              </div>
+              <button type="button" onclick="window.setPlannerSchedulingMode('focus')" 
+                      class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#A855F7]/15 hover:border-[#A855F7]/30 border border-transparent transition-all duration-150 flex items-start gap-2.5 group ${m === 'focus' ? 'bg-[#1E1035]/70 border-[#A855F7]/30' : ''}">
+                <div class="p-1.5 rounded-lg bg-[#A855F7]/15 text-[#A855F7] group-hover:bg-[#A855F7]/25 transition mt-0.5 shrink-0 shadow-sm">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-xs font-bold text-white flex items-center justify-between">
+                    <span>Focus Mode</span>
+                    ${m === 'focus' ? '<span class="text-[#A855F7] text-xs font-extrabold">✓</span>' : ''}
+                  </div>
+                  <div class="text-[10px] text-[#A1A1AA] font-normal mt-0.5 leading-snug">No overlapping tasks</div>
+                </div>
+              </button>
+              <button type="button" onclick="window.setPlannerSchedulingMode('flexible')" 
+                      class="w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#06B6D4]/15 hover:border-[#06B6D4]/30 border border-transparent transition-all duration-150 flex items-start gap-2.5 group mt-1 ${m === 'flexible' ? 'bg-[#113238]/70 border-[#06B6D4]/30' : ''}">
+                <div class="p-1.5 rounded-lg bg-[#06B6D4]/15 text-[#06B6D4] group-hover:bg-[#06B6D4]/25 transition mt-0.5 shrink-0 shadow-sm">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-xs font-bold text-white flex items-center justify-between">
+                    <span>Flexible Mode</span>
+                    ${m === 'flexible' ? '<span class="text-[#06B6D4] text-xs font-extrabold">✓</span>' : ''}
+                  </div>
+                  <div class="text-[10px] text-[#A1A1AA] font-normal mt-0.5 leading-snug">Allow overlapping tasks</div>
+                </div>
+              </button>
+            </div>
+          </div>
+        `;
+      }
+      sync() {
+        this.render();
+      }
+    }
+    if (!customElements.get('sf-scheduling-mode-select')) {
+      customElements.define('sf-scheduling-mode-select', SfSchedulingModeSelect);
+    }
+
+    function setPlannerSchedulingMode(mode) {
+      if (!window.plannerSettings) window.plannerSettings = {};
+      window.plannerSettings.schedulingMode = mode;
+      try {
+        localStorage.setItem('studyflow_planner_settings', JSON.stringify(window.plannerSettings));
+      } catch (err) {}
+      
+      document.querySelectorAll('sf-scheduling-mode-select').forEach(el => {
+        if (typeof el.sync === 'function') el.sync();
+      });
+      document.querySelectorAll('.sf-scheduling-mode-select').forEach(select => {
+        if (select.value !== mode) select.value = mode;
+      });
+
+      if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+      if (typeof renderDailyPlanner === 'function') {
+        const dailyState = window.SF_STORE ? window.SF_STORE.getSlice('planner') : null;
+        renderDailyPlanner(dailyState);
+      }
+    }
+    window.setPlannerSchedulingMode = setPlannerSchedulingMode;
+
+    function _checkPlannerTimeConflict(targetBlockId, startMin, endMin, targetDateStr = null) {
       const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
-      const dailyBlocks = plannerState ? (plannerState.dailyBlocks || []) : [];
-      for (let i = 0; i < dailyBlocks.length; i++) {
-        const b = dailyBlocks[i];
-        const bId = b.id || b._id;
-        if (bId === targetBlockId) continue;
+      const allRaw = [...(plannerState?.plannerEvents || []), ...(plannerState?.dailyBlocks || [])];
+      
+      const dateStr = targetDateStr || window._selectedSlotDate || window._plannerDragState?.currentDateStr || window._currentDateStr || new Date().toISOString().split('T')[0];
+      
+      const dayBlocks = typeof expandWeeklyRecurrences === 'function'
+        ? expandWeeklyRecurrences(allRaw, new Date(`${dateStr}T00:00:00.000Z`), new Date(`${dateStr}T23:59:59.999Z`), dateStr)
+        : allRaw.filter(b => (b.date || (b.startTime && typeof b.startTime === 'string' && b.startTime.split('T')[0])) === dateStr);
+
+      for (let i = 0; i < dayBlocks.length; i++) {
+        const b = dayBlocks[i];
+        const bId = b.id || b._id || b.virtualId || b.masterId;
+        if (targetBlockId && (bId === targetBlockId || b.id === targetBlockId || b._id === targetBlockId)) continue;
+        
         const bStart = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '');
-        const bEnd = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '');
+        let bEnd = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '');
+        if (!bEnd || bEnd <= bStart) bEnd = bStart + 60;
+        
         if (startMin < bEnd && endMin > bStart) {
           return true;
         }
@@ -1178,7 +1319,7 @@
         }
 
         return `
-              <div class="relative group sf-planner-card transition-all duration-200 cursor-grab active:cursor-grabbing" data-id="${id}" data-start-min="${sMin}" data-end-min="${eMin}" onpointerdown="initPlannerBlockDrag(event, '${id}')">
+              <div class="relative group sf-planner-card transition-all duration-200 cursor-grab active:cursor-grabbing select-none rounded-2xl" data-id="${id}" data-start-min="${sMin}" data-end-min="${eMin}" onpointerdown="initPlannerBlockDrag(event, '${id}')">
                 <span class="absolute -left-14 top-3 font-mono text-[11px] text-[#6B7280]">${startTime}</span>
                 <!-- Top Resize Handle -->
                 <div class="sf-resize-handle absolute -top-1.5 inset-x-6 h-3.5 flex items-center justify-center z-20 cursor-ns-resize opacity-0 group-hover:opacity-100 transition-opacity duration-150" onpointerdown="initPlannerBlockResize(event, '${id}', 'top')">
@@ -1261,35 +1402,13 @@
       const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
       const origDateStr = origCol ? origCol.getAttribute('data-date') : ((plannerState && plannerState.selectedDate) || _toLocalDateStr());
 
-      const ghostElem = document.createElement('div');
-      ghostElem.id = 'sf-drag-ghost';
-      ghostElem.className = 'border-2 border-dashed border-[#A855F7]/70 rounded-2xl bg-[#A855F7]/10 p-4 transition-all duration-150 flex items-center justify-between text-[#D8B4FE]';
-      ghostElem.style.height = `${cardElem.offsetHeight}px`;
-      const formattedStart = _formatMinutesToAMPM(origStartMin);
-      const formattedEnd = _formatMinutesToAMPM(origEndMin);
-      ghostElem.innerHTML = `<span class="font-bold text-xs font-mono">🕒 ${formattedStart} – ${formattedEnd}</span>`;
-
-      if (cardElem.parentNode) {
-        cardElem.parentNode.insertBefore(ghostElem, cardElem);
-      }
-
-      const rect = cardElem.getBoundingClientRect();
-      cardElem.style.transition = 'none';
-      cardElem.classList.add('scale-[1.02]', 'opacity-95', 'z-50', 'shadow-[0_20px_50px_rgba(168,85,247,0.35)]', 'cursor-grabbing');
-      cardElem.style.willChange = 'transform';
-      cardElem.style.position = 'fixed';
-      cardElem.style.left = `${rect.left}px`;
-      cardElem.style.top = `${rect.top}px`;
-      cardElem.style.width = `${rect.width}px`;
-      cardElem.style.margin = '0';
-      document.body.appendChild(cardElem);
-
       if (cardElem.setPointerCapture && e.pointerId !== undefined) {
         try { cardElem.setPointerCapture(e.pointerId); } catch (_err) {}
       }
 
       _plannerDragState = {
         active: true,
+        hasMovedBeyondThreshold: false,
         blockId: blockId,
         pointerId: e.pointerId,
         startX: e.clientX,
@@ -1304,7 +1423,9 @@
         currentEndMin: origEndMin,
         duration: duration,
         cardElement: cardElem,
-        ghostElement: ghostElem,
+        ghostElement: null,
+        origLeft: cardElem.style.left || '4px',
+        origWidth: cardElem.style.width || 'calc(100% - 12px)',
         animationFrame: null,
         deltaX: 0,
         deltaY: 0,
@@ -1321,10 +1442,66 @@
       if (!_plannerDragState || !_plannerDragState.active) return;
       if (e.pointerId !== undefined && _plannerDragState.pointerId !== undefined && e.pointerId !== _plannerDragState.pointerId) return;
 
+      const deltaX = e.clientX - _plannerDragState.startX;
+      const deltaY = e.clientY - _plannerDragState.startY;
+
+      if (!_plannerDragState.hasMovedBeyondThreshold && (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4)) {
+        _plannerDragState.hasMovedBeyondThreshold = true;
+        if (e && e.preventDefault) e.preventDefault();
+        document.body.classList.add('select-none');
+        document.body.style.userSelect = 'none';
+        document.body.style.webkitUserSelect = 'none';
+        if (window.getSelection) {
+          try { window.getSelection().removeAllRanges(); } catch (_err) {}
+        }
+        const cardElem = _plannerDragState.cardElement;
+        if (!cardElem) return;
+
+        const origStartMin = _plannerDragState.originalStartMin;
+        const origEndMin = _plannerDragState.originalEndMin;
+
+        const ghostElem = document.createElement('div');
+        ghostElem.id = 'sf-drag-ghost';
+        ghostElem.className = 'border-2 border-dashed border-[#A855F7]/70 rounded-2xl bg-[#A855F7]/10 p-4 flex items-center justify-between text-[#D8B4FE]';
+        ghostElem.style.transition = 'top 0.18s cubic-bezier(0.16, 1, 0.3, 1), left 0.18s cubic-bezier(0.16, 1, 0.3, 1), height 0.18s cubic-bezier(0.16, 1, 0.3, 1), width 0.18s cubic-bezier(0.16, 1, 0.3, 1), transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.18s ease, border-color 0.18s ease !important';
+        ghostElem.style.height = `${cardElem.offsetHeight}px`;
+        const formattedStart = _formatMinutesToAMPM(origStartMin);
+        const formattedEnd = _formatMinutesToAMPM(origEndMin);
+        ghostElem.innerHTML = `<span class="font-bold text-xs font-mono">🕒 ${formattedStart} – ${formattedEnd}</span>`;
+
+        if (cardElem.parentNode) {
+          if (cardElem.style.position === 'absolute' || cardElem.parentNode.classList?.contains('weekly-event-layer')) {
+            ghostElem.style.position = 'absolute';
+            ghostElem.style.top = cardElem.style.top;
+            ghostElem.style.left = cardElem.style.left;
+            ghostElem.style.width = cardElem.style.width || 'calc(100% - 12px)';
+            ghostElem.style.height = `${cardElem.offsetHeight}px`;
+          }
+          cardElem.parentNode.insertBefore(ghostElem, cardElem);
+        }
+        _plannerDragState.ghostElement = ghostElem;
+        _plannerDragState.origLeft = ghostElem.style.left || cardElem.style.left || '4px';
+        _plannerDragState.origWidth = ghostElem.style.width || cardElem.style.width || 'calc(100% - 12px)';
+
+        const rect = cardElem.getBoundingClientRect();
+        cardElem.style.transition = 'none';
+        cardElem.classList.add('scale-[1.02]', 'opacity-95', 'z-50', 'shadow-[0_20px_50px_rgba(168,85,247,0.35)]', 'cursor-grabbing');
+        cardElem.style.willChange = 'transform';
+        cardElem.style.position = 'fixed';
+        cardElem.style.left = `${rect.left}px`;
+        cardElem.style.top = `${rect.top}px`;
+        cardElem.style.width = `${rect.width}px`;
+        cardElem.style.margin = '0';
+        document.body.appendChild(cardElem);
+      }
+
+      if (!_plannerDragState.hasMovedBeyondThreshold) return;
+      if (e && e.preventDefault) e.preventDefault();
+
       _plannerDragState.currentX = e.clientX;
       _plannerDragState.currentY = e.clientY;
-      _plannerDragState.deltaX = e.clientX - _plannerDragState.startX;
-      _plannerDragState.deltaY = e.clientY - _plannerDragState.startY;
+      _plannerDragState.deltaX = deltaX;
+      _plannerDragState.deltaY = deltaY;
       if (_plannerDragState.animationFrame) cancelAnimationFrame(_plannerDragState.animationFrame);
       _plannerDragState.animationFrame = requestAnimationFrame(_mutatePlannerDragVisuals);
     }
@@ -1335,7 +1512,12 @@
 
       cardElement.style.transform = `translate3d(${deltaX}px, ${deltaY}px, 0)`;
 
-      const PIXELS_PER_15_MIN = 24;
+      let PIXELS_PER_15_MIN = 24;
+      if (window._currentPlannerView === 'weekly' || (ghostElement && ghostElement.parentNode && ghostElement.parentNode.classList?.contains('weekly-event-layer'))) {
+        const scale = typeof _getWeeklyMinScale === 'function' ? _getWeeklyMinScale() : (100 / 60);
+        PIXELS_PER_15_MIN = scale * 15;
+      }
+
       const deltaSteps = Math.round(deltaY / PIXELS_PER_15_MIN);
       const deltaMins = deltaSteps * 15;
       const currentStartMin = Math.max(0, Math.min(1440 - duration, originalStartMin + deltaMins));
@@ -1370,18 +1552,32 @@
         }
       }
 
-      const isConflict = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin);
+      const hasOverlap = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin, _plannerDragState.currentDateStr);
+      const isConflict = (window.plannerSettings?.schedulingMode !== 'flexible') && hasOverlap;
       _plannerDragState.isConflict = isConflict;
 
       if (ghostElement) {
         const formattedStart = _formatMinutesToAMPM(currentStartMin);
         const formattedEnd = _formatMinutesToAMPM(currentEndMin);
         if (isConflict) {
-          ghostElement.className = 'border-2 border-dashed border-red-500/80 rounded-2xl bg-red-500/15 p-4 transition-all duration-150 flex items-center justify-between text-red-300';
+          ghostElement.className = 'border-2 border-dashed border-red-500/80 rounded-2xl bg-red-500/15 p-4 flex items-center justify-between text-red-300';
           ghostElement.innerHTML = `<span class="font-bold text-xs">⚠️ Time Conflict: ${formattedStart} – ${formattedEnd}</span>`;
         } else {
-          ghostElement.className = 'border-2 border-dashed border-[#A855F7]/70 rounded-2xl bg-[#A855F7]/10 p-4 transition-all duration-150 flex items-center justify-between text-[#D8B4FE]';
+          ghostElement.className = 'border-2 border-dashed border-[#A855F7]/70 rounded-2xl bg-[#A855F7]/10 p-4 flex items-center justify-between text-[#D8B4FE]';
           ghostElement.innerHTML = `<span class="font-bold text-xs font-mono">🕒 ${formattedStart} – ${formattedEnd}</span>`;
+        }
+
+        if (ghostElement.parentNode && ghostElement.parentNode.classList?.contains('weekly-event-layer')) {
+          const scale = typeof _getWeeklyMinScale === 'function' ? _getWeeklyMinScale() : (100 / 60);
+          const topPadMin = parseFloat(ghostElement.parentNode.getAttribute('data-top-pad-min')) || 0;
+          const topPx = Math.round((currentStartMin - topPadMin) * scale);
+          const heightPx = Math.round(duration * scale);
+          ghostElement.style.position = 'absolute';
+          ghostElement.style.top = `${topPx}px`;
+          ghostElement.style.height = `${heightPx}px`;
+          ghostElement.style.left = '4px';
+          ghostElement.style.width = 'calc(100% - 12px)';
+          ghostElement.style.margin = '0';
         }
       }
     }
@@ -1396,7 +1592,7 @@
 
       if (_plannerDragState.animationFrame) cancelAnimationFrame(_plannerDragState.animationFrame);
 
-      const { blockId, cardElement, ghostElement, originalStartMin, originalEndMin, currentStartMin, currentEndMin, originalDateStr, currentDateStr, isConflict, pointerId } = _plannerDragState;
+      const { blockId, cardElement, ghostElement, originalStartMin, originalEndMin, currentStartMin, currentEndMin, originalDateStr, currentDateStr, isConflict, pointerId, hasMovedBeyondThreshold } = _plannerDragState;
       _plannerDragState.active = false;
       _plannerDragState = null;
       if (window._destroySfTooltip) window._destroySfTooltip('drag end');
@@ -1405,12 +1601,23 @@
         try { cardElement.releasePointerCapture(pointerId); } catch (_err) {}
       }
 
+      if (!hasMovedBeyondThreshold) {
+        return;
+      }
+
       if (ghostElement && ghostElement.parentNode) {
         ghostElement.parentNode.removeChild(ghostElement);
       }
 
       if (cardElement) {
-        cardElement.style.transition = 'transform 0.25s cubic-bezier(0.2, 0, 0, 1), box-shadow 0.2s ease, opacity 0.2s ease';
+        // The card was appended to document.body with position:fixed during drag.
+        // Remove it from wherever it currently lives FIRST so it is never
+        // rendered as an orphan floating element during the transition frame.
+        if (cardElement.parentNode) {
+          cardElement.parentNode.removeChild(cardElement);
+        }
+        // Style cleanup (no longer visible, but be tidy)
+        cardElement.style.transition = '';
         cardElement.style.transform = '';
         cardElement.style.willChange = '';
         cardElement.style.position = '';
@@ -1419,12 +1626,12 @@
         cardElement.style.width = '';
         cardElement.style.margin = '';
         cardElement.classList.remove('scale-[1.02]', 'opacity-95', 'z-50', 'shadow-[0_20px_50px_rgba(168,85,247,0.35)]', 'cursor-grabbing');
-        setTimeout(() => {
-          if (cardElement) cardElement.style.transition = '';
-        }, 260);
       }
 
-      if (isConflict) {
+      const hasOverlapOnDrop = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin, currentDateStr || originalDateStr);
+      const isConflictOnDrop = (window.plannerSettings?.schedulingMode !== 'flexible') && (isConflict || hasOverlapOnDrop);
+
+      if (isConflictOnDrop) {
         if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
           window.SF_COMPONENTS.showToast('Time conflict detected. Choose another slot.', 'error');
         }
@@ -1538,7 +1745,7 @@
     // ── Proportional pixel-per-minute mapping ─────────────────────────────────
     function _calcPxPerMin(cardElement, durationMins) {
       const cardH = cardElement.offsetHeight || 72;
-      return Math.max(1.0, cardH / 60);
+      return Math.max(1.0, cardH / Math.max(15, durationMins || 60));
     }
 
     // ── Ghost factory ─────────────────────────────────────────────────────────
@@ -1549,7 +1756,9 @@
       ghost.style.cssText = [
         `height:${cardElem.offsetHeight}px`,
         'position:absolute',
-        'left:0', 'right:0', 'top:0',
+        'left:0px',
+        'width:100%',
+        'top:0px',
         'z-index:60',
         'box-sizing:border-box',
         'overflow:hidden',
@@ -1558,7 +1767,7 @@
         'background:rgba(168,85,247,0.05)',
         'box-shadow:0 0 20px rgba(168,85,247,0.18), inset 0 0 12px rgba(168,85,247,0.08)',
         'pointer-events:none',
-        'transition:none !important',
+        'transition: height 0.16s cubic-bezier(0.16, 1, 0.3, 1), top 0.16s cubic-bezier(0.16, 1, 0.3, 1), transform 0.16s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.16s ease, background-color 0.16s ease !important',
       ].join(';');
       ghost.innerHTML = _makeGhostLabel(_formatResizeDurationLabel(startMin, endMin), false);
       return ghost;
@@ -1652,6 +1861,13 @@
         if (Math.abs(rawDeltaY) <= RESIZE_ACTIVATION_THRESHOLD) return;
         // Threshold crossed: elevate card stacking context, dim card, spawn ghost
         _plannerDragState.hasMovedBeyondThreshold = true;
+        if (e && e.preventDefault) e.preventDefault();
+        document.body.classList.add('select-none');
+        document.body.style.userSelect = 'none';
+        document.body.style.webkitUserSelect = 'none';
+        if (window.getSelection) {
+          try { window.getSelection().removeAllRanges(); } catch (_err) {}
+        }
         document.body.classList.add('sf-resizing');
         const { cardElement, originalStartMin, originalEndMin } = _plannerDragState;
         const innerCard = cardElement.querySelector('.sf-card-inner');
@@ -1663,7 +1879,9 @@
           cardElement.style.opacity = RESIZE_CARD_DIM_OPACITY;
           cardElement.style.transform = 'scale(0.985)';
         }
-        cardElement.style.position = 'relative'; // establishes coordinate system for ghost
+        if (window.getComputedStyle(cardElement).position === 'static') {
+          cardElement.style.position = 'relative'; // establishes coordinate system for ghost
+        }
         cardElement.style.zIndex = '50';         // Elevates active card above all siblings
         const ghost = _spawnResizeGhost(cardElement, originalStartMin, originalEndMin);
         cardElement.appendChild(ghost);
@@ -1672,6 +1890,7 @@
       }
 
       _plannerDragState.deltaY = rawDeltaY;
+      if (e && e.preventDefault) e.preventDefault();
       if (_plannerDragState.animationFrame) cancelAnimationFrame(_plannerDragState.animationFrame);
       _plannerDragState.animationFrame = requestAnimationFrame(_mutatePlannerResizeVisuals);
     }
@@ -1710,7 +1929,8 @@
       _plannerDragState.currentEndMin = currentEndMin;
 
       // ── Conflict detection (Unified helper) ───────────────────────────────
-      const isConflict = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin);
+      const hasOverlap = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin, _plannerDragState.currentDateStr);
+      const isConflict = (window.plannerSettings?.schedulingMode !== 'flexible') && hasOverlap;
       _plannerDragState.isConflict = isConflict;
 
       // Deduplicate DOM writes if snapped boundaries and conflict status haven't changed
@@ -1727,10 +1947,12 @@
 
       // ── Ghost geometry ─────────────────────────────────────────────────────
       const durationDeltaMins = (currentEndMin - currentStartMin) - duration;
-      const newH = Math.max(32, cardElement.offsetHeight + durationDeltaMins * pxPerMin);
+      const newH = Math.max(36, cardElement.offsetHeight + durationDeltaMins * pxPerMin);
 
       if (mode === 'resize-bottom') {
         ghostElement.style.top = '0';
+        ghostElement.style.left = '0';
+        ghostElement.style.width = '100%';
         ghostElement.style.transform = '';
         ghostElement.style.height = `${newH}px`;
       } else {
@@ -1738,6 +1960,8 @@
         const topOffsetPx = topOffsetMins * pxPerMin;
         ghostElement.style.transform = `translate3d(0, ${topOffsetPx}px, 0)`;
         ghostElement.style.top = '0';
+        ghostElement.style.left = '0';
+        ghostElement.style.width = '100%';
         ghostElement.style.height = `${newH}px`;
       }
 
@@ -1792,11 +2016,16 @@
       // Click without threshold crossing → no-op
       if (!hasMovedBeyondThreshold) return;
 
+      const hasOverlapOnDrop = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin, _plannerDragState?.currentDateStr);
+      const isConflictOnDrop = (window.plannerSettings?.schedulingMode !== 'flexible') && (isConflict || hasOverlapOnDrop);
+
       // Conflict → cancel with toast, zero network requests
-      if (isConflict) {
+      if (isConflictOnDrop) {
         if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
           window.SF_COMPONENTS.showToast('Time conflict detected. Resize cancelled.', 'error');
         }
+        if (window.renderDailyPlanner) window.renderDailyPlanner();
+        if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
         return;
       }
 
@@ -1902,7 +2131,6 @@
       const now = new Date();
       const currentMin = now.getHours() * 60 + now.getMinutes();
 
-      let insertedIndicator = false;
       cards.forEach(card => {
         const sMin = parseInt(card.getAttribute('data-start-min'), 10);
         const eMin = parseInt(card.getAttribute('data-end-min'), 10);
@@ -1920,7 +2148,31 @@
           const badge = card.querySelector('.sf-now-badge');
           if (badge) badge.classList.add('hidden');
         }
+      });
 
+      if (window.plannerSettings?.schedulingMode === 'flexible') {
+        const eventLayer = container.querySelector('.flex-1.relative');
+        if (eventLayer) {
+          const topPadMin = parseFloat(eventLayer.getAttribute('data-top-pad-min')) || 510;
+          const topPx = Math.round((currentMin - topPadMin) * _DAILY_FLEX_PX_PER_MIN);
+          const maxH = eventLayer.clientHeight || 1440;
+          if (topPx >= 0 && topPx <= maxH) {
+            const indicatorHtml = `
+              <div id="sf-now-indicator" class="absolute left-0 right-0 z-40 pointer-events-none flex items-center group" style="top: ${topPx}px;">
+                <span class="font-mono text-[9px] font-extrabold text-[#A855F7] bg-[#1E1035] px-1 py-0.5 rounded border border-[#A855F7]/40 shadow-[0_0_10px_rgba(168,85,247,0.8)] -ml-1 w-9 text-center">NOW</span>
+                <div class="h-[2px] bg-gradient-to-r from-[#A855F7] via-[#A855F7]/80 to-transparent w-full relative shadow-[0_0_10px_rgba(168,85,247,0.8)]">
+                  <span class="absolute -top-1 left-0 w-2.5 h-2.5 rounded-full bg-[#A855F7] shadow-[0_0_8px_rgba(168,85,247,1)]"></span>
+                </div>
+              </div>`;
+            eventLayer.insertAdjacentHTML('beforeend', indicatorHtml);
+          }
+        }
+        return;
+      }
+
+      let insertedIndicator = false;
+      cards.forEach(card => {
+        const sMin = parseInt(card.getAttribute('data-start-min'), 10);
         if (!insertedIndicator && !isNaN(sMin) && sMin > currentMin) {
           const indicatorHtml = `
             <div id="sf-now-indicator" class="relative flex items-center -ml-14 pr-4 my-2 z-20 group">
@@ -2012,9 +2264,225 @@
         return;
       }
 
-      container.innerHTML = _renderPlannerCards(sortedBlocks, goals);
+      // Flexible Mode: render side-by-side using the same overlap engine as Weekly
+      if (window.plannerSettings?.schedulingMode === 'flexible') {
+        _renderDailyFlexible(container, sortedBlocks, goals);
+      } else {
+        container.style.overflowY = 'visible';
+        container.style.maxHeight = 'none';
+        container.style.height = 'auto';
+        container.style.paddingLeft = '3.5rem';
+        container.classList.add('space-y-4', 'before:absolute', 'before:left-12', 'before:top-2', 'before:bottom-2', 'before:w-px', 'before:bg-[#1C1C24]');
+        container.innerHTML = _renderPlannerCards(sortedBlocks, goals);
+        _requestTimeVisualsUpdate();
+      }
+    }
+
+    // ─────────────────────────────────────────────────────────────────
+    // DAILY FLEXIBLE OVERLAP LAYOUT ENGINE
+    // Reuses calculateOverlapGroups() (same as Weekly) and renders
+    // cards in an absolute-positioned layer inside the daily container.
+    // px/min scale = 24/15 = 1.6  (matches the drag engine constant).
+    // Focus Mode completely untouched — only activates when mode=flexible.
+    // ─────────────────────────────────────────────────────────────────
+    const _DAILY_FLEX_PX_PER_MIN = 75 / 60;  // 1.25 px per minute (exactly 75px per hour, matching Focus Mode card height)
+
+    function _renderFlexibleCardHtml(block, goals, layoutMap, totalColsCluster, isOverlapRow, clusterStartMin = 0) {
+      const id = block.id || block._id || '';
+      const title = block.title || 'Untitled Block';
+      const desc = block.description || block.subject || '';
+      const startTime = _formatTimeDisplay(block.startTimeDisplay || block.startTime || '09:00 AM');
+      const endTime = _formatTimeDisplay(block.endTimeDisplay || block.endTime || '');
+      let durationStr = block.durationStr || '';
+      if (!durationStr && startTime && endTime) {
+        durationStr = `${startTime} – ${endTime}`;
+      } else if (!durationStr) {
+        durationStr = '1h 00m';
+      }
+
+      const sMin = _timeStrToMinutes(block.startTimeDisplay || block.startTime || '09:00 AM');
+      let eMin = _timeStrToMinutes(block.endTimeDisplay || block.endTime || '10:00 AM');
+      if (!eMin || eMin <= sMin) eMin = sMin + 60;
+
+      const overlapInfo = layoutMap.get(block._instanceId || id || '') ||
+                          (block._id ? layoutMap.get(block._id) : null) ||
+                          { colIndex: 0, totalCols: 1, colSpan: 1 };
+
+      const { colIndex = 0, totalCols = totalColsCluster, colSpan = 1 } = overlapInfo;
+      const effectiveCols = Math.max(1, totalCols || totalColsCluster || 1);
+
+      let widthOrFlexStyle = '', cardContainerClasses = '', baseZIndex = 10;
+      if (!isOverlapRow || effectiveCols <= 1) {
+        // Requirement: If only ONE event exists, render exactly like Focus Mode. 100% width. No stack. No offset.
+        widthOrFlexStyle = 'position: relative; width: 100%;';
+        cardContainerClasses = 'relative group sf-planner-card transition-all duration-200 cursor-grab active:cursor-grabbing select-none rounded-2xl';
+      } else {
+        // Requirement: Reuse exact Weekly Planner stacking algorithm & offsets (createWeeklyEventCard)
+        const topPx = Math.round((sMin - (clusterStartMin || sMin)) * _DAILY_FLEX_PX_PER_MIN);
+        const heightPx = Math.max(75, Math.round((eMin - sMin) * _DAILY_FLEX_PX_PER_MIN));
+        
+        let leftCalc, widthCalc, minW = '140px';
+        const staggerStep = Math.min(28, Math.floor(64 / (effectiveCols - 1)));
+        if (effectiveCols >= 4) {
+          minW = `${Math.max(80, Math.floor(180 / effectiveCols))}px`;
+        }
+        if (colSpan > 1 || colIndex + colSpan >= effectiveCols) {
+          leftCalc = `calc(${colIndex * staggerStep}px)`;
+          widthCalc = `calc(100% - ${colIndex * staggerStep}px)`;
+        } else {
+          leftCalc = `calc(${colIndex * staggerStep}px)`;
+          widthCalc = `calc(100% - ${colIndex * staggerStep + 16}px)`;
+        }
+        baseZIndex = 20 + colIndex;
+        widthOrFlexStyle = `position: absolute; top: ${topPx}px; height: ${heightPx}px; --sf-card-h: ${heightPx}px; left: ${leftCalc}; width: ${widthCalc}; min-width: ${minW}; z-index: ${baseZIndex};`;
+        cardContainerClasses = 'absolute group sf-planner-card transition-[transform,filter,box-shadow,z-index,border-color,left,width,top,height] duration-200 ease-out hover:z-[35] hover:scale-[1.01] hover:brightness-115 hover:shadow-xl cursor-grab active:cursor-grabbing select-none rounded-2xl';
+      }
+
+      const theme = window.getPlannerTheme ? window.getPlannerTheme(block) : { cardBg: 'bg-[#1E1035]/90', border: 'border-[#A855F7]/40 group-hover:border-[#A855F7]', glow: '', bar: 'bg-[#A855F7]', text: 'text-[#D8B4FE]', hexColor: '#A855F7' };
+      const badgeHtml = window.renderPlannerBadge ? window.renderPlannerBadge(block.type || block.category) : '';
+
+      let goalHtml = '';
+      if (block.goalId && goals) {
+        const linkedGoal = goals.find(g => g.id === block.goalId || g._id === block.goalId);
+        const goalTitle = linkedGoal ? (linkedGoal.title || 'Linked Goal') : (block.goalTitle || 'Linked Goal');
+        goalHtml = `<div class="mt-1.5"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#A855F7]/10 border border-[#A855F7]/30 text-[10px] text-[#D8B4FE] font-medium">🎯 ${goalTitle}</span></div>`;
+      }
+
+      const timestampHtml = !isOverlapRow ? `<span class="absolute -left-14 top-3 font-mono text-[11px] text-[#6B7280]">${startTime}</span>` : '';
+
+      return `
+        <div class="${cardContainerClasses}" style="${widthOrFlexStyle}" data-id="${id}" data-start-min="${sMin}" data-end-min="${eMin}" data-overlap-col="${colIndex}" data-overlap-total="${effectiveCols}" data-overlap-span="${colSpan || 1}" data-original-z="${baseZIndex}" onpointerdown="initPlannerBlockDrag(event, '${id}')">
+          ${timestampHtml}
+          <!-- Top Resize Handle -->
+          <div class="sf-resize-handle absolute -top-1.5 inset-x-6 h-3.5 flex items-center justify-center z-20 cursor-ns-resize opacity-0 group-hover:opacity-100 transition-opacity duration-150" onpointerdown="initPlannerBlockResize(event, '${id}', 'top')">
+            <div class="w-8 h-1 bg-[#A855F7]/80 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.7)] hover:bg-[#C084FC] hover:shadow-[0_0_12px_rgba(168,85,247,1)] transition-all duration-150"></div>
+            <span class="sf-resize-tooltip absolute bottom-full mb-1 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-[#12121A]/95 border border-[#2A2A38] rounded text-[10px] font-semibold text-[#D8B4FE] whitespace-nowrap shadow-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-30">Resize start time</span>
+          </div>
+          <div class="${theme.cardBg} border ${theme.border} p-4 rounded-2xl flex items-center justify-between shadow-[0_4px_15px_rgba(0,0,0,0.15)] transition-all duration-200 sf-card-inner h-full">
+            <div class="flex items-center space-x-3.5 min-w-0 flex-1">
+              <div class="w-1.5 h-10 ${theme.bar} rounded-full transition-all duration-200 sf-card-bar shrink-0"></div>
+              <div class="min-w-0 flex-1">
+                <h4 class="font-bold text-sm text-white flex items-center gap-2 truncate">
+                  <span class="truncate">${title}</span>
+                  ${_renderRecurrenceBadge(block)}
+                  <span class="sf-now-badge hidden inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-[#A855F7] text-white shadow-[0_0_8px_rgba(168,85,247,0.8)] animate-pulse shrink-0">NOW</span>
+                </h4>
+                ${desc ? `<p class="text-xs text-[#A1A1AA] mt-0.5 truncate">${desc}</p>` : ''}
+                ${goalHtml}
+              </div>
+            </div>
+            <div class="flex items-center space-x-3 shrink-0 pl-2">
+              <span class="font-mono text-xs ${theme.text}">${durationStr}</span>
+              ${badgeHtml}
+              <div class="relative ml-1 shrink-0">
+                <button onclick="togglePlannerCardMenu(event, '${id}')" class="p-1.5 rounded-xl hover:bg-[#20202E] text-[#6B7280] hover:text-white transition focus:outline-none focus:ring-2 focus:ring-[#A855F7]" aria-label="Block Actions" title="Actions">
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+                </button>
+                <div id="planner-menu-${id}" class="sf-planner-dropdown hidden absolute right-0 mt-2 w-36 bg-[#12121A]/90 border border-[#2A2A38] rounded-xl shadow-[0_12px_30px_rgba(0,0,0,0.7)] backdrop-blur-lg p-1.5 z-30 animate-fadeIn space-y-1">
+                  <button onclick="openEditBlockModal('${id}')" class="w-full px-3 py-2 text-left text-xs font-semibold text-[#D8B4FE] hover:bg-[#A855F7]/15 hover:text-white rounded-lg flex items-center gap-2.5 transition-all duration-150 focus:outline-none focus:ring-1 focus:ring-[#A855F7]">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                    <span>Edit</span>
+                  </button>
+                  <button onclick="confirmDeleteTimeBlock('${id}')" class="w-full px-3 py-2 text-left text-xs font-semibold text-red-400 hover:bg-red-500/15 hover:text-red-300 rounded-lg flex items-center gap-2.5 transition-all duration-150 focus:outline-none focus:ring-1 focus:ring-red-400">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    <span>Delete</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- Bottom Resize Handle -->
+          <div class="sf-resize-handle absolute -bottom-1.5 inset-x-6 h-3.5 flex items-center justify-center z-20 cursor-ns-resize opacity-0 group-hover:opacity-100 transition-opacity duration-150" onpointerdown="initPlannerBlockResize(event, '${id}', 'bottom')">
+            <div class="w-8 h-1 bg-[#A855F7]/80 rounded-full shadow-[0_0_8px_rgba(168,85,247,0.7)] hover:bg-[#C084FC] hover:shadow-[0_0_12px_rgba(168,85,247,1)] transition-all duration-150"></div>
+            <span class="sf-resize-tooltip absolute top-full mt-1 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-[#12121A]/95 border border-[#2A2A38] rounded text-[10px] font-semibold text-[#D8B4FE] whitespace-nowrap shadow-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 z-30">Resize end time</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function _renderDailyFlexible(container, sortedBlocks, goals) {
+      container.style.overflowY = 'visible';
+      container.style.maxHeight = 'none';
+      container.style.height = 'auto';
+      container.style.paddingLeft = '3.5rem';
+      container.classList.remove('overflow-y-auto', 'max-h-[660px]', 'custom-scrollbar');
+      container.classList.add('space-y-4', 'before:absolute', 'before:left-12', 'before:top-2', 'before:bottom-2', 'before:w-px', 'before:bg-[#1C1C24]');
+
+      if (!sortedBlocks || sortedBlocks.length === 0) {
+        container.innerHTML = '';
+        _requestTimeVisualsUpdate();
+        return;
+      }
+
+      const layoutMap = (typeof calculateOverlapGroups === 'function')
+        ? calculateOverlapGroups(sortedBlocks)
+        : new Map();
+
+      const clusters = [];
+      let currentCluster = [];
+      let clusterMaxEnd = -1;
+      sortedBlocks.forEach(b => {
+        const sMin = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '09:00 AM');
+        let eMin = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '10:00 AM');
+        if (!eMin || eMin <= sMin) eMin = sMin + 60;
+        if (currentCluster.length > 0 && sMin >= clusterMaxEnd) {
+          clusters.push(currentCluster);
+          currentCluster = [];
+          clusterMaxEnd = -1;
+        }
+        currentCluster.push(b);
+        if (eMin > clusterMaxEnd) clusterMaxEnd = eMin;
+      });
+      if (currentCluster.length > 0) clusters.push(currentCluster);
+
+      const htmlParts = clusters.map(cluster => {
+        if (cluster.length === 1) {
+          return _renderFlexibleCardHtml(cluster[0], goals, layoutMap, 1, false, 0);
+        } else {
+          const totalCols = Math.max(...cluster.map(b => {
+            const info = layoutMap.get(b._instanceId || b.id || '') || (b._id ? layoutMap.get(b._id) : null);
+            return info?.totalCols || cluster.length;
+          }));
+          const earliestStartTime = _formatTimeDisplay(cluster[0].startTimeDisplay || cluster[0].startTime || '09:00 AM');
+          const clusterStartMin = Math.min(...cluster.map(b => _timeStrToMinutes(b.startTimeDisplay || b.startTime || '09:00 AM')));
+          const clusterEndMin = Math.max(...cluster.map(b => {
+            let e = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '10:00 AM');
+            if (!e || e <= _timeStrToMinutes(b.startTimeDisplay || b.startTime || '09:00 AM')) e = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '09:00 AM') + 60;
+            return e;
+          }));
+          const clusterDuration = Math.max(60, clusterEndMin - clusterStartMin);
+          const clusterHeightPx = Math.max(75, Math.round(clusterDuration * _DAILY_FLEX_PX_PER_MIN));
+          const cardsHtml = cluster.map(b => _renderFlexibleCardHtml(b, goals, layoutMap, totalCols, true, clusterStartMin)).join('');
+          return `
+            <div class="relative w-full sf-overlap-row sf-overlap-stack group/row transition-all duration-200" style="height: ${clusterHeightPx}px;" data-top-pad-min="${clusterStartMin}">
+              <span class="absolute -left-14 top-3 font-mono text-[11px] text-[#6B7280]">${earliestStartTime}</span>
+              ${cardsHtml}
+            </div>
+          `;
+        }
+      });
+
+      container.innerHTML = htmlParts.join('');
+
+      const blockMapById = new Map();
+      sortedBlocks.forEach(b => {
+        if (b.id) blockMapById.set(b.id, b);
+        if (b._id) blockMapById.set(b._id, b);
+        if (b._instanceId) blockMapById.set(b._instanceId, b);
+      });
+      container.querySelectorAll('.sf-planner-card').forEach(card => {
+        const id = card.getAttribute('data-id');
+        if (!id) return;
+        const b = blockMapById.get(id) || {};
+        card._sfEventData = b;
+      });
+      if (typeof attachWeeklyEventInteractions === 'function') {
+        attachWeeklyEventInteractions(container);
+      }
+
       _requestTimeVisualsUpdate();
     }
+
 
     const PLANNER_COLOR_META = {
       PURPLE:  { id: 'PURPLE',  label: 'Purple',  hex: '#A855F7', theme: { hexColor: '#A855F7', cardBg: 'bg-[#1E1035]/90', border: 'border-[#A855F7]/40 group-hover:border-[#A855F7]', glow: 'shadow-[0_4px_20px_rgba(168,85,247,0.15)]', bar: 'bg-[#A855F7] shadow-[0_0_10px_rgba(168,85,247,0.8)]', badgeBg: 'bg-[#A855F7]/20', badgeBorder: 'border-[#A855F7]/40', text: 'text-[#D8B4FE]' } },
@@ -3114,6 +3582,48 @@
             if (!window.SF_STORE && typeof _refreshWeeklyDataImmediately === 'function') _refreshWeeklyDataImmediately();
           };
 
+          const sMinEdit = _timeStrToMinutes(payload.startTimeDisplay || '09:00 AM');
+          const eMinEdit = _timeStrToMinutes(payload.endTimeDisplay || '10:00 AM');
+          const isFocusEdit = window.plannerSettings?.schedulingMode !== 'flexible';
+          if (isFocusEdit && _checkPlannerTimeConflict(editingBlockId, sMinEdit, eMinEdit, targetDateStr)) {
+            const plannerStateEdit = window.SF_STORE && window.SF_STORE.getSlice('planner');
+            const allRawEdit = [...(plannerStateEdit?.plannerEvents || []), ...(plannerStateEdit?.dailyBlocks || [])];
+            const dayInstancesEdit = typeof expandWeeklyRecurrences === 'function' 
+              ? expandWeeklyRecurrences(allRawEdit, new Date(`${targetDateStr}T00:00:00.000Z`), new Date(`${targetDateStr}T23:59:59.999Z`), targetDateStr)
+              : allRawEdit.filter(b => (b.date || (b.startTime && b.startTime.split('T')[0])) === targetDateStr);
+            const overlapsEdit = dayInstancesEdit.filter(b => {
+              const bId = b.id || b._id || b.virtualId || b.masterId;
+              if (bId === editingBlockId || b.id === editingBlockId || b._id === editingBlockId) return false;
+              const bsMin = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '');
+              let beMin = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '');
+              if (!beMin || beMin <= bsMin) beMin = bsMin + 60;
+              return Math.max(sMinEdit, bsMin) < Math.min(eMinEdit, beMin);
+            });
+            if (overlapsEdit.length > 0) {
+              window._isSavingBlock = false;
+              if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Save Block'; }
+              showPlannerConflictDialog({
+                timeStr: `${payload.startTimeDisplay || '09:00 AM'} – ${payload.endTimeDisplay || '10:00 AM'}`,
+                existingTitles: Array.from(new Set(overlapsEdit.map(t => t.title || t.subject || 'Untitled Block'))),
+                onCancel: () => {},
+                onConfirm: async () => {
+                  window._isSavingBlock = true;
+                  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving...'; }
+                  if (isRec && payload.isRecurring !== false) {
+                    closeAddBlockModal();
+                    promptRecurrenceScope('Apply edits to:', scope => runEdit(scope));
+                  } else if (isRec && payload.isRecurring === false) {
+                    closeAddBlockModal();
+                    await runEdit('ALL');
+                  } else {
+                    await runEdit(null);
+                  }
+                }
+              });
+              return;
+            }
+          }
+
           if (isRec && payload.isRecurring !== false) {
             closeAddBlockModal();
             promptRecurrenceScope('Apply edits to:', scope => runEdit(scope));
@@ -3137,12 +3647,14 @@
           const sMin = _timeStrToMinutes(payload.startTimeDisplay || '09:00 AM');
           const eMin = _timeStrToMinutes(payload.endTimeDisplay || '10:00 AM');
 
-          const overlaps = dayInstances.filter(b => {
+          const isFocusCreate = window.plannerSettings?.schedulingMode !== 'flexible';
+          const hasOverlapCreate = _checkPlannerTimeConflict(null, sMin, eMin, targetDateStr);
+          const overlaps = (isFocusCreate && hasOverlapCreate) ? dayInstances.filter(b => {
             const bsMin = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '');
             let beMin = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '');
             if (!beMin || beMin <= bsMin) beMin = bsMin + 60;
             return Math.max(sMin, bsMin) < Math.min(eMin, beMin);
-          });
+          }) : [];
 
           if (overlaps.length > 0) {
             window._isSavingBlock = false;
@@ -3224,7 +3736,7 @@
 
     function showPlannerConflictDialog({ timeStr, existingTitles, onCancel, onConfirm }) {
       const overlay = document.createElement('div');
-      overlay.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[600] animate-fadeIn p-4';
+      overlay.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[999999999] animate-fadeIn p-4';
       const listHtml = existingTitles.map(t => `<li class="text-xs text-white/90 truncate font-medium">• ${t}</li>`).join('');
       overlay.innerHTML = `
         <div class="bg-[#12121A] border border-[#2A2A38] rounded-2xl p-6 max-w-sm w-full shadow-[0_20px_50px_rgba(0,0,0,0.9)] text-white space-y-4">
@@ -3374,9 +3886,36 @@
             box-shadow: 0 12px 32px rgba(168,85,247,0.45) !important;
             border-width: 2px !important;
             border-color: rgba(216,180,254,0.95) !important;
+            border-radius: 0.75rem !important;
             height: auto !important;
             min-height: max-content !important;
             overflow: visible !important;
+          }
+          #dailyTimelineContainer .sf-card-selected,
+          .sf-planner-card.sf-card-selected {
+            z-index: 99999 !important;
+            transform: scale(1.02);
+            box-shadow: 0 16px 45px rgba(168,85,247,0.6) !important;
+            border-width: 0 !important;
+            border-color: transparent !important;
+            border-radius: 1rem !important;
+            height: var(--sf-card-h, auto) !important;
+            min-height: var(--sf-card-h, max-content) !important;
+            overflow: visible !important;
+          }
+          #dailyTimelineContainer .sf-card-selected .sf-card-inner,
+          .sf-planner-card.sf-card-selected .sf-card-inner {
+            border-width: 2px !important;
+            border-color: rgba(216,180,254,0.98) !important;
+            border-radius: 1rem !important;
+            box-shadow: 0 16px 45px rgba(168,85,247,0.6) !important;
+          }
+          .sf-planner-card,
+          .sf-planner-card *,
+          .weekly-event-card,
+          .weekly-event-card * {
+            user-select: none !important;
+            -webkit-user-select: none !important;
           }
           .sf-card-selected .sf-card-title,
           .sf-card-selected .sf-card-time {
@@ -3499,7 +4038,7 @@
 
     function promptRecurrenceScope(actionText, onScopeSelected) {
       const overlay = document.createElement('div');
-      overlay.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[200000] animate-fadeIn p-4';
+      overlay.className = 'fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-[999999999] animate-fadeIn p-4';
       overlay.innerHTML = `
         <div class="bg-[#12121A] border border-[#2A2A38] rounded-2xl p-6 max-w-sm w-full shadow-[0_20px_50px_rgba(0,0,0,0.9)] text-white space-y-4">
           <div class="flex items-center gap-3">
@@ -3638,9 +4177,36 @@
           box-shadow: 0 12px 32px rgba(168,85,247,0.45) !important;
           border-width: 2px !important;
           border-color: rgba(216,180,254,0.95) !important;
+          border-radius: 0.75rem !important;
           height: auto !important;
           min-height: max-content !important;
           overflow: visible !important;
+        }
+        #dailyTimelineContainer .sf-card-selected,
+        .sf-planner-card.sf-card-selected {
+          z-index: 99999 !important;
+          transform: scale(1.02);
+          box-shadow: 0 16px 45px rgba(168,85,247,0.6) !important;
+          border-width: 0 !important;
+          border-color: transparent !important;
+          border-radius: 1rem !important;
+          height: var(--sf-card-h, auto) !important;
+          min-height: var(--sf-card-h, max-content) !important;
+          overflow: visible !important;
+        }
+        #dailyTimelineContainer .sf-card-selected .sf-card-inner,
+        .sf-planner-card.sf-card-selected .sf-card-inner {
+          border-width: 2px !important;
+          border-color: rgba(216,180,254,0.98) !important;
+          border-radius: 1rem !important;
+          box-shadow: 0 16px 45px rgba(168,85,247,0.6) !important;
+        }
+        .sf-planner-card,
+        .sf-planner-card *,
+        .weekly-event-card,
+        .weekly-event-card * {
+          user-select: none !important;
+          -webkit-user-select: none !important;
         }
         .sf-card-selected .sf-card-title,
         .sf-card-selected .sf-card-time,
@@ -4481,13 +5047,16 @@
       }
 
       const { colIndex, totalCols, colSpan = 1 } = overlapInfo;
-      let leftCalc, widthCalc;
+      let leftCalc, widthCalc, minW = '90px';
       if (totalCols <= 1) {
         leftCalc = '1px';
         widthCalc = 'calc(100% - 2px)';
       } else {
-        // Stagger horizontally (Google Calendar overlap algorithm) keeping min-width 90px
+        // Stagger horizontally (Google Calendar overlap algorithm) keeping min-width responsive for 2..6 overlaps
         const staggerStep = Math.min(28, Math.floor(64 / (totalCols - 1)));
+        if (totalCols >= 4) {
+          minW = `${Math.max(45, Math.floor(180 / totalCols))}px`;
+        }
         if (colSpan > 1 || colIndex + colSpan >= totalCols) {
           leftCalc = `calc(${colIndex * staggerStep}px + 2px)`;
           widthCalc = `calc(100% - ${colIndex * staggerStep + 4}px)`;
@@ -4505,7 +5074,7 @@
       card.style.height = `${position.height}px`;
       card.style.left = leftCalc;
       card.style.width = widthCalc;
-      card.style.minWidth = '90px';
+      card.style.minWidth = minW;
       card.style.zIndex = `${baseZIndex}`;
       card.style.borderLeftColor = theme.hexColor;
       card.setAttribute('data-start-min', position.startMin || 0);
@@ -4890,7 +5459,6 @@
     function _weeklySelectCard(cardEl, id, forceSelect = false) {
       if (!cardEl) return;
       if (!forceSelect && _weeklySelectedCardEl === cardEl) {
-        // Already popped up on top — second click returns it to normal stacking
         _weeklyDeselectAll();
         return;
       }
@@ -4898,7 +5466,6 @@
         const prevId = _weeklySelectedCardEl.getAttribute('data-id') || (_weeklySelectedCardEl._sfEventData && (_weeklySelectedCardEl._sfEventData.id || _weeklySelectedCardEl._sfEventData._id || _weeklySelectedCardEl._sfEventData._instanceId)) || '';
         const isSameEventId = prevId && id && (prevId === id || prevId.split('::')[0] === id.split('::')[0]);
         if (!_weeklySelectedCardEl.isConnected || (forceSelect && isSameEventId)) {
-          // Replace reference without calling _weeklyDeselectAll() when node was destroyed during rerender or re-selecting same event
         } else {
           _weeklyDeselectAll();
         }
@@ -4908,15 +5475,13 @@
       window._weeklySelectedCard = cardEl;
       _weeklySelectedId = id;
 
-      // Save original z-index on card
       if (cardEl.dataset.originalZ === undefined) {
         cardEl.dataset.originalZ = cardEl.style.zIndex || '';
       }
-      cardEl.style.zIndex = '9999';
+      cardEl.style.zIndex = '99999';
       cardEl.classList.add('sf-card-selected');
 
-      // Also elevate its column (.weekly-col) temporarily so it renders above neighboring day columns
-      const colEl = cardEl.closest('.weekly-col');
+      const colEl = cardEl.closest('.weekly-col') || cardEl.closest('.sf-overlap-row') || cardEl.closest('.sf-overlap-stack');
       if (colEl) {
         if (colEl.dataset.originalZ === undefined) {
           colEl.dataset.originalZ = colEl.style.zIndex || '';
@@ -4934,15 +5499,19 @@
         }
         activeCard.classList.remove('sf-card-selected');
 
-        const colEl = activeCard.closest('.weekly-col');
+        const colEl = activeCard.closest('.weekly-col') || activeCard.closest('.sf-overlap-row') || activeCard.closest('.sf-overlap-stack');
         if (colEl && colEl.dataset && colEl.dataset.originalZ !== undefined) {
           colEl.style.zIndex = colEl.dataset.originalZ;
           delete colEl.dataset.originalZ;
+        } else if (colEl && colEl.style.zIndex === '50') {
+          colEl.style.zIndex = '';
         }
       }
       const grid = document.getElementById('weeklyCellsGrid') || document.getElementById('weeklyCalendarContainer');
-      if (grid) {
-        grid.querySelectorAll('.sf-card-selected').forEach(el => {
+      const dailyContainer = document.getElementById('dailyTimelineContainer');
+      [grid, dailyContainer].forEach(container => {
+        if (!container) return;
+        container.querySelectorAll('.sf-card-selected').forEach(el => {
           el.classList.remove('sf-card-selected');
           if (el.dataset && el.dataset.originalZ !== undefined) {
             el.style.zIndex = el.dataset.originalZ;
@@ -4951,7 +5520,7 @@
             el.style.zIndex = '';
           }
         });
-        grid.querySelectorAll('.weekly-col[style*="z-index"]').forEach(col => {
+        container.querySelectorAll('.weekly-col[style*="z-index"], .sf-overlap-row[style*="z-index"], .sf-overlap-stack[style*="z-index"]').forEach(col => {
           if (col.dataset && col.dataset.originalZ !== undefined) {
             col.style.zIndex = col.dataset.originalZ;
             delete col.dataset.originalZ;
@@ -4959,11 +5528,19 @@
             col.style.zIndex = '';
           }
         });
-      }
+      });
       _weeklySelectedCardEl = null;
       _weeklySelectedCard = null;
       window._weeklySelectedCard = null;
       _weeklySelectedId = null;
+    }
+
+    function _dailyFlexibleSelectCard(cardEl, id, forceSelect = false) {
+      return _weeklySelectCard(cardEl, id, forceSelect);
+    }
+
+    function _dailyFlexibleDeselectAll() {
+      return _weeklyDeselectAll();
     }
 
     let _weeklyDragResizeState = null;
@@ -5083,6 +5660,13 @@
       const deltaX = e.clientX ? (e.clientX - (_weeklyDragResizeState.startX || 0)) : 0;
       if (!(_weeklyDragResizeState.hasMovedBeyondThreshold) && (Math.abs(deltaY) > 4 || Math.abs(deltaX) > 4)) {
         _weeklyDragResizeState.hasMovedBeyondThreshold = true;
+        if (e && e.preventDefault) e.preventDefault();
+        document.body.classList.add('select-none');
+        document.body.style.userSelect = 'none';
+        document.body.style.webkitUserSelect = 'none';
+        if (window.getSelection) {
+          try { window.getSelection().removeAllRanges(); } catch (_err) {}
+        }
         window._sfWeeklyIsDragging = true;
         const cardElem = _weeklyDragResizeState.cardElement;
         const ghostElem = _weeklyDragResizeState.ghostElement;
@@ -5095,6 +5679,7 @@
         }
       }
       if (!_weeklyDragResizeState.hasMovedBeyondThreshold) return;
+      if (e && e.preventDefault) e.preventDefault();
 
       const scale = typeof _getWeeklyMinScale === 'function' ? _getWeeklyMinScale() : (100 / 60);
       const stepPx = 15 * scale;
@@ -5164,6 +5749,10 @@
       }
       _weeklyDragResizeState.currentDateStr = targetDateStr;
 
+      const hasOverlap = _checkPlannerTimeConflict(_weeklyDragResizeState.blockId, currentStartMin, currentEndMin, targetDateStr);
+      const isConflict = (window.plannerSettings?.schedulingMode !== 'flexible') && hasOverlap;
+      _weeklyDragResizeState.isConflict = isConflict;
+
       const ghost = _weeklyDragResizeState.ghostElement;
       if (ghost) {
         ghost.style.top = `${Math.round(currentStartMin * scale)}px`;
@@ -5173,13 +5762,23 @@
         const fStart = _formatMinutesToAMPM(currentStartMin);
         const fEnd = _formatMinutesToAMPM(currentEndMin);
         const dateNote = targetDateStr !== _weeklyDragResizeState.originalDateStr ? ` (${targetDateStr})` : '';
-        ghost.innerHTML = `<span class="font-bold text-xs font-mono">🕒 ${fStart} – ${fEnd}${dateNote}</span>`;
+        if (isConflict) {
+          ghost.className = 'border-2 border-dashed border-red-500/80 rounded-xl bg-red-500/15 p-2 flex items-center justify-between text-red-300 z-50 pointer-events-none shadow-lg';
+          ghost.innerHTML = `<span class="font-bold text-xs">⚠️ Time Conflict: ${fStart} – ${fEnd}${dateNote}</span>`;
+        } else {
+          ghost.className = 'border-2 border-dashed border-[#A855F7]/80 rounded-xl bg-[#A855F7]/15 p-2 flex items-center justify-between text-[#D8B4FE] z-50 pointer-events-none shadow-lg';
+          ghost.innerHTML = `<span class="font-bold text-xs font-mono">🕒 ${fStart} – ${fEnd}${dateNote}</span>`;
+        }
       }
     }
 
     async function _onWeeklyDragResizeEnd(e) {
       if (!_weeklyDragResizeState || !_weeklyDragResizeState.active) return;
       if (e && e.pointerId !== undefined && _weeklyDragResizeState.pointerId !== undefined && e.pointerId !== _weeklyDragResizeState.pointerId) return;
+
+      document.body.classList.remove('select-none');
+      document.body.style.userSelect = '';
+      document.body.style.webkitUserSelect = '';
 
       if (_weeklyDragResizeState._edgeNavTimer) {
         clearTimeout(_weeklyDragResizeState._edgeNavTimer);
@@ -5190,7 +5789,7 @@
       window.removeEventListener('pointerup', _onWeeklyDragResizeEnd);
       window.removeEventListener('pointercancel', _onWeeklyDragResizeEnd);
 
-      const { blockId, cardElement, ghostElement, originalStartMin, originalEndMin, currentStartMin, currentEndMin, originalDateStr, currentDateStr, hasMovedBeyondThreshold, pointerId } = _weeklyDragResizeState;
+      const { blockId, cardElement, ghostElement, originalStartMin, originalEndMin, currentStartMin, currentEndMin, originalDateStr, currentDateStr, hasMovedBeyondThreshold, pointerId, mode } = _weeklyDragResizeState;
       _weeklyDragResizeState.active = false;
       _weeklyDragResizeState = null;
 
@@ -5208,6 +5807,20 @@
       }
       if (cardElement) {
         cardElement.classList.remove('scale-[1.02]', 'opacity-60', 'z-50', 'cursor-grabbing');
+      }
+
+      const hasOverlapOnDrop = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin, currentDateStr || originalDateStr);
+      const isConflictOnDrop = (window.plannerSettings?.schedulingMode !== 'flexible') && hasOverlapOnDrop;
+
+      if (isConflictOnDrop) {
+        const msg = mode !== 'drag' 
+          ? 'Time conflict detected. Resize cancelled.' 
+          : 'Time conflict detected. Choose another slot.';
+        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+          window.SF_COMPONENTS.showToast(msg, 'error');
+        }
+        if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+        return;
       }
 
       if (!hasMovedBeyondThreshold || (currentStartMin === originalStartMin && currentEndMin === originalEndMin && currentDateStr === originalDateStr)) {
@@ -5276,9 +5889,9 @@
 
     function attachWeeklyEventInteractions(container) {
       if (!container) return;
-      const cards = container.classList && container.classList.contains('weekly-event-card')
+      const cards = container.classList && (container.classList.contains('weekly-event-card') || container.classList.contains('sf-planner-card'))
         ? [container]
-        : container.querySelectorAll('.weekly-event-card');
+        : container.querySelectorAll('.weekly-event-card, .sf-planner-card');
 
       cards.forEach(cardEl => {
         if (cardEl._sfInteractionsAttached) return;
@@ -5294,12 +5907,14 @@
         cardEl.addEventListener('click', (e) => {
           e.stopPropagation();
           if (window._sfWeeklyIsDragging || window._sfIsDraggingOrResizing) return;
+          if (e.target.closest('button') || e.target.closest('.sf-planner-dropdown') || e.target.closest('.sf-resize-handle')) return;
           _handleWeeklyInteraction('select', id, { cardEl, elevate: false });
         });
 
         cardEl.addEventListener('dblclick', (e) => {
           e.stopPropagation();
           if (window._sfWeeklyIsDragging || window._sfIsDraggingOrResizing) return;
+          if (e.target.closest('button') || e.target.closest('.sf-planner-dropdown') || e.target.closest('.sf-resize-handle')) return;
           _handleWeeklyInteraction('select', id, { cardEl, elevate: true });
           _handleWeeklyInteraction('edit', id);
         });
@@ -5308,6 +5923,7 @@
           e.preventDefault();
           e.stopPropagation();
           if (window._sfWeeklyIsDragging || window._sfIsDraggingOrResizing) return;
+          if (e.target.closest('button') || e.target.closest('.sf-planner-dropdown') || e.target.closest('.sf-resize-handle')) return;
           _handleWeeklyInteraction('select', id, { cardEl, elevate: true });
           _handleWeeklyInteraction('contextmenu', id, { x: e.clientX, y: e.clientY });
         });
@@ -5315,21 +5931,23 @@
         cardEl.addEventListener('mouseenter', () => _sfWeeklyTooltipShow(cardEl, cardEl._sfEventData || ev));
         cardEl.addEventListener('mouseleave', () => _sfWeeklyTooltipHide());
 
-        cardEl.addEventListener('pointerdown', (e) => {
-          if (e.target.closest('.sf-resize-handle') || e.target.closest('button')) return;
-          if (e.button !== undefined && e.button !== 0 && e.pointerType === 'mouse') return;
-          _initWeeklyCardDrag(e, cardEl, id, cardEl._sfEventData || ev);
-        });
-
-        const resizeHandles = cardEl.querySelectorAll('.sf-resize-handle');
-        resizeHandles.forEach(handle => {
-          handle.addEventListener('pointerdown', (e) => {
-            e.stopPropagation();
+        if (cardEl.classList.contains('weekly-event-card')) {
+          cardEl.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('.sf-resize-handle') || e.target.closest('button')) return;
             if (e.button !== undefined && e.button !== 0 && e.pointerType === 'mouse') return;
-            const mode = handle.getAttribute('data-mode') || 'bottom';
-            _initWeeklyCardResize(e, cardEl, id, cardEl._sfEventData || ev, mode);
+            _initWeeklyCardDrag(e, cardEl, id, cardEl._sfEventData || ev);
           });
-        });
+
+          const resizeHandles = cardEl.querySelectorAll('.sf-resize-handle');
+          resizeHandles.forEach(handle => {
+            handle.addEventListener('pointerdown', (e) => {
+              e.stopPropagation();
+              if (e.button !== undefined && e.button !== 0 && e.pointerType === 'mouse') return;
+              const mode = handle.getAttribute('data-mode') || 'bottom';
+              _initWeeklyCardResize(e, cardEl, id, cardEl._sfEventData || ev, mode);
+            });
+          });
+        }
       });
     }
     window.attachWeeklyEventInteractions = attachWeeklyEventInteractions;
@@ -5337,6 +5955,7 @@
     // Clear selection when clicking grid background
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.weekly-event-card') &&
+          !e.target.closest('.sf-planner-card') &&
           !e.target.closest('#sf-weekly-context-menu') &&
           !e.target.closest('#sf-add-block-modal') &&
           !e.target.closest('#weeklyFullscreenBtn') &&
@@ -5344,6 +5963,7 @@
           !e.target.closest('[onclick*="togglePlannerFullscreen"]') &&
           !e.target.closest('.sf-fullscreen-btn')) {
         _weeklyDeselectAll();
+        _dailyFlexibleDeselectAll();
         _closeWeeklyContextMenu();
         _sfWeeklyTooltipHide();
       }
@@ -5551,6 +6171,14 @@
       newBlock.endTime = newEndISO;
       newBlock.startTimeDisplay = typeof _formatTimeDisplay === 'function' ? _formatTimeDisplay(newStartISO) : toHHMM(newStartMin);
       newBlock.endTimeDisplay = typeof _formatTimeDisplay === 'function' ? _formatTimeDisplay(newEndISO) : toHHMM(newEndMin);
+
+      const isFocusDup = window.plannerSettings?.schedulingMode !== 'flexible';
+      if (isFocusDup && _checkPlannerTimeConflict(null, newStartMin, newEndMin, dateStr)) {
+        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+          window.SF_COMPONENTS.showToast('Time conflict detected. Choose another slot.', 'error');
+        }
+        return null;
+      }
 
       try {
         let created = null;
