@@ -80,7 +80,7 @@
       <!-- ========================================================= -->
       <section id="dailyView" class="space-y-6">
         <!-- AI Schedule Optimizer Banner -->
-        <div class="bg-[#0A0A0E] border border-[#A855F7]/30 p-6 rounded-[24px] flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-[0_0_35px_rgba(168,85,247,0.18)] relative overflow-visible group hover:border-[#A855F7]/50 transition duration-300 z-[200]">
+        <div class="bg-[#0A0A0E] border border-[#A855F7]/30 p-6 rounded-[24px] flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-[0_0_35px_rgba(168,85,247,0.18)] relative overflow-visible group hover:border-[#A855F7]/50 transition duration-300 z-[20]">
           <div class="absolute inset-0 rounded-[24px] overflow-hidden pointer-events-none z-0"><div class="absolute -right-10 -bottom-10 w-48 h-48 bg-[#A855F7]/10 rounded-full blur-3xl"></div></div>
           
           <div class="flex items-center space-x-4 pl-1 relative z-10">
@@ -276,7 +276,7 @@
       <section id="weeklyView" class="hidden space-y-4">
         <!-- Focus Summary Card (~120px height, KPI Cards & Optimize Button) -->
         <!-- Focus Summary Card (~120px height, KPI Cards & Optimize Button) -->
-        <div id="weeklySummaryToolbar" class="flex flex-col xl:flex-row items-center justify-between gap-6 p-5 sm:p-6 rounded-[24px] bg-[#0A0A0E] border border-[#A855F7]/30 shadow-[0_0_35px_rgba(168,85,247,0.18)] backdrop-blur-xl min-h-[120px] relative overflow-visible group hover:border-[#A855F7]/50 transition duration-300 z-[999999]">
+        <div id="weeklySummaryToolbar" class="flex flex-col xl:flex-row items-center justify-between gap-6 p-5 sm:p-6 rounded-[24px] bg-[#0A0A0E] border border-[#A855F7]/30 shadow-[0_0_35px_rgba(168,85,247,0.18)] backdrop-blur-xl min-h-[120px] relative overflow-visible group hover:border-[#A855F7]/50 transition duration-300 z-[20]">
           <div class="absolute inset-0 rounded-[24px] overflow-hidden pointer-events-none z-0"><div class="absolute -right-10 -bottom-10 w-48 h-48 bg-[#A855F7]/10 rounded-full blur-3xl"></div></div>
           <div class="flex items-center gap-3.5 w-full xl:w-auto justify-start relative z-10">
             <div class="w-11 h-11 rounded-[16px] bg-[#1E1035] flex items-center justify-center text-[#A855F7] shadow-[0_0_20px_rgba(168,85,247,0.3)] shrink-0 group-hover:scale-105 transition">
@@ -292,7 +292,7 @@
             </div>
           </div>
           
-          <div class="flex flex-wrap items-center gap-4 sm:gap-5 w-full xl:w-auto justify-end relative z-[210] overflow-visible">
+          <div class="flex flex-wrap items-center gap-4 sm:gap-5 w-full xl:w-auto justify-end relative z-[20] overflow-visible">
             <!-- KPI Card 1: Focus Time -->
             <div class="flex items-center gap-2.5">
               <div class="w-9 h-9 rounded-[11px] bg-[#1E1035] flex items-center justify-center text-[#A855F7] shrink-0 shadow-sm">
@@ -336,7 +336,7 @@
             </div>
             
             <!-- Optimise + Mode row -->
-            <div class="flex flex-col items-end gap-2 shrink-0 relative z-[999999] overflow-visible">
+            <div class="flex flex-col items-end gap-2 shrink-0 relative z-[20] overflow-visible">
               <button onclick="alert('✨ AI Schedule Optimizer is balancing your study blocks and allocating free buffer hours...')" class="px-3.5 py-2 rounded-[13px] bg-[#13131A] border border-[#A855F7]/30 hover:bg-[#1E1035] text-white font-semibold text-[11px] sm:text-xs shadow-[0_0_15px_rgba(168,85,247,0.2)] transition flex items-center gap-2 group">
                 <span>✨ Optimise Schedule →</span>
               </button>
@@ -374,7 +374,7 @@
                   <svg class="w-3.5 h-3.5 text-[#A855F7]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/></svg>
                   <span id="weeklyFilterBtnLabel">Filters</span>
                 </button>
-                <div id="weeklyFilterPopup" class="hidden absolute right-0 mt-2 w-56 rounded-2xl bg-[#12121A] border border-[#20202E] shadow-[0_15px_40px_rgba(0,0,0,0.7)] z-[999999] py-1.5 text-white font-sans transition-all duration-150">
+                <div id="weeklyFilterPopup" class="hidden absolute right-0 mt-2 w-56 rounded-2xl bg-[#12121A] border border-[#20202E] shadow-[0_15px_40px_rgba(0,0,0,0.7)] z-[100] py-1.5 text-white font-sans transition-all duration-150">
                 </div>
               </div>
               <button onclick="togglePlannerFullscreen('weekly')" id="weeklyFullscreenBtn" class="px-3.5 py-1.5 rounded-[14px] bg-[#1E1035]/60 hover:bg-[#1E1035] border border-[#24242E] hover:border-[#A855F7]/40 text-[#D8B4FE] hover:text-white text-xs font-semibold transition flex items-center gap-1.5 shadow-sm shrink-0">
@@ -896,7 +896,7 @@
     }
 
 
-    function setPlanningStyle(style, skipConfirm = false) {
+    function setPlanningStyle(style, skipConfirm = false, skipToast = false) {
       if (!window.plannerSettings) window.plannerSettings = {};
       window.plannerSettings.planningStyle = style;
       if ('schedulingMode' in window.plannerSettings) delete window.plannerSettings.schedulingMode;
@@ -913,7 +913,7 @@
         const dailyState = window.SF_STORE ? window.SF_STORE.getSlice('planner') : null;
         renderDailyPlanner(dailyState);
       }
-      if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+      if (!skipToast && window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
         const label = style === 'flexible' ? 'Flexible Planner' : 'Focus Planner';
         window.SF_COMPONENTS.showToast(`Planning Style updated. You're now using ${label}.`, 'success');
       }
@@ -946,6 +946,35 @@
       }
       return false;
     }
+
+    function _findPlannerTimeOverlaps(targetBlockId, startMin, endMin, targetDateStr = null) {
+      const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
+      const allDayGroupBlocks = Object.values(plannerState?.dayGroups || {}).flat();
+      const allRaw = [...(plannerState?.plannerEvents || []), ...(plannerState?.dailyBlocks || []), ...allDayGroupBlocks];
+      
+      const dateStr = targetDateStr || window._selectedSlotDate || window._plannerDragState?.currentDateStr || window._currentDateStr || new Date().toISOString().split('T')[0];
+      
+      const dayBlocks = typeof expandWeeklyRecurrences === 'function'
+        ? expandWeeklyRecurrences(allRaw, new Date(`${dateStr}T00:00:00.000Z`), new Date(`${dateStr}T23:59:59.999Z`), dateStr)
+        : allRaw.filter(b => (b.date || (b.startTime && typeof b.startTime === 'string' && b.startTime.split('T')[0])) === dateStr);
+
+      const overlaps = [];
+      for (let i = 0; i < dayBlocks.length; i++) {
+        const b = dayBlocks[i];
+        const bId = b.id || b._id || b.virtualId || b.masterId || b._instanceId;
+        if (targetBlockId && (bId === targetBlockId || b.id === targetBlockId || b._id === targetBlockId || b._instanceId === targetBlockId)) continue;
+        
+        const bStart = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '');
+        let bEnd = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '');
+        if (!bEnd || bEnd <= bStart) bEnd = bStart + 60;
+        
+        if (startMin < bEnd && endMin > bStart) {
+          overlaps.push(b);
+        }
+      }
+      return overlaps;
+    }
+    window._findPlannerTimeOverlaps = _findPlannerTimeOverlaps;
 
     function renderPlannerFilterChips() {
       const container = document.getElementById('sf-planner-filters');
@@ -1642,126 +1671,147 @@
         }
       };
 
-      const hasOverlapOnDrop = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin, currentDateStr || originalDateStr);
-      const isConflictOnDrop = (_getPlanningStyle() !== 'flexible') && (isConflict || hasOverlapOnDrop);
-
-      if (isConflictOnDrop) {
-        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-          window.SF_COMPONENTS.showToast('Time conflict detected. Choose another slot.', 'error');
-        }
-        finishDragCleanup();
-        if (window.renderDailyPlanner) window.renderDailyPlanner();
-        if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
-        return;
-      }
-
       const targetDateStr = currentDateStr || originalDateStr || _toLocalDateStr();
-      if (!validatePlannerTime(targetDateStr, currentStartMin, { isEditing: true, origDateStr: originalDateStr, origStartTime: originalStartMin }).valid) {
-        finishDragCleanup();
-        if (window.renderDailyPlanner) window.renderDailyPlanner();
-        if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
-        return;
-      }
+      const overlaps = _findPlannerTimeOverlaps(blockId, currentStartMin, currentEndMin, targetDateStr);
+      const hasOverlapOnDrop = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin, targetDateStr);
+      const hasOverlap = overlaps.length > 0 || isConflict || hasOverlapOnDrop;
 
-      const duration = originalEndMin - originalStartMin;
-      const newStartMin = currentStartMin;
-      const newEndMin = newStartMin + duration;
-
-      if (newStartMin === originalStartMin && (targetDateStr === originalDateStr || !targetDateStr)) {
-        finishDragCleanup();
-        return;
-      }
-
-      if (ghostElement && cardElement && document.body.contains(cardElement) && document.body.contains(ghostElement)) {
-        const ghostRect = ghostElement.getBoundingClientRect();
-        cardElement.style.transition = 'left 0.14s cubic-bezier(0.16, 1, 0.3, 1), top 0.14s cubic-bezier(0.16, 1, 0.3, 1), width 0.14s cubic-bezier(0.16, 1, 0.3, 1), height 0.14s cubic-bezier(0.16, 1, 0.3, 1), transform 0.14s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.14s ease, box-shadow 0.14s ease';
-        cardElement.style.left = `${ghostRect.left}px`;
-        cardElement.style.top = `${ghostRect.top}px`;
-        cardElement.style.width = `${ghostRect.width}px`;
-        cardElement.style.transform = 'translate3d(0px, 0px, 0px) scale(1.0) rotate(0deg)';
-        cardElement.style.boxShadow = '0 4px 15px rgba(0,0,0,0.15)';
-        cardElement.style.opacity = '0.9';
-        await new Promise(resolve => setTimeout(resolve, 140));
-      }
-      finishDragCleanup();
-
-      const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
-      const newStartHH = Math.floor(currentStartMin / 60);
-      const newStartMM = currentStartMin % 60;
-      const newEndHH = Math.floor(currentEndMin / 60);
-      const newEndMM = currentEndMin % 60;
-
-      const allDayGroupBlocks = Object.values(plannerState?.dayGroups || {}).flat();
-      const rawEvents = [...(plannerState?.plannerEvents || []), ...(plannerState?.dailyBlocks || []), ...allDayGroupBlocks];
-      const existingBlock = (cardElement && cardElement._sfEventData) || rawEvents.find(b => b && (b.id === blockId || b._id === blockId || b._instanceId === blockId));
-      const durationStr = existingBlock ? existingBlock.durationStr : '';
-
-      let newStartISO, newEndISO;
-      if (existingBlock && existingBlock.startTime && !isNaN(new Date(existingBlock.startTime).getTime())) {
-        const startDtObj = new Date(existingBlock.startTime);
-        if (targetDateStr && targetDateStr !== originalDateStr) {
-          const parts = targetDateStr.split('-').map(Number);
-          if (parts.length === 3) startDtObj.setFullYear(parts[0], parts[1] - 1, parts[2]);
-        }
-        startDtObj.setHours(newStartHH, newStartMM, 0, 0);
-        newStartISO = startDtObj.toISOString();
-
-        const endDtObj = existingBlock.endTime && !isNaN(new Date(existingBlock.endTime).getTime())
-          ? new Date(existingBlock.endTime)
-          : new Date(existingBlock.startTime);
-        if (targetDateStr && targetDateStr !== originalDateStr) {
-          const parts = targetDateStr.split('-').map(Number);
-          if (parts.length === 3) endDtObj.setFullYear(parts[0], parts[1] - 1, parts[2]);
-        }
-        endDtObj.setHours(newEndHH, newEndMM, 0, 0);
-        newEndISO = endDtObj.toISOString();
-      } else {
-        newStartISO = new Date(`${targetDateStr}T${String(newStartHH).padStart(2, '0')}:${String(newStartMM).padStart(2, '0')}:00`).toISOString();
-        newEndISO = new Date(`${targetDateStr}T${String(newEndHH).padStart(2, '0')}:${String(newEndMM).padStart(2, '0')}:00`).toISOString();
-      }
-
-      const patch = {
-        startTime: newStartISO,
-        endTime: newEndISO,
-        startTimeDisplay: _formatTimeDisplay(newStartISO),
-        endTimeDisplay: _formatTimeDisplay(newEndISO),
-        durationStr
-      };
-
-      if (targetDateStr !== originalDateStr) {
-        patch.date = targetDateStr;
-        patch.eventDate = targetDateStr;
-      }
-
-      const isRec = (existingBlock && existingBlock.isRecurring) || (typeof blockId === 'string' && blockId.includes('::'));
-
-      const runUpdate = async (scope = null) => {
-        try {
-          const exDate = (typeof blockId === 'string' && blockId.includes('::')) ? blockId.split('::')[1] : (originalDateStr || targetDateStr);
-          const scopedPatch = scope ? { ...patch, editScope: scope, exDate } : patch;
-          if (window.SF_STORE) {
-            await window.SF_STORE.dispatch('planner/UPDATE', { id: blockId, patch: scopedPatch });
-          } else if (window.plannerService) {
-            await window.plannerService.updateBlock(blockId, scopedPatch);
-          }
-          if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-            window.SF_COMPONENTS.showToast(`Rescheduled to ${targetDateStr} at ${_formatMinutesToAMPM(currentStartMin)}`, 'success');
-          }
-        } catch (err) {
-          console.error('[Planner] Error rescheduling block:', err);
-          if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-            window.SF_COMPONENTS.showToast(err.message || 'Failed to reschedule block', 'error');
-          }
+      const executeDragDrop = async () => {
+        if (!validatePlannerTime(targetDateStr, currentStartMin, { isEditing: true, origDateStr: originalDateStr, origStartTime: originalStartMin }).valid) {
+          finishDragCleanup();
           if (window.renderDailyPlanner) window.renderDailyPlanner();
           if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+          return;
+        }
+
+        const duration = originalEndMin - originalStartMin;
+        const newStartMin = currentStartMin;
+        const newEndMin = newStartMin + duration;
+
+        if (newStartMin === originalStartMin && (targetDateStr === originalDateStr || !targetDateStr)) {
+          finishDragCleanup();
+          return;
+        }
+
+        if (ghostElement && cardElement && document.body.contains(cardElement) && document.body.contains(ghostElement)) {
+          const ghostRect = ghostElement.getBoundingClientRect();
+          cardElement.style.transition = 'left 0.14s cubic-bezier(0.16, 1, 0.3, 1), top 0.14s cubic-bezier(0.16, 1, 0.3, 1), width 0.14s cubic-bezier(0.16, 1, 0.3, 1), height 0.14s cubic-bezier(0.16, 1, 0.3, 1), transform 0.14s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.14s ease, box-shadow 0.14s ease';
+          cardElement.style.left = `${ghostRect.left}px`;
+          cardElement.style.top = `${ghostRect.top}px`;
+          cardElement.style.width = `${ghostRect.width}px`;
+          cardElement.style.transform = 'translate3d(0px, 0px, 0px) scale(1.0) rotate(0deg)';
+          cardElement.style.boxShadow = '0 4px 15px rgba(0,0,0,0.15)';
+          cardElement.style.opacity = '0.9';
+          await new Promise(resolve => setTimeout(resolve, 140));
+        }
+        finishDragCleanup();
+
+        const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
+        const newStartHH = Math.floor(currentStartMin / 60);
+        const newStartMM = currentStartMin % 60;
+        const newEndHH = Math.floor(currentEndMin / 60);
+        const newEndMM = currentEndMin % 60;
+
+        const allDayGroupBlocks = Object.values(plannerState?.dayGroups || {}).flat();
+        const rawEvents = [...(plannerState?.plannerEvents || []), ...(plannerState?.dailyBlocks || []), ...allDayGroupBlocks];
+        const existingBlock = (cardElement && cardElement._sfEventData) || rawEvents.find(b => b && (b.id === blockId || b._id === blockId || b._instanceId === blockId));
+        const durationStr = existingBlock ? existingBlock.durationStr : '';
+
+        let newStartISO, newEndISO;
+        if (existingBlock && existingBlock.startTime && !isNaN(new Date(existingBlock.startTime).getTime())) {
+          const startDtObj = new Date(existingBlock.startTime);
+          if (targetDateStr && targetDateStr !== originalDateStr) {
+            const parts = targetDateStr.split('-').map(Number);
+            if (parts.length === 3) startDtObj.setFullYear(parts[0], parts[1] - 1, parts[2]);
+          }
+          startDtObj.setHours(newStartHH, newStartMM, 0, 0);
+          newStartISO = startDtObj.toISOString();
+
+          const endDtObj = existingBlock.endTime && !isNaN(new Date(existingBlock.endTime).getTime())
+            ? new Date(existingBlock.endTime)
+            : new Date(existingBlock.startTime);
+          if (targetDateStr && targetDateStr !== originalDateStr) {
+            const parts = targetDateStr.split('-').map(Number);
+            if (parts.length === 3) endDtObj.setFullYear(parts[0], parts[1] - 1, parts[2]);
+          }
+          endDtObj.setHours(newEndHH, newEndMM, 0, 0);
+          newEndISO = endDtObj.toISOString();
+        } else {
+          newStartISO = new Date(`${targetDateStr}T${String(newStartHH).padStart(2, '0')}:${String(newStartMM).padStart(2, '0')}:00`).toISOString();
+          newEndISO = new Date(`${targetDateStr}T${String(newEndHH).padStart(2, '0')}:${String(newEndMM).padStart(2, '0')}:00`).toISOString();
+        }
+
+        const patch = {
+          startTime: newStartISO,
+          endTime: newEndISO,
+          startTimeDisplay: _formatTimeDisplay(newStartISO),
+          endTimeDisplay: _formatTimeDisplay(newEndISO),
+          durationStr
+        };
+
+        if (targetDateStr !== originalDateStr) {
+          patch.date = targetDateStr;
+          patch.eventDate = targetDateStr;
+        }
+
+        const isRec = (existingBlock && existingBlock.isRecurring) || (typeof blockId === 'string' && blockId.includes('::'));
+
+        const runUpdate = async (scope = null) => {
+          try {
+            const exDate = (typeof blockId === 'string' && blockId.includes('::')) ? blockId.split('::')[1] : (originalDateStr || targetDateStr);
+            const scopedPatch = scope ? { ...patch, editScope: scope, exDate } : patch;
+            if (window.SF_STORE) {
+              await window.SF_STORE.dispatch('planner/UPDATE', { id: blockId, patch: scopedPatch });
+            } else if (window.plannerService) {
+              await window.plannerService.updateBlock(blockId, scopedPatch);
+            }
+            if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+              window.SF_COMPONENTS.showToast(`Rescheduled to ${targetDateStr} at ${_formatMinutesToAMPM(currentStartMin)}`, 'success');
+            }
+          } catch (err) {
+            console.error('[Planner] Error rescheduling block:', err);
+            if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+              window.SF_COMPONENTS.showToast(err.message || 'Failed to reschedule block', 'error');
+            }
+            if (window.renderDailyPlanner) window.renderDailyPlanner();
+            if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+          }
+        };
+
+        if (isRec) {
+          promptRecurrenceScope('Reschedule recurring event:', scope => runUpdate(scope));
+        } else {
+          await runUpdate(null);
         }
       };
 
-      if (isRec) {
-        promptRecurrenceScope('Reschedule recurring event:', scope => runUpdate(scope));
-      } else {
-        await runUpdate(null);
+      if (hasOverlap) {
+        if (_getPlanningStyle() !== 'flexible') {
+          if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+            window.SF_COMPONENTS.showToast('This time slot is already occupied.', 'error');
+          }
+          finishDragCleanup();
+          if (window.renderDailyPlanner) window.renderDailyPlanner();
+          if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+          return;
+        } else {
+          showPlannerConflictDialog({
+            timeStr: `${_formatMinutesToAMPM(currentStartMin)} – ${_formatMinutesToAMPM(currentEndMin)}`,
+            existingTitles: Array.from(new Set(overlaps.map(t => t.title || t.subject || 'Untitled Block'))),
+            onCancel: () => {
+              finishDragCleanup();
+              if (window.renderDailyPlanner) window.renderDailyPlanner();
+              if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+            },
+            onConfirm: async () => {
+              await executeDragDrop();
+            }
+          });
+          return;
+        }
       }
+
+      await executeDragDrop();
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -2056,80 +2106,96 @@
       // Click without threshold crossing → no-op
       if (!hasMovedBeyondThreshold) return;
 
-      const hasOverlapOnDrop = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin, _plannerDragState?.currentDateStr);
-      const isConflictOnDrop = (_getPlanningStyle() !== 'flexible') && (isConflict || hasOverlapOnDrop);
-
-      // Conflict → cancel with toast, zero network requests
-      if (isConflictOnDrop) {
-        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-          window.SF_COMPONENTS.showToast('Time conflict detected. Resize cancelled.', 'error');
-        }
-        if (window.renderDailyPlanner) window.renderDailyPlanner();
-        if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
-        return;
-      }
-
-      // No actual change → no-op
-      if (currentStartMin === originalStartMin && currentEndMin === originalEndMin) return;
-
       const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
       const targetDateStr = _plannerDragState?.currentDateStr || (plannerState && plannerState.selectedDate) || _toLocalDateStr();
-      if (!validatePlannerTime(targetDateStr, currentStartMin, { isEditing: true, origDateStr: _plannerDragState?.originalDateStr || targetDateStr, origStartTime: originalStartMin }).valid) {
-        if (window.renderDailyPlanner) window.renderDailyPlanner();
-        if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
-        return;
-      }
+      const overlaps = _findPlannerTimeOverlaps(blockId, currentStartMin, currentEndMin, targetDateStr);
+      const hasOverlapOnDrop = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin, targetDateStr);
+      const hasOverlap = overlaps.length > 0 || isConflict || hasOverlapOnDrop;
 
-      const toISO = (totalMins) => {
-        const hh = String(Math.floor(totalMins / 60)).padStart(2, '0');
-        const mm = String(totalMins % 60).padStart(2, '0');
-        return new Date(`${targetDateStr}T${hh}:${mm}:00`).toISOString();
-      };
-      const newStartISO = toISO(currentStartMin);
-      const newEndISO = toISO(currentEndMin);
-
-      const durationMins = currentEndMin - currentStartMin;
-      const dh = Math.floor(durationMins / 60);
-      const dm = durationMins % 60;
-      const newDurationStr = dh > 0 && dm > 0 ? `${dh}h ${dm}m` : dh > 0 ? `${dh}h` : `${dm}m`;
-
-      const patch = {
-        startTime: newStartISO,
-        endTime: newEndISO,
-        startTimeDisplay: _formatTimeDisplay(newStartISO),
-        endTimeDisplay: _formatTimeDisplay(newEndISO),
-        durationStr: newDurationStr
-      };
-
-      const existingBlock = (plannerState && plannerState.dailyBlocks || []).find(b => b.id === blockId || b._id === blockId);
-      const isRec = (existingBlock && existingBlock.isRecurring) || (typeof blockId === 'string' && blockId.includes('::'));
-
-      const runResize = async (scope = null) => {
-        try {
-          const exDate = (typeof blockId === 'string' && blockId.includes('::')) ? blockId.split('::')[1] : targetDateStr;
-          const scopedPatch = scope ? { ...patch, editScope: scope, exDate } : patch;
-          if (window.SF_STORE) {
-            await window.SF_STORE.dispatch('planner/UPDATE', { id: blockId, patch: scopedPatch });
-          } else if (window.plannerService) {
-            await window.plannerService.updateBlock(blockId, scopedPatch);
-          }
-          if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-            window.SF_COMPONENTS.showToast(`Resized to ${newDurationStr}`, 'success');
-          }
-        } catch (err) {
-          console.error('[Planner] Error resizing block:', err);
-          if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-            window.SF_COMPONENTS.showToast(err.message || 'Failed to resize block', 'error');
-          }
+      const executeResizeDrop = async () => {
+        if (!validatePlannerTime(targetDateStr, currentStartMin, { isEditing: true, origDateStr: _plannerDragState?.originalDateStr || targetDateStr, origStartTime: originalStartMin }).valid) {
           if (window.renderDailyPlanner) window.renderDailyPlanner();
+          if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+          return;
+        }
+
+        const toISO = (totalMins) => {
+          const hh = String(Math.floor(totalMins / 60)).padStart(2, '0');
+          const mm = String(totalMins % 60).padStart(2, '0');
+          return new Date(`${targetDateStr}T${hh}:${mm}:00`).toISOString();
+        };
+        const newStartISO = toISO(currentStartMin);
+        const newEndISO = toISO(currentEndMin);
+
+        const durationMins = currentEndMin - currentStartMin;
+        const dh = Math.floor(durationMins / 60);
+        const dm = durationMins % 60;
+        const newDurationStr = dh > 0 && dm > 0 ? `${dh}h ${dm}m` : dh > 0 ? `${dh}h` : `${dm}m`;
+
+        const patch = {
+          startTime: newStartISO,
+          endTime: newEndISO,
+          startTimeDisplay: _formatTimeDisplay(newStartISO),
+          endTimeDisplay: _formatTimeDisplay(newEndISO),
+          durationStr: newDurationStr
+        };
+
+        const existingBlock = (plannerState && plannerState.dailyBlocks || []).find(b => b.id === blockId || b._id === blockId);
+        const isRec = (existingBlock && existingBlock.isRecurring) || (typeof blockId === 'string' && blockId.includes('::'));
+
+        const runResize = async (scope = null) => {
+          try {
+            const exDate = (typeof blockId === 'string' && blockId.includes('::')) ? blockId.split('::')[1] : targetDateStr;
+            const scopedPatch = scope ? { ...patch, editScope: scope, exDate } : patch;
+            if (window.SF_STORE) {
+              await window.SF_STORE.dispatch('planner/UPDATE', { id: blockId, patch: scopedPatch });
+            } else if (window.plannerService) {
+              await window.plannerService.updateBlock(blockId, scopedPatch);
+            }
+            if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+              window.SF_COMPONENTS.showToast(`Resized to ${newDurationStr}`, 'success');
+            }
+          } catch (err) {
+            console.error('[Planner] Error resizing block:', err);
+            if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+              window.SF_COMPONENTS.showToast(err.message || 'Failed to resize block', 'error');
+            }
+            if (window.renderDailyPlanner) window.renderDailyPlanner();
+          }
+        };
+
+        if (isRec) {
+          promptRecurrenceScope('Resize recurring event:', scope => runResize(scope));
+        } else {
+          await runResize(null);
         }
       };
 
-      if (isRec) {
-        promptRecurrenceScope('Resize recurring event:', scope => runResize(scope));
-      } else {
-        await runResize(null);
+      if (hasOverlap) {
+        if (_getPlanningStyle() !== 'flexible') {
+          if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+            window.SF_COMPONENTS.showToast('This time slot is already occupied.', 'error');
+          }
+          if (window.renderDailyPlanner) window.renderDailyPlanner();
+          if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+          return;
+        } else {
+          showPlannerConflictDialog({
+            timeStr: `${_formatMinutesToAMPM(currentStartMin)} – ${_formatMinutesToAMPM(currentEndMin)}`,
+            existingTitles: Array.from(new Set(overlaps.map(t => t.title || t.subject || 'Untitled Block'))),
+            onCancel: () => {
+              if (window.renderDailyPlanner) window.renderDailyPlanner();
+              if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+            },
+            onConfirm: async () => {
+              await executeResizeDrop();
+            }
+          });
+          return;
+        }
       }
+
+      await executeResizeDrop();
     }
 
     function _scheduleNextMinute() {
@@ -2563,16 +2629,12 @@
       if (!window._dailyFlexDidInitialScroll && container && isToday) {
         window._dailyFlexDidInitialScroll = true;
         setTimeout(() => {
-          if (container && _getPlanningStyle() === 'flexible') {
+          if (container && _getPlanningStyle() === 'flexible' && container.scrollTop <= 10) {
             const currentHour = new Date().getHours();
             const scrollTarget = Math.max(0, (currentHour - 2) * hrHeight);
-            if (typeof container.scrollTo === 'function') {
-              container.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-            } else {
-              container.scrollTop = scrollTarget;
-            }
+            container.scrollTop = scrollTarget;
           }
-        }, 60);
+        }, 30);
       }
     }
 
@@ -4442,15 +4504,11 @@
 
     function scrollWeeklyGridToNow() {
       const body = document.getElementById('weeklyGridScrollBody');
-      if (body) {
+      if (body && body.scrollTop <= 10) {
         const currentHour = new Date().getHours();
         const hrHeight = typeof _getWeeklyHourHeight === 'function' ? _getWeeklyHourHeight() : 100;
         const scrollTarget = Math.max(0, (currentHour - 2) * hrHeight);
-        if (typeof body.scrollTo === 'function') {
-          body.scrollTo({ top: scrollTarget, behavior: 'smooth' });
-        } else {
-          body.scrollTop = scrollTarget;
-        }
+        body.scrollTop = scrollTarget;
       }
     }
 
@@ -6169,64 +6227,80 @@
         cardElement.classList.remove('scale-[1.02]', 'opacity-60', 'z-50', 'cursor-grabbing');
       }
 
+      const overlaps = _findPlannerTimeOverlaps(blockId, currentStartMin, currentEndMin, currentDateStr || originalDateStr);
       const hasOverlapOnDrop = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin, currentDateStr || originalDateStr);
-      const isConflictOnDrop = (_getPlanningStyle() !== 'flexible') && hasOverlapOnDrop;
+      const hasOverlap = overlaps.length > 0 || hasOverlapOnDrop;
 
-      if (isConflictOnDrop) {
-        const msg = mode !== 'drag' 
-          ? 'Time conflict detected. Resize cancelled.' 
-          : 'Time conflict detected. Choose another slot.';
-        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-          window.SF_COMPONENTS.showToast(msg, 'error');
+      const executeWeeklyUpdate = async () => {
+        if (!validatePlannerTime(currentDateStr || originalDateStr, currentStartMin, { isEditing: true, origDateStr: originalDateStr, origStartTime: originalStartMin }).valid) {
+          if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+          return;
         }
-        if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
-        return;
-      }
 
-      if (!validatePlannerTime(currentDateStr || originalDateStr, currentStartMin, { isEditing: true, origDateStr: originalDateStr, origStartTime: originalStartMin }).valid) {
-        if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
-        return;
-      }
+        if (!hasMovedBeyondThreshold || (currentStartMin === originalStartMin && currentEndMin === originalEndMin && currentDateStr === originalDateStr)) {
+          return;
+        }
 
-      if (!hasMovedBeyondThreshold || (currentStartMin === originalStartMin && currentEndMin === originalEndMin && currentDateStr === originalDateStr)) {
-        return;
-      }
+        const toHHMM = (m) => `${String(Math.floor(m / 60)).padStart(2,'0')}:${String(m % 60).padStart(2,'0')}`;
+        const newStartISO = new Date(`${currentDateStr}T${toHHMM(currentStartMin)}:00`).toISOString();
+        const newEndISO   = new Date(`${currentDateStr}T${toHHMM(currentEndMin)}:00`).toISOString();
 
-      const toHHMM = (m) => `${String(Math.floor(m / 60)).padStart(2,'0')}:${String(m % 60).padStart(2,'0')}`;
-      const newStartISO = new Date(`${currentDateStr}T${toHHMM(currentStartMin)}:00`).toISOString();
-      const newEndISO   = new Date(`${currentDateStr}T${toHHMM(currentEndMin)}:00`).toISOString();
+        const patch = {
+          date: currentDateStr,
+          startTime: newStartISO,
+          endTime: newEndISO,
+          startTimeDisplay: typeof _formatTimeDisplay === 'function' ? _formatTimeDisplay(newStartISO) : toHHMM(currentStartMin),
+          endTimeDisplay: typeof _formatTimeDisplay === 'function' ? _formatTimeDisplay(newEndISO) : toHHMM(currentEndMin)
+        };
 
-      const patch = {
-        date: currentDateStr,
-        startTime: newStartISO,
-        endTime: newEndISO,
-        startTimeDisplay: typeof _formatTimeDisplay === 'function' ? _formatTimeDisplay(newStartISO) : toHHMM(currentStartMin),
-        endTimeDisplay: typeof _formatTimeDisplay === 'function' ? _formatTimeDisplay(newEndISO) : toHHMM(currentEndMin)
-      };
-
-      try {
-        if (window.SF_STORE) {
-          const plannerSlice = window.SF_STORE.getSlice('planner');
-          if (plannerSlice && plannerSlice.plannerEvents) {
-            const ev = plannerSlice.plannerEvents.find(b => (b.id || b._id || b._instanceId) === blockId || (blockId.includes('::') && (b.id || b._id) === blockId.split('::')[0]));
-            if (ev) Object.assign(ev, patch);
+        try {
+          if (window.SF_STORE) {
+            const plannerSlice = window.SF_STORE.getSlice('planner');
+            if (plannerSlice && plannerSlice.plannerEvents) {
+              const ev = plannerSlice.plannerEvents.find(b => (b.id || b._id || b._instanceId) === blockId || (blockId.includes('::') && (b.id || b._id) === blockId.split('::')[0]));
+              if (ev) Object.assign(ev, patch);
+            }
+            if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+            await window.SF_STORE.dispatch('planner/UPDATE', { id: blockId, patch });
+          } else if (window.plannerService) {
+            await window.plannerService.updateBlock(blockId, patch);
+            if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+          }
+          if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+            window.SF_COMPONENTS.showToast(`Updated block to ${_formatMinutesToAMPM(currentStartMin)}`, 'success');
+          }
+        } catch (err) {
+          console.error('[Sprint5.1] Weekly Drag/Resize update error:', err);
+          if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+            window.SF_COMPONENTS.showToast(err.message || 'Failed to update block', 'error');
           }
           if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
-          await window.SF_STORE.dispatch('planner/UPDATE', { id: blockId, patch });
-        } else if (window.plannerService) {
-          await window.plannerService.updateBlock(blockId, patch);
+        }
+      };
+
+      if (hasOverlap) {
+        if (_getPlanningStyle() !== 'flexible') {
+          if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+            window.SF_COMPONENTS.showToast('This time slot is already occupied.', 'error');
+          }
           if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+          return;
+        } else {
+          showPlannerConflictDialog({
+            timeStr: `${_formatMinutesToAMPM(currentStartMin)} – ${_formatMinutesToAMPM(currentEndMin)}`,
+            existingTitles: Array.from(new Set(overlaps.map(t => t.title || t.subject || 'Untitled Block'))),
+            onCancel: () => {
+              if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+            },
+            onConfirm: async () => {
+              await executeWeeklyUpdate();
+            }
+          });
+          return;
         }
-        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-          window.SF_COMPONENTS.showToast(`Updated block to ${_formatMinutesToAMPM(currentStartMin)}`, 'success');
-        }
-      } catch (err) {
-        console.error('[Sprint5.1] Weekly Drag/Resize update error:', err);
-        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-          window.SF_COMPONENTS.showToast(err.message || 'Failed to update block', 'error');
-        }
-        if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
       }
+
+      await executeWeeklyUpdate();
     }
 
     function _handleWeeklyInteraction(action, id, extra) {
@@ -6863,7 +6937,7 @@
 
     function _renderConflictBadgeIfAny(block) {
       const currentStyle = _getPlanningStyle();
-      if (currentStyle === 'focus' || window._isReviewingConflicts) {
+      if (currentStyle === 'flexible' || currentStyle === 'focus' || window._isReviewingConflicts) {
         if (_checkBlockOverlapsOnDay(block, block.date || window._selectedSlotDate)) {
           return `<span class="sf-conflict-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30 text-[10px] font-semibold tracking-normal select-none shrink-0" title="Existing task overlap on schedule.">⚠ Existing Conflict</span>`;
         }
@@ -7024,7 +7098,7 @@
       localStorage.setItem('studyflow_planning_style_onboarded', 'true');
       const modal = document.getElementById('firstLaunchWelcomeModal');
       if (modal) modal.classList.add('hidden');
-      setPlanningStyle(chosen);
+      setPlanningStyle(chosen, false, true);
       if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
         window.SF_COMPONENTS.showToast(`Welcome! ${chosen === 'flexible' ? 'Flexible' : 'Focus'} Planner configured.`, 'success');
       }

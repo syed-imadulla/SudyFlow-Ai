@@ -66,7 +66,7 @@ window.StudyFlowDB = {
 
 window.StudyFlowTemplates = {
   'components/navbar.html': `
-    <header class="sticky top-4 z-40 bg-[#080808]/90 backdrop-blur-xl border border-[#171717] px-6 py-3.5 mx-6 md:mx-10 my-4 rounded-2xl shadow-saas flex items-center justify-between transition-all">
+    <header class="sticky top-4 z-[500000] bg-[#080808]/90 backdrop-blur-xl border border-[#171717] px-6 py-3.5 mx-6 md:mx-10 my-4 rounded-2xl shadow-saas flex items-center justify-between transition-all">
       <div class="flex items-center space-x-4">
         <h2 id="pageTitleDisplay" class="text-base font-bold text-[#FAFAFA] capitalize tracking-tight font-sans">Dashboard</h2>
       </div>
