@@ -1641,6 +1641,11 @@
       }
 
       const targetDateStr = currentDateStr || originalDateStr || _toLocalDateStr();
+      if (!validatePlannerTime(targetDateStr, currentStartMin, { isEditing: true, origDateStr: originalDateStr, origStartTime: originalStartMin }).valid) {
+        if (window.renderDailyPlanner) window.renderDailyPlanner();
+        if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+        return;
+      }
       if (currentStartMin === originalStartMin && currentEndMin === originalEndMin && targetDateStr === originalDateStr) {
         if (window.renderDailyPlanner) window.renderDailyPlanner();
         if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
@@ -2032,9 +2037,13 @@
       // No actual change → no-op
       if (currentStartMin === originalStartMin && currentEndMin === originalEndMin) return;
 
-      // ── Commit: exactly ONE planner/UPDATE dispatch ───────────────────────
       const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
-      const targetDateStr = (plannerState && plannerState.selectedDate) || _toLocalDateStr();
+      const targetDateStr = _plannerDragState?.currentDateStr || (plannerState && plannerState.selectedDate) || _toLocalDateStr();
+      if (!validatePlannerTime(targetDateStr, currentStartMin, { isEditing: true, origDateStr: _plannerDragState?.originalDateStr || targetDateStr, origStartTime: originalStartMin }).valid) {
+        if (window.renderDailyPlanner) window.renderDailyPlanner();
+        if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+        return;
+      }
 
       const toISO = (totalMins) => {
         const hh = String(Math.floor(totalMins / 60)).padStart(2, '0');
@@ -2567,6 +2576,62 @@
     }
     window._toLocalDateStr = _toLocalDateStr;
 
+    function validatePlannerTime(targetDateStr, startTimeOrMins, options = {}) {
+      const todayStr = typeof _toLocalDateStr === 'function' ? _toLocalDateStr() : new Date().toLocaleDateString('en-CA');
+      const now = new Date();
+
+      if (!targetDateStr) targetDateStr = todayStr;
+
+      if (options.isEditing && options.origDateStr && options.origStartTime !== undefined) {
+        let currentStartTimeStr = typeof startTimeOrMins === 'number' 
+          ? `${String(Math.floor(startTimeOrMins / 60)).padStart(2, '0')}:${String(startTimeOrMins % 60).padStart(2, '0')}`
+          : String(startTimeOrMins).substring(0, 5);
+        let origStartTimeStr = typeof options.origStartTime === 'number'
+          ? `${String(Math.floor(options.origStartTime / 60)).padStart(2, '0')}:${String(options.origStartTime % 60).padStart(2, '0')}`
+          : String(options.origStartTime).substring(0, 5);
+        if (targetDateStr === options.origDateStr && currentStartTimeStr === origStartTimeStr) {
+          return { valid: true };
+        }
+      }
+
+      let startHr, startMin;
+      if (typeof startTimeOrMins === 'number') {
+        startHr = Math.floor(startTimeOrMins / 60);
+        startMin = startTimeOrMins % 60;
+      } else if (typeof startTimeOrMins === 'string') {
+        const parts = startTimeOrMins.split(':').map(Number);
+        startHr = parts[0] || 0;
+        startMin = parts[1] || 0;
+      } else {
+        return { valid: true };
+      }
+
+      const showErr = (msg) => {
+        if (options.showToast !== false && window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+          window.SF_COMPONENTS.showToast(msg || 'Start time cannot be in the past.', 'error');
+        }
+      };
+
+      if (targetDateStr < todayStr) {
+        showErr('Start time cannot be in the past.');
+        return { valid: false, reason: 'past_date' };
+      }
+
+      if (targetDateStr === todayStr) {
+        const currentHr = now.getHours();
+        const currentMin = now.getMinutes();
+        if (startHr < currentHr || (startHr === currentHr && startMin < currentMin)) {
+          showErr('Start time cannot be in the past.');
+          return { valid: false, reason: 'past_time' };
+        }
+      }
+
+      return { valid: true };
+    }
+    window.validatePlannerTime = validatePlannerTime;
+    window.isPlannerTimeValid = (targetDateStr, startTimeOrMins, options = {}) => validatePlannerTime(targetDateStr, startTimeOrMins, Object.assign({}, options, { showToast: false })).valid;
+
+
     async function navigateDailyDate(dir) {
       const state = window.SF_STORE && window.SF_STORE.getSlice('planner');
       const currentStr = (state && state.selectedDate) || _toLocalDateStr();
@@ -2955,12 +3020,34 @@
       }
       if (defaults.date) {
         window._selectedSlotDate = defaults.date;
+      } else {
+        window._selectedSlotDate = null;
       }
-      if (defaults.startTime && document.getElementById('sf-add-block-start')) {
-        document.getElementById('sf-add-block-start').value = defaults.startTime;
+
+      let startVal = defaults.startTime;
+      let endVal = defaults.endTime;
+      if (!startVal && !endVal) {
+        const now = new Date();
+        let nextHour = now.getHours() + (now.getMinutes() > 0 ? 1 : 0);
+        let endHour = nextHour + 1;
+        if (nextHour >= 24) {
+          nextHour = nextHour % 24;
+          endHour = (nextHour + 1) % 24;
+          if (!defaults.date && (!window.SF_STORE?.getSlice('planner')?.selectedDate || window.SF_STORE.getSlice('planner').selectedDate === _toLocalDateStr())) {
+            window._selectedSlotDate = _toLocalDateStr(new Date(now.getTime() + 86400000));
+          }
+        } else if (endHour >= 24) {
+          endHour = endHour % 24;
+        }
+        startVal = `${String(nextHour).padStart(2, '0')}:00`;
+        endVal = `${String(endHour).padStart(2, '0')}:00`;
       }
-      if (defaults.endTime && document.getElementById('sf-add-block-end')) {
-        document.getElementById('sf-add-block-end').value = defaults.endTime;
+
+      if (startVal && document.getElementById('sf-add-block-start')) {
+        document.getElementById('sf-add-block-start').value = startVal;
+      }
+      if (endVal && document.getElementById('sf-add-block-end')) {
+        document.getElementById('sf-add-block-end').value = endVal;
       }
 
       if (window.syncCustomUIControls) window.syncCustomUIControls();
@@ -3142,6 +3229,7 @@
         submitBtn.textContent = 'Save Block';
       }
       window._isSavingBlock = false;
+      window._selectedSlotDate = null;
     }
 
     function _formatAMPM(timeStr) {
@@ -3427,6 +3515,27 @@
       }
 
       const isEditing = !!window._currentEditingBlockId;
+      const checkState = window.SF_STORE && window.SF_STORE.getSlice('planner');
+      const checkBlock = isEditing && checkState ? (checkState.dailyBlocks || []).find(b => b.id === window._currentEditingBlockId || b._id === window._currentEditingBlockId) : null;
+
+      let targetDateStr;
+      if (checkBlock && checkBlock.startTime && !isNaN(new Date(checkBlock.startTime).getTime())) {
+        targetDateStr = _toLocalDateStr(new Date(checkBlock.startTime));
+      } else {
+        targetDateStr = window._selectedSlotDate || (checkState && checkState.selectedDate) || _toLocalDateStr();
+      }
+
+      let origDateStr = null;
+      let origStartVal = null;
+      if (checkBlock && checkBlock.startTime && !isNaN(new Date(checkBlock.startTime).getTime())) {
+        const origStartObj = new Date(checkBlock.startTime);
+        origDateStr = _toLocalDateStr(origStartObj);
+        origStartVal = `${String(origStartObj.getHours()).padStart(2, '0')}:${String(origStartObj.getMinutes()).padStart(2, '0')}`;
+      }
+      if (!validatePlannerTime(targetDateStr, startTimeVal, { isEditing: isEditing && !!checkBlock, origDateStr: origDateStr, origStartTime: origStartVal }).valid) {
+        return;
+      }
+
       window._isSavingBlock = true;
       if (submitBtn) {
         submitBtn.disabled = true;
@@ -3925,9 +4034,13 @@
           }
           /* Ensure all modals, confirms and overlays always appear above the fullscreen calendar */
           body.sf-planner-fullscreen-active #sf-add-block-modal,
-          body.sf-planner-fullscreen-active .sf-confirm-overlay,
-          body.sf-planner-fullscreen-active .sf-toast-container {
+          body.sf-planner-fullscreen-active .sf-confirm-overlay {
             z-index: 200000 !important;
+          }
+          body.sf-planner-fullscreen-active .sf-toast-container,
+          .sf-toast-container,
+          #sf-toast-container {
+            z-index: 2147483647 !important;
           }
           /* Overlays appended directly to body (recurrence scope, confirm dialogs) */
           body.sf-planner-fullscreen-active > .fixed.inset-0 {
@@ -4401,13 +4514,38 @@
     function openAddBlockModalForSlot(dayIndex, hour, isHalfHour = false) {
       if (!_weeklyStartDate) return;
       const colDate = new Date(_weeklyStartDate.getTime() + dayIndex * 86400000);
-      const dateStr = colDate.toLocaleDateString('en-CA');
-      window._selectedSlotDate = dateStr;
+      let dateStr = colDate.toLocaleDateString('en-CA');
+      const todayStr = typeof _toLocalDateStr === 'function' ? _toLocalDateStr() : new Date().toLocaleDateString('en-CA');
+      const now = new Date();
+      let startHr = String(hour).padStart(2, '0');
+      let startMin = isHalfHour ? '30' : '00';
+      let endHr = isHalfHour ? String((hour + 1) % 24).padStart(2, '0') : String((hour + 1) % 24).padStart(2, '0');
+      let endMin = isHalfHour ? '00' : '00';
 
-      const startHr = String(hour).padStart(2, '0');
-      const startMin = isHalfHour ? '30' : '00';
-      const endHr = isHalfHour ? String((hour + 1) % 24).padStart(2, '0') : String((hour + 1) % 24).padStart(2, '0');
-      const endMin = isHalfHour ? '00' : '00';
+      const validation = validatePlannerTime(dateStr, `${startHr}:${startMin}`, { showToast: dateStr < todayStr });
+      if (!validation.valid && dateStr < todayStr) {
+        return;
+      }
+
+      if (!validation.valid && dateStr === todayStr) {
+        let nextHour = now.getHours() + (now.getMinutes() > 0 ? 1 : 0);
+        let nextEndHour = nextHour + 1;
+        if (nextHour >= 24) {
+          nextHour = nextHour % 24;
+          nextEndHour = (nextHour + 1) % 24;
+          dateStr = _toLocalDateStr(new Date(now.getTime() + 86400000));
+        } else if (nextEndHour >= 24) {
+          nextEndHour = nextEndHour % 24;
+        }
+        startHr = String(nextHour).padStart(2, '0');
+        startMin = '00';
+        endHr = String(nextEndHour).padStart(2, '0');
+        endMin = '00';
+        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+          window.SF_COMPONENTS.showToast('Selected time has already passed. Defaulted to the next available hour.', 'info');
+        }
+      }
+      window._selectedSlotDate = dateStr;
 
       if (typeof openAddBlockModal === 'function') {
         openAddBlockModal({
@@ -5217,6 +5355,9 @@
     }
 
     function openAddBlockModalForDate(dateStr) {
+      if (!validatePlannerTime(dateStr, '00:00', { showToast: true }).valid && dateStr < _toLocalDateStr()) {
+        return;
+      }
       window._selectedSlotDate = dateStr;
       if (typeof openAddBlockModal === 'function') {
         openAddBlockModal({ date: dateStr });
@@ -5823,6 +5964,11 @@
         return;
       }
 
+      if (!validatePlannerTime(currentDateStr || originalDateStr, currentStartMin, { isEditing: true, origDateStr: originalDateStr, origStartTime: originalStartMin }).valid) {
+        if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+        return;
+      }
+
       if (!hasMovedBeyondThreshold || (currentStartMin === originalStartMin && currentEndMin === originalEndMin && currentDateStr === originalDateStr)) {
         return;
       }
@@ -6131,6 +6277,9 @@
         if (!isNaN(d)) dateStr = d.toLocaleDateString('en-CA');
       }
       if (!dateStr) dateStr = source.date || (plannerState && plannerState.selectedDate) || (typeof _toLocalDateStr === 'function' ? _toLocalDateStr() : new Date().toLocaleDateString('en-CA'));
+      if (!validatePlannerTime(dateStr, newStartMin, { showToast: true }).valid) {
+        return;
+      }
 
       let newStartISO, newEndISO;
       if (source.startTime && !isNaN(new Date(source.startTime).getTime())) {

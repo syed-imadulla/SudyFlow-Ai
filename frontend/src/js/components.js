@@ -659,7 +659,11 @@
       if (!container) {
         container = document.createElement('div');
         container.id = 'sf-toast-container';
-        container.className = 'sf-toast-container fixed bottom-5 right-5 z-[300000] flex flex-col gap-2.5 pointer-events-none max-w-xs w-full px-4 md:px-0';
+        container.className = 'sf-toast-container fixed bottom-5 right-5 z-[2147483647] flex flex-col gap-2.5 pointer-events-none max-w-xs w-full px-4 md:px-0';
+        document.body.appendChild(container);
+      }
+      container.style.setProperty('z-index', '2147483647', 'important');
+      if (container !== document.body.lastElementChild) {
         document.body.appendChild(container);
       }
 

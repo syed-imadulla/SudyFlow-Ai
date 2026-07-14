@@ -256,3 +256,10 @@ select option:checked, select option:hover {
 [title], [data-tooltip] {
   cursor: pointer;
 }
+
+/* Ensure toast notifications ALWAYS appear in front of every modal and overlay across all pages */
+#sf-toast-container,
+.sf-toast-container,
+div[id="sf-toast-container"] {
+  z-index: 2147483647 !important;
+}
