@@ -1353,6 +1353,10 @@
                           <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                           <span>Edit</span>
                         </button>
+                        <button onclick="duplicatePlannerBlock('${id}')" class="w-full px-3 py-2 text-left text-xs font-semibold text-[#A1A1AA] hover:bg-[#A855F7]/15 hover:text-white rounded-lg flex items-center gap-2.5 transition-all duration-150 focus:outline-none focus:ring-1 focus:ring-[#A855F7]">
+                          <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path stroke-linecap="round" stroke-linejoin="round" d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                          <span>Duplicate</span>
+                        </button>
                         <button onclick="confirmDeleteTimeBlock('${id}')" class="w-full px-3 py-2 text-left text-xs font-semibold text-red-400 hover:bg-red-500/15 hover:text-red-300 rounded-lg flex items-center gap-2.5 transition-all duration-150 focus:outline-none focus:ring-1 focus:ring-red-400">
                           <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                           <span>Delete</span>
@@ -2293,6 +2297,7 @@
       container.innerHTML = _renderPlannerCards(sortedBlocks, goals);
       _requestTimeVisualsUpdate();
     }
+    window.renderDailyPlanner = renderDailyPlanner;
 
     // ─────────────────────────────────────────────────────────────────
     // DAILY FLEXIBLE OVERLAP LAYOUT ENGINE
@@ -2423,6 +2428,10 @@
                   <button onclick="openEditBlockModal('${id}')" class="w-full px-3 py-2 text-left text-xs font-semibold text-[#D8B4FE] hover:bg-[#A855F7]/15 hover:text-white rounded-lg flex items-center gap-2.5 transition-all duration-150 focus:outline-none focus:ring-1 focus:ring-[#A855F7]">
                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                     <span>Edit</span>
+                  </button>
+                  <button onclick="duplicatePlannerBlock('${id}')" class="w-full px-3 py-2 text-left text-xs font-semibold text-[#A1A1AA] hover:bg-[#A855F7]/15 hover:text-white rounded-lg flex items-center gap-2.5 transition-all duration-150 focus:outline-none focus:ring-1 focus:ring-[#A855F7]">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path stroke-linecap="round" stroke-linejoin="round" d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                    <span>Duplicate</span>
                   </button>
                   <button onclick="confirmDeleteTimeBlock('${id}')" class="w-full px-3 py-2 text-left text-xs font-semibold text-red-400 hover:bg-red-500/15 hover:text-red-300 rounded-lg flex items-center gap-2.5 transition-all duration-150 focus:outline-none focus:ring-1 focus:ring-red-400">
                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
@@ -2789,6 +2798,19 @@
 
     window._currentEditingBlockId = null;
 
+    function closeAllPlannerCardMenus() {
+      document.querySelectorAll('.sf-planner-dropdown').forEach(d => {
+        d.classList.add('hidden');
+        const card = d.closest('.sf-planner-card');
+        if (card && card.dataset.originalZ) {
+          card.style.zIndex = card.dataset.originalZ;
+        } else if (card) {
+          card.style.zIndex = '';
+        }
+      });
+    }
+    window.closeAllPlannerCardMenus = closeAllPlannerCardMenus;
+
     function togglePlannerCardMenu(e, blockId) {
       if (e) {
         e.preventDefault();
@@ -2799,10 +2821,14 @@
       if (!menu) return;
 
       const wasHidden = menu.classList.contains('hidden');
-      document.querySelectorAll('.sf-planner-dropdown').forEach(d => d.classList.add('hidden'));
+      closeAllPlannerCardMenus();
 
       if (wasHidden) {
         menu.classList.remove('hidden');
+        const card = menu.closest('.sf-planner-card');
+        if (card) {
+          card.style.zIndex = '9999';
+        }
       }
     }
 
@@ -3024,7 +3050,7 @@
 
     function openAddBlockModal(defaults = {}) {
       window._currentEditingBlockId = null;
-      document.querySelectorAll('.sf-planner-dropdown').forEach(d => d.classList.add('hidden'));
+      if (typeof closeAllPlannerCardMenus === 'function') closeAllPlannerCardMenus(); else document.querySelectorAll('.sf-planner-dropdown').forEach(d => d.classList.add('hidden'));
 
       const modal = document.getElementById('sf-add-block-modal');
       const form = document.getElementById('sf-add-block-form');
@@ -3169,7 +3195,7 @@
     }
 
     function openEditBlockModal(blockId) {
-      document.querySelectorAll('.sf-planner-dropdown').forEach(d => d.classList.add('hidden'));
+      if (typeof closeAllPlannerCardMenus === 'function') closeAllPlannerCardMenus(); else document.querySelectorAll('.sf-planner-dropdown').forEach(d => d.classList.add('hidden'));
 
       const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
       const allDayGroupBlocks = Object.values(plannerState?.dayGroups || {}).flat();
@@ -3566,7 +3592,7 @@
         closeAddBlockModal();
       }
       if (!e.target.closest('.sf-planner-dropdown') && !e.target.closest('button[onclick*="togglePlannerCardMenu"]')) {
-        document.querySelectorAll('.sf-planner-dropdown').forEach(d => d.classList.add('hidden'));
+        if (typeof closeAllPlannerCardMenus === 'function') closeAllPlannerCardMenus(); else document.querySelectorAll('.sf-planner-dropdown').forEach(d => d.classList.add('hidden'));
       }
     });
 
@@ -4303,7 +4329,7 @@
 
     let _isDeletingBlock = false;
     function confirmDeleteTimeBlock(blockId) {
-      document.querySelectorAll('.sf-planner-dropdown').forEach(d => d.classList.add('hidden'));
+      if (typeof closeAllPlannerCardMenus === 'function') closeAllPlannerCardMenus(); else document.querySelectorAll('.sf-planner-dropdown').forEach(d => d.classList.add('hidden'));
 
       const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
       const existingBlock = (plannerState && plannerState.dailyBlocks || []).find(b => b.id === blockId || b._id === blockId);
@@ -4332,6 +4358,14 @@
       }
     }
     window.confirmDeleteTimeBlock = confirmDeleteTimeBlock;
+
+    function duplicateDailyTimeBlock(blockId) {
+      if (typeof closeAllPlannerCardMenus === 'function') closeAllPlannerCardMenus(); else document.querySelectorAll('.sf-planner-dropdown').forEach(d => d.classList.add('hidden'));
+      if (typeof duplicatePlannerBlock === 'function') {
+        duplicatePlannerBlock(blockId);
+      }
+    }
+    window.duplicateDailyTimeBlock = duplicateDailyTimeBlock;
     window.initPlannerBlockDrag = initPlannerBlockDrag;
 
     async function _executeDeleteBlock(blockId, scope = null) {
@@ -6162,7 +6196,7 @@
       } else if (action === 'duplicate') {
         _closeWeeklyContextMenu();
         _sfWeeklyTooltipHide();
-        if (typeof _duplicateWeeklyEvent === 'function') _duplicateWeeklyEvent(id);
+        if (typeof duplicatePlannerBlock === 'function') duplicatePlannerBlock(id); else if (typeof _duplicateWeeklyEvent === 'function') _duplicateWeeklyEvent(id);
       } else if (action === 'delete') {
         _closeWeeklyContextMenu();
         _sfWeeklyTooltipHide();
@@ -6356,7 +6390,8 @@
     }, true);
 
     // ── Duplicate Event ───────────────────────────────────────
-    async function _duplicateWeeklyEvent(id) {
+    async function duplicatePlannerBlock(id) {
+      if (typeof closeAllPlannerCardMenus === 'function') closeAllPlannerCardMenus(); else document.querySelectorAll('.sf-planner-dropdown').forEach(d => d.classList.add('hidden'));
       if (!id) return;
       const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
       const allDayGroupBlocks = Object.values(plannerState?.dayGroups || {}).flat();
@@ -6462,33 +6497,66 @@
       newBlock.endTimeDisplay = typeof _formatTimeDisplay === 'function' ? _formatTimeDisplay(newEndISO) : toHHMM(newEndMin);
 
       const isFocusDup = window.plannerSettings?.schedulingMode !== 'flexible';
-      if (isFocusDup && _checkPlannerTimeConflict(null, newStartMin, newEndMin, dateStr)) {
-        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-          window.SF_COMPONENTS.showToast('Time conflict detected. Choose another slot.', 'error');
+      const hasConflict = _checkPlannerTimeConflict(null, newStartMin, newEndMin, dateStr);
+
+      const runCreateDuplicate = async () => {
+        try {
+          let created = null;
+          if (window.SF_STORE) {
+            created = await window.SF_STORE.dispatch('planner/CREATE', newBlock);
+          } else if (window.plannerService) {
+            created = await window.plannerService.createBlock(newBlock);
+            if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+            if (typeof renderDailyPlanner === 'function') renderDailyPlanner();
+          }
+          if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+            window.SF_COMPONENTS.showToast('Event duplicated! ✓', 'success');
+          }
+          return created;
+        } catch (err) {
+          console.error('[Sprint5.1] Duplicate error:', err);
+          if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+            window.SF_COMPONENTS.showToast(err.message || 'Failed to duplicate event', 'error');
+          }
         }
-        return null;
+      };
+
+      if (hasConflict) {
+        if (isFocusDup) {
+          if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+            window.SF_COMPONENTS.showToast('This time slot is already occupied.', 'error');
+          }
+          return null;
+        } else {
+          const allRaw = [...(plannerState?.plannerEvents || []), ...(plannerState?.dailyBlocks || [])];
+          const startOfDate = new Date(`${dateStr}T00:00:00.000Z`);
+          const endOfDate = new Date(`${dateStr}T23:59:59.999Z`);
+          const dayInstances = typeof expandWeeklyRecurrences === 'function'
+            ? expandWeeklyRecurrences(allRaw, startOfDate, endOfDate, dateStr)
+            : allRaw.filter(b => (b.date || (b.startTime && b.startTime.split('T')[0])) === dateStr);
+          const overlaps = dayInstances.filter(b => {
+            const bsMin = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '');
+            let beMin = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '');
+            if (!beMin || beMin <= bsMin) beMin = bsMin + 60;
+            return Math.max(newStartMin, bsMin) < Math.min(newEndMin, beMin);
+          });
+
+          showPlannerConflictDialog({
+            timeStr: `${newBlock.startTimeDisplay || toHHMM(newStartMin)} – ${newBlock.endTimeDisplay || toHHMM(newEndMin)}`,
+            existingTitles: Array.from(new Set(overlaps.map(t => t.title || t.subject || 'Untitled Block'))),
+            onCancel: () => {},
+            onConfirm: async () => {
+              await runCreateDuplicate();
+            }
+          });
+          return null;
+        }
       }
 
-      try {
-        let created = null;
-        if (window.SF_STORE) {
-          created = await window.SF_STORE.dispatch('planner/CREATE', newBlock);
-        } else if (window.plannerService) {
-          created = await window.plannerService.createBlock(newBlock);
-          if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
-        }
-        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-          window.SF_COMPONENTS.showToast('Event duplicated! ✓', 'success');
-        }
-        return created;
-      } catch (err) {
-        console.error('[Sprint5.1] Duplicate error:', err);
-        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-          window.SF_COMPONENTS.showToast(err.message || 'Failed to duplicate event', 'error');
-        }
-      }
+      return await runCreateDuplicate();
     }
-    window._duplicateWeeklyEvent = _duplicateWeeklyEvent;
+    window.duplicatePlannerBlock = duplicatePlannerBlock;
+    window._duplicateWeeklyEvent = duplicatePlannerBlock;
 
     // ── Tooltip ───────────────────────────────────────────────
     let _sfWeeklyTooltipEl = null;
@@ -6633,7 +6701,7 @@
         _weeklyDeselectAll();
       } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
         e.preventDefault();
-        _duplicateWeeklyEvent(_weeklySelectedId);
+        if (typeof duplicatePlannerBlock === 'function') duplicatePlannerBlock(_weeklySelectedId); else if (typeof _duplicateWeeklyEvent === 'function') _duplicateWeeklyEvent(_weeklySelectedId);
       } else if (e.key === 'Enter') {
         e.preventDefault();
         if (typeof openEditBlockModal === 'function') openEditBlockModal(_weeklySelectedId);
