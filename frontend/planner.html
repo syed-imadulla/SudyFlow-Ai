@@ -897,11 +897,15 @@
 
 
     function setPlanningStyle(style, skipConfirm = false, skipToast = false) {
+      window._isReviewingConflicts = false;
       if (!window.plannerSettings) window.plannerSettings = {};
       window.plannerSettings.planningStyle = style;
       if ('schedulingMode' in window.plannerSettings) delete window.plannerSettings.schedulingMode;
       try {
         localStorage.setItem('studyflow_planner_settings', JSON.stringify(window.plannerSettings));
+        localStorage.setItem('sf_planner_onboarding_completed', 'true');
+        localStorage.setItem('studyflow_planning_style_onboarded', 'true');
+        localStorage.setItem('sf_planner_style', style);
       } catch (err) {}
       
       document.querySelectorAll('sf-scheduling-mode-select, sf-planning-style-indicator').forEach(el => {
@@ -913,17 +917,70 @@
         const dailyState = window.SF_STORE ? window.SF_STORE.getSlice('planner') : null;
         renderDailyPlanner(dailyState);
       }
-      if (!skipToast && window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+      if (!skipToast) {
         const label = style === 'flexible' ? 'Flexible Planner' : 'Focus Planner';
-        window.SF_COMPONENTS.showToast(`Planning Style updated. You're now using ${label}.`, 'success');
+        const msg = `Planning Style updated. You're now using ${label}.`;
+        if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+          window.SF_COMPONENTS.showToast(msg, 'success');
+        }
       }
     }
     window.setPlanningStyle = setPlanningStyle;
     window.setPlannerSchedulingMode = setPlanningStyle;
 
+    function _isSameOrDuplicateBlock(a, b) {
+      if (!a || !b) return false;
+      if (a === b) return true;
+      const aId = a.id || a._id || a.virtualId || a._instanceId || '';
+      const bId = b.id || b._id || b.virtualId || b._instanceId || '';
+      if (aId && bId && aId === bId) return true;
+      const aBase = aId.includes('::') ? aId.split('::')[0] : (a.masterId || a.seriesId || aId);
+      const bBase = bId.includes('::') ? bId.split('::')[0] : (b.masterId || b.seriesId || bId);
+      if (aBase && bBase && aBase === bBase) {
+        const aDate = a.date || (a.startTime && typeof a.startTime === 'string' ? a.startTime.split('T')[0] : '');
+        const bDate = b.date || (b.startTime && typeof b.startTime === 'string' ? b.startTime.split('T')[0] : '');
+        if (!aDate || !bDate || aDate === bDate) return true;
+      }
+      return false;
+    }
+    window._isSameOrDuplicateBlock = _isSameOrDuplicateBlock;
+
+    function _isTargetBlockMatch(targetBlockId, b) {
+      if (!b || !targetBlockId) return false;
+      const bId = typeof b === 'string' ? b : (b.id || b._id || b.virtualId || b.masterId || b._instanceId || '');
+      if (bId === targetBlockId || b.id === targetBlockId || b._id === targetBlockId || b._instanceId === targetBlockId || b.virtualId === targetBlockId) return true;
+      const tBase = typeof targetBlockId === 'string' && targetBlockId.includes('::') ? targetBlockId.split('::')[0] : targetBlockId;
+      const tDate = typeof targetBlockId === 'string' && targetBlockId.includes('::') ? targetBlockId.split('::')[1] : null;
+      const bBase = typeof bId === 'string' && bId.includes('::') ? bId.split('::')[0] : (b.masterId || b.seriesId || b.id || b._id || '');
+      const bDate = b.date || (b.startTime && typeof b.startTime === 'string' ? b.startTime.split('T')[0] : null);
+      if (tBase && bBase && tBase === bBase && (!tDate || !bDate || tDate === bDate)) return true;
+      return false;
+    }
+    window._isTargetBlockMatch = _isTargetBlockMatch;
+
+    function _deduplicateBlockArray(blocks) {
+      if (!Array.isArray(blocks)) return [];
+      const result = [];
+      for (let i = 0; i < blocks.length; i++) {
+        const b = blocks[i];
+        if (!b) continue;
+        let isDup = false;
+        for (let j = 0; j < result.length; j++) {
+          if (_isSameOrDuplicateBlock(result[j], b)) {
+            isDup = true;
+            break;
+          }
+        }
+        if (!isDup) result.push(b);
+      }
+      return result;
+    }
+    window._deduplicateBlockArray = _deduplicateBlockArray;
+
     function _checkPlannerTimeConflict(targetBlockId, startMin, endMin, targetDateStr = null) {
       const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
-      const allRaw = [...(plannerState?.plannerEvents || []), ...(plannerState?.dailyBlocks || [])];
+      const allDayGroupBlocks = Object.values(plannerState?.dayGroups || {}).flat();
+      const allRaw = [...(plannerState?.plannerEvents || []), ...(plannerState?.dailyBlocks || []), ...allDayGroupBlocks];
       
       const dateStr = targetDateStr || window._selectedSlotDate || window._plannerDragState?.currentDateStr || window._currentDateStr || new Date().toISOString().split('T')[0];
       
@@ -931,10 +988,10 @@
         ? expandWeeklyRecurrences(allRaw, new Date(`${dateStr}T00:00:00.000Z`), new Date(`${dateStr}T23:59:59.999Z`), dateStr)
         : allRaw.filter(b => (b.date || (b.startTime && typeof b.startTime === 'string' && b.startTime.split('T')[0])) === dateStr);
 
-      for (let i = 0; i < dayBlocks.length; i++) {
-        const b = dayBlocks[i];
-        const bId = b.id || b._id || b.virtualId || b.masterId;
-        if (targetBlockId && (bId === targetBlockId || b.id === targetBlockId || b._id === targetBlockId)) continue;
+      const cleanBlocks = _deduplicateBlockArray(dayBlocks);
+      for (let i = 0; i < cleanBlocks.length; i++) {
+        const b = cleanBlocks[i];
+        if (targetBlockId && _isTargetBlockMatch(targetBlockId, b)) continue;
         
         const bStart = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '');
         let bEnd = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '');
@@ -958,11 +1015,11 @@
         ? expandWeeklyRecurrences(allRaw, new Date(`${dateStr}T00:00:00.000Z`), new Date(`${dateStr}T23:59:59.999Z`), dateStr)
         : allRaw.filter(b => (b.date || (b.startTime && typeof b.startTime === 'string' && b.startTime.split('T')[0])) === dateStr);
 
+      const cleanBlocks = _deduplicateBlockArray(dayBlocks);
       const overlaps = [];
-      for (let i = 0; i < dayBlocks.length; i++) {
-        const b = dayBlocks[i];
-        const bId = b.id || b._id || b.virtualId || b.masterId || b._instanceId;
-        if (targetBlockId && (bId === targetBlockId || b.id === targetBlockId || b._id === targetBlockId || b._instanceId === targetBlockId)) continue;
+      for (let i = 0; i < cleanBlocks.length; i++) {
+        const b = cleanBlocks[i];
+        if (targetBlockId && _isTargetBlockMatch(targetBlockId, b)) continue;
         
         const bStart = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '');
         let bEnd = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '');
@@ -1409,7 +1466,7 @@
 
       const origCol = cardElem.closest('.weekly-col');
       const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
-      const origDateStr = origCol ? origCol.getAttribute('data-date') : ((plannerState && plannerState.selectedDate) || _toLocalDateStr());
+      const origDateStr = origCol ? origCol.getAttribute('data-date') : (window._selectedSlotDate || window._currentDateStr || (plannerState && plannerState.selectedDate) || _toLocalDateStr());
 
       if (cardElem.setPointerCapture && e.pointerId !== undefined) {
         try { cardElem.setPointerCapture(e.pointerId); } catch (_err) {}
@@ -1672,6 +1729,10 @@
       };
 
       const targetDateStr = currentDateStr || originalDateStr || _toLocalDateStr();
+      if (!hasMovedBeyondThreshold || (currentStartMin === originalStartMin && (targetDateStr === originalDateStr || !targetDateStr))) {
+        finishDragCleanup();
+        return;
+      }
       const overlaps = _findPlannerTimeOverlaps(blockId, currentStartMin, currentEndMin, targetDateStr);
       const hasOverlapOnDrop = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin, targetDateStr);
       const hasOverlap = overlaps.length > 0 || isConflict || hasOverlapOnDrop;
@@ -1749,29 +1810,39 @@
           durationStr
         };
 
-        if (targetDateStr !== originalDateStr) {
-          patch.date = targetDateStr;
-          patch.eventDate = targetDateStr;
-        }
-
-        const isRec = (existingBlock && existingBlock.isRecurring) || (typeof blockId === 'string' && blockId.includes('::'));
+        const isRec = existingBlock && existingBlock.isRecurring && existingBlock.isRecurring !== false;
 
         const runUpdate = async (scope = null) => {
           try {
-            const exDate = (typeof blockId === 'string' && blockId.includes('::')) ? blockId.split('::')[1] : (originalDateStr || targetDateStr);
-            const scopedPatch = scope ? { ...patch, editScope: scope, exDate } : patch;
-            if (window.SF_STORE) {
-              await window.SF_STORE.dispatch('planner/UPDATE', { id: blockId, patch: scopedPatch });
-            } else if (window.plannerService) {
-              await window.plannerService.updateBlock(blockId, scopedPatch);
+            const exDate = (typeof blockId === 'string' && blockId.includes('::')) ? blockId.split('::')[1] : originalDateStr;
+            const targetId = (typeof blockId === 'string' && blockId.includes('::')) ? blockId.split('::')[0] : blockId;
+            const updatePayload = Object.assign({}, patch, {
+              startTimeDisplay: _formatMinutesToAMPM(currentStartMin),
+              endTimeDisplay: _formatMinutesToAMPM(currentEndMin),
+              date: targetDateStr
+            });
+            if (scope) {
+              updatePayload.editScope = scope;
+              updatePayload.exDate = exDate;
+              updatePayload.seriesId = existingBlock?.seriesId || targetId;
             }
-            if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-              window.SF_COMPONENTS.showToast(`Rescheduled to ${targetDateStr} at ${_formatMinutesToAMPM(currentStartMin)}`, 'success');
+            if (window.SF_STORE) {
+              await window.SF_STORE.dispatch('planner/UPDATE', {
+                id: blockId,
+                patch: updatePayload
+              });
+            } else if (window.plannerService) {
+              await window.plannerService.updateBlock(blockId, updatePayload);
             }
           } catch (err) {
-            console.error('[Planner] Error rescheduling block:', err);
+            console.error('[Sprint5.1] Drag update error:', err);
             if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-              window.SF_COMPONENTS.showToast(err.message || 'Failed to reschedule block', 'error');
+              window.SF_COMPONENTS.showToast(err.message || 'Failed to update event', 'error');
+            }
+          } finally {
+            finishDragCleanup();
+            if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+              window.SF_COMPONENTS.showToast('Event rescheduled successfully.', 'success');
             }
             if (window.renderDailyPlanner) window.renderDailyPlanner();
             if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
@@ -1795,6 +1866,24 @@
           if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
           return;
         } else {
+          const createdNewOverlap = typeof _isNewPlannerOverlap === 'function' && _isNewPlannerOverlap(blockId, currentStartMin, currentEndMin, targetDateStr, originalStartMin, originalStartMin + (currentEndMin - currentStartMin), originalDateStr);
+          if (!createdNewOverlap) {
+            await executeDragDrop();
+            return;
+          }
+          console.log(
+            "[Conflict Dialog]",
+            "Caller:",
+            "_onPlannerDragEnd",
+            {
+              planningStyle: typeof _getPlanningStyle === 'function' ? _getPlanningStyle() : 'flexible',
+              hasMovedBeyondThreshold: _plannerDragState ? _plannerDragState.hasMovedBeyondThreshold : null,
+              timeChanged: (currentStartMin !== originalStartMin || currentEndMin !== originalEndMin || targetDateStr !== originalDateStr),
+              createdNewOverlap: createdNewOverlap,
+              action: 'drag',
+              blockId: blockId
+            }
+          );
           showPlannerConflictDialog({
             timeStr: `${_formatMinutesToAMPM(currentStartMin)} – ${_formatMinutesToAMPM(currentEndMin)}`,
             existingTitles: Array.from(new Set(overlaps.map(t => t.title || t.subject || 'Untitled Block'))),
@@ -1903,6 +1992,10 @@
 
       const pxPerMin = _calcPxPerMin(cardElem, origDuration);
 
+      const origCol = cardElem.closest('.weekly-col');
+      const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
+      const origDateStr = origCol ? origCol.getAttribute('data-date') : (window._selectedSlotDate || window._currentDateStr || (plannerState && plannerState.selectedDate) || _toLocalDateStr());
+
       if (handleElem.setPointerCapture && e.pointerId !== undefined) {
         try { handleElem.setPointerCapture(e.pointerId); } catch (_err) {}
       }
@@ -1915,6 +2008,8 @@
         blockId: blockId,
         pointerId: e.pointerId,
         startY: e.clientY,
+        originalDateStr: origDateStr,
+        currentDateStr: origDateStr,
         originalStartMin: origStartMin,
         originalEndMin: origEndMin,
         currentStartMin: origStartMin,
@@ -2104,7 +2199,7 @@
 
       // ── Early exits ───────────────────────────────────────────────────────
       // Click without threshold crossing → no-op
-      if (!hasMovedBeyondThreshold) return;
+      if (!hasMovedBeyondThreshold || (currentStartMin === originalStartMin && currentEndMin === originalEndMin)) return;
 
       const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
       const targetDateStr = _plannerDragState?.currentDateStr || (plannerState && plannerState.selectedDate) || _toLocalDateStr();
@@ -2137,7 +2232,8 @@
           endTime: newEndISO,
           startTimeDisplay: _formatTimeDisplay(newStartISO),
           endTimeDisplay: _formatTimeDisplay(newEndISO),
-          durationStr: newDurationStr
+          durationStr: newDurationStr,
+          date: targetDateStr
         };
 
         const existingBlock = (plannerState && plannerState.dailyBlocks || []).find(b => b.id === blockId || b._id === blockId);
@@ -2180,6 +2276,24 @@
           if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
           return;
         } else {
+          const createdNewOverlap = typeof _isNewPlannerOverlap === 'function' && _isNewPlannerOverlap(blockId, currentStartMin, currentEndMin, targetDateStr, originalStartMin, originalEndMin, targetDateStr);
+          if (!createdNewOverlap) {
+            await executeResizeDrop();
+            return;
+          }
+          console.log(
+            "[Conflict Dialog]",
+            "Caller:",
+            "_onPlannerResizeEnd",
+            {
+              planningStyle: typeof _getPlanningStyle === 'function' ? _getPlanningStyle() : 'flexible',
+              hasMovedBeyondThreshold: _plannerDragState ? _plannerDragState.hasMovedBeyondThreshold : null,
+              timeChanged: (currentStartMin !== originalStartMin || currentEndMin !== originalEndMin || targetDateStr !== originalDateStr),
+              createdNewOverlap: createdNewOverlap,
+              action: 'resize',
+              blockId: blockId
+            }
+          );
           showPlannerConflictDialog({
             timeStr: `${_formatMinutesToAMPM(currentStartMin)} – ${_formatMinutesToAMPM(currentEndMin)}`,
             existingTitles: Array.from(new Set(overlaps.map(t => t.title || t.subject || 'Untitled Block'))),
@@ -2626,16 +2740,9 @@
       }
       _requestTimeVisualsUpdate();
 
-      if (!window._dailyFlexDidInitialScroll && container && isToday) {
-        window._dailyFlexDidInitialScroll = true;
-        setTimeout(() => {
-          if (container && _getPlanningStyle() === 'flexible' && container.scrollTop <= 10) {
-            const currentHour = new Date().getHours();
-            const scrollTarget = Math.max(0, (currentHour - 2) * hrHeight);
-            container.scrollTop = scrollTarget;
-          }
-        }, 30);
-      }
+      setTimeout(() => {
+        if (typeof scrollDailyGridToNow === 'function') scrollDailyGridToNow();
+      }, 50);
     }
 
 
@@ -2784,7 +2891,10 @@
       const parts = currentStr.split('-').map(Number);
       let dt = new Date(parts[0], parts[1] - 1, parts[2]);
 
-      if (dir === 'prev') {
+      if (typeof dir === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dir)) {
+        const p = dir.split('-').map(Number);
+        dt = new Date(p[0], p[1] - 1, p[2]);
+      } else if (dir === 'prev') {
         dt.setDate(dt.getDate() - 1);
       } else if (dir === 'next') {
         dt.setDate(dt.getDate() + 1);
@@ -2793,7 +2903,7 @@
       }
 
       const targetStr = _toLocalDateStr(dt);
-      if (targetStr === currentStr && dir !== 'today') return;
+      if (targetStr === currentStr && dir !== 'today' && !(typeof dir === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dir))) return;
 
       const dateHeader = document.getElementById('dailyDateHeader');
       if (dateHeader) {
@@ -2805,11 +2915,85 @@
         }
       }
 
+      const todayStrCheck = typeof _toLocalDateStr === 'function' ? _toLocalDateStr() : new Date().toLocaleDateString('en-CA');
+      if (targetStr === todayStrCheck) {
+        window._dailyFlexForceNextScroll = true;
+      }
+
+      try { localStorage.setItem('sf_last_selected_date', targetStr); } catch(e) {}
       if (window.SF_STORE) {
+        window.SF_STORE.dispatch('planner/SELECT_DATE', targetStr);
         await window.SF_STORE.dispatch('planner/LOAD', { date: targetStr });
+      }
+      if (targetStr === todayStrCheck && typeof scrollDailyGridToNow === 'function') {
+        setTimeout(scrollDailyGridToNow, 60);
       }
     }
     window.navigateDailyDate = navigateDailyDate;
+
+    async function navigateToDailyForDate(dateStr, options = {}) {
+      if (!dateStr) return;
+      try { localStorage.setItem('sf_last_selected_date', dateStr); } catch(e) {}
+      if (window.SF_STORE && window.SF_STORE.dispatch) {
+        window.SF_STORE.dispatch('planner/SELECT_DATE', dateStr);
+      }
+      await navigateDailyDate(dateStr);
+      if (typeof switchPlannerView === 'function') {
+        switchPlannerView('daily');
+      }
+      if (options.openAddModal) {
+        if (typeof openAddBlockModalForDailySlot === 'function') {
+          const now = new Date();
+          let hr = now.getHours() + (now.getMinutes() > 0 ? 1 : 0);
+          if (hr >= 24) hr = 9;
+          setTimeout(() => {
+            openAddBlockModalForDailySlot(hr, false);
+          }, 100);
+        } else if (typeof openAddBlockModal === 'function') {
+          setTimeout(() => {
+            openAddBlockModal(dateStr, '09:00', '10:00');
+          }, 100);
+        }
+      }
+    }
+    window.navigateToDailyForDate = navigateToDailyForDate;
+
+    async function openDailyViewForDate(dateStr) {
+      return navigateToDailyForDate(dateStr, { openAddModal: false });
+    }
+    window.openDailyViewForDate = openDailyViewForDate;
+
+    function navigateToWeeklyForDate(dateStr) {
+      if (!dateStr) return;
+
+      // Synchronously compute the Monday of the target week.
+      // Do NOT rely on async dispatch timing — compute it here and
+      // write _weeklyStartDate directly so switchPlannerView reads
+      // the correct value immediately.
+      const parts = dateStr.split('-').map(Number);
+      const targetDate = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0, 0);
+      const dow = targetDate.getDay(); // 0=Sun…6=Sat
+      const diffToMon = dow === 0 ? -6 : 1 - dow;
+      const mon = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate() + diffToMon, 0, 0, 0, 0);
+
+      // Set state synchronously before any view switch
+      window._weeklyStartDate = mon;
+      try { localStorage.setItem('sf_last_selected_date', dateStr); } catch(e) {}
+      try { localStorage.setItem('sf_last_planner_view', 'weekly'); } catch(e) {}
+      if (window.SF_STORE && window.SF_STORE.getSlice) {
+        // Directly patch the internal state (SELECT_DATE is sync in the handler body)
+        window.SF_STORE.dispatch('planner/SELECT_DATE', dateStr);
+      }
+      // Tell switchPlannerView which date to use, bypassing stale-store reads
+      window._pendingWeeklySelectedDate = dateStr;
+
+      if (typeof switchPlannerView === 'function') {
+        switchPlannerView('weekly');
+      }
+
+      delete window._pendingWeeklySelectedDate;
+    }
+    window.navigateToWeeklyForDate = navigateToWeeklyForDate;
 
     document.addEventListener('DOMContentLoaded', async () => {
       const dateHeader = document.getElementById('dailyDateHeader');
@@ -2870,6 +3054,12 @@
           }
         });
         await window.SF_STORE.bootstrap(['user', 'goals', 'planner']);
+        try {
+          const savedSel = localStorage.getItem('sf_last_selected_date');
+          if (savedSel && savedSel.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            window.SF_STORE.dispatch('planner/SELECT_DATE', savedSel);
+          }
+        } catch(e) {}
       }
 
       try {
@@ -2891,11 +3081,15 @@
     function closeAllPlannerCardMenus() {
       document.querySelectorAll('.sf-planner-dropdown').forEach(d => {
         d.classList.add('hidden');
-        const card = d.closest('.sf-planner-card');
+        const card = d.closest('.sf-planner-card') || d.closest('.weekly-event-card');
         if (card && card.dataset.originalZ) {
           card.style.zIndex = card.dataset.originalZ;
         } else if (card) {
           card.style.zIndex = '';
+        }
+        if (card && card._sfHadOverflowHidden) {
+          card.classList.add('overflow-hidden');
+          delete card._sfHadOverflowHidden;
         }
       });
     }
@@ -2915,9 +3109,13 @@
 
       if (wasHidden) {
         menu.classList.remove('hidden');
-        const card = menu.closest('.sf-planner-card');
+        const card = menu.closest('.sf-planner-card') || menu.closest('.weekly-event-card');
         if (card) {
-          card.style.zIndex = '9999';
+          if (card.classList.contains('overflow-hidden')) {
+            card._sfHadOverflowHidden = true;
+            card.classList.remove('overflow-hidden');
+          }
+          card.style.zIndex = '200002';
         }
       }
     }
@@ -3310,7 +3508,7 @@
         }
       }
       if (!block) {
-        document.querySelectorAll('.weekly-event-card').forEach(card => {
+        document.querySelectorAll('.weekly-event-card, .sf-planner-card').forEach(card => {
           const ev = card._sfEventData;
           if (ev && !block) {
             const evId = String(ev.id || ev._id || ev._instanceId || '');
@@ -3920,6 +4118,42 @@
               }
               return;
             } else {
+              const origStartMinEdit = existingBlock ? _timeStrToMinutes(existingBlock.startTimeDisplay || existingBlock.startTime || '') : sMinEdit;
+              let origEndMinEdit = existingBlock ? _timeStrToMinutes(existingBlock.endTimeDisplay || existingBlock.endTime || '') : eMinEdit;
+              if (!origEndMinEdit || origEndMinEdit <= origStartMinEdit) origEndMinEdit = origStartMinEdit + 60;
+              const origDateStrEdit = existingBlock?.date || (existingBlock?.startTime && typeof existingBlock.startTime === 'string' && existingBlock.startTime.split('T')[0]) || targetDateStr;
+              
+              const timeChangedEdit = (sMinEdit !== origStartMinEdit) || (eMinEdit !== origEndMinEdit) || (targetDateStr !== origDateStrEdit);
+              const createdNewOverlapEdit = typeof _isNewPlannerOverlap === 'function' && _isNewPlannerOverlap(editingBlockId, sMinEdit, eMinEdit, targetDateStr, origStartMinEdit, origEndMinEdit, origDateStrEdit);
+              
+              if (!timeChangedEdit || !createdNewOverlapEdit) {
+                window._isSavingBlock = true;
+                if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Saving...'; }
+                if (isRec && payload.isRecurring !== false) {
+                  closeAddBlockModal();
+                  promptRecurrenceScope('Apply edits to:', scope => runEdit(scope));
+                } else if (isRec && payload.isRecurring === false) {
+                  closeAddBlockModal();
+                  await runEdit('ALL');
+                } else {
+                  await runEdit(null);
+                }
+                return;
+              }
+
+              console.log(
+                "[Conflict Dialog]",
+                "Caller:",
+                "submitAddBlock (Edit)",
+                {
+                  planningStyle: typeof _getPlanningStyle === 'function' ? _getPlanningStyle() : 'flexible',
+                  hasMovedBeyondThreshold: false,
+                  timeChanged: timeChangedEdit,
+                  createdNewOverlap: createdNewOverlapEdit,
+                  action: 'edit',
+                  blockId: editingBlockId
+                }
+              );
               showPlannerConflictDialog({
                 timeStr: `${payload.startTimeDisplay || '09:00 AM'} – ${payload.endTimeDisplay || '10:00 AM'}`,
                 existingTitles: Array.from(new Set(overlapsEdit.map(t => t.title || t.subject || 'Untitled Block'))),
@@ -3985,6 +4219,19 @@
               }
               return;
             } else {
+              console.log(
+                "[Conflict Dialog]",
+                "Caller:",
+                "submitAddBlock (Create)",
+                {
+                  planningStyle: typeof _getPlanningStyle === 'function' ? _getPlanningStyle() : 'flexible',
+                  hasMovedBeyondThreshold: false,
+                  timeChanged: true,
+                  createdNewOverlap: true,
+                  action: 'create',
+                  blockId: null
+                }
+              );
               showPlannerConflictDialog({
                 timeStr: `${payload.startTimeDisplay || '09:00 AM'} – ${payload.endTimeDisplay || '10:00 AM'}`,
                 existingTitles: Array.from(new Set(overlaps.map(t => t.title || t.subject || 'Untitled Block'))),
@@ -4145,6 +4392,19 @@
         styleEl = document.createElement('style');
         styleEl.id = 'sf-fullscreen-dynamic-styles';
         styleEl.innerHTML = `
+          body.sf-planner-fullscreen-active include[src*="navbar"],
+          body.sf-planner-fullscreen-active include[src*="sidebar"],
+          body.sf-planner-fullscreen-active nav,
+          body.sf-planner-fullscreen-active aside,
+          body.sf-planner-fullscreen-active > div > include,
+          body.sf-planner-fullscreen-active main > header,
+          body.sf-planner-fullscreen-active #sidebar,
+          body.sf-planner-fullscreen-active #navbar,
+          body.sf-planner-fullscreen-active .sidebar,
+          body.sf-planner-fullscreen-active .navbar,
+          body.sf-planner-fullscreen-active header {
+            display: none !important;
+          }
           #weeklyCalendarContainer.sf-calendar-fullscreen,
           #monthlyCalendarContainer.sf-calendar-fullscreen {
             position: fixed !important;
@@ -4261,8 +4521,15 @@
           body.sf-planner-fullscreen-active > .fixed.inset-0 {
             z-index: 200000 !important;
           }
-          body.sf-planner-fullscreen-active > div[id="sf-weekly-context-menu"] {
-            z-index: 200001 !important;
+          body.sf-planner-fullscreen-active > div[id="sf-weekly-context-menu"],
+          body.sf-planner-fullscreen-active .sf-planner-dropdown,
+          body.sf-planner-fullscreen-active [id^="planner-menu-"] {
+            z-index: 200005 !important;
+          }
+          body.sf-planner-fullscreen-active .weekly-event-card:has(.sf-planner-dropdown:not(.hidden)),
+          body.sf-planner-fullscreen-active .sf-planner-card:has(.sf-planner-dropdown:not(.hidden)) {
+            z-index: 200002 !important;
+            overflow: visible !important;
           }
           body.sf-planner-fullscreen-active #weeklySummaryToolbar,
           body.sf-planner-fullscreen-active #monthlySummaryToolbar,
@@ -4502,6 +4769,23 @@
     let _weeklyStartDate = null;
     let _weeklyNowTimer = null;
 
+    function scrollDailyGridToNow() {
+      const container = document.getElementById('dailyTimelineContainer');
+      if (!container || _getPlanningStyle() !== 'flexible') return;
+      const todayStr = typeof _toLocalDateStr === 'function' ? _toLocalDateStr() : new Date().toLocaleDateString('en-CA');
+      const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
+      const selectedDateStr = (plannerState && plannerState.selectedDate) || todayStr;
+      if (selectedDateStr !== todayStr) return;
+      if (container.scrollTop <= 15 || window._dailyFlexForceNextScroll) {
+        window._dailyFlexForceNextScroll = false;
+        const currentHour = new Date().getHours();
+        const hrHeight = 75;
+        const scrollTarget = Math.max(0, (currentHour - 1.5) * hrHeight);
+        container.scrollTop = scrollTarget;
+      }
+    }
+    window.scrollDailyGridToNow = scrollDailyGridToNow;
+
     function scrollWeeklyGridToNow() {
       const body = document.getElementById('weeklyGridScrollBody');
       if (body && body.scrollTop <= 10) {
@@ -4612,35 +4896,47 @@
       }
 
       if (action === 'prev') {
-        _weeklyStartDate.setDate(_weeklyStartDate.getDate() - 7);
+        _weeklyStartDate = new Date(_weeklyStartDate.getFullYear(), _weeklyStartDate.getMonth(), _weeklyStartDate.getDate() - 7, 0, 0, 0, 0);
       } else if (action === 'next') {
-        _weeklyStartDate.setDate(_weeklyStartDate.getDate() + 7);
+        _weeklyStartDate = new Date(_weeklyStartDate.getFullYear(), _weeklyStartDate.getMonth(), _weeklyStartDate.getDate() + 7, 0, 0, 0, 0);
       } else if (action === 'today') {
         const now = typeof _toLocalDateStr === 'function' ? new Date(_toLocalDateStr() + 'T12:00:00') : new Date();
         const dayOfWeek = now.getDay();
         const diffToMon = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-        const mon = new Date(now);
-        mon.setDate(now.getDate() + diffToMon);
-        mon.setHours(0, 0, 0, 0);
+        const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMon, 0, 0, 0, 0);
         _weeklyStartDate = mon;
-        renderWeeklyUI();
-        setTimeout(scrollWeeklyGridToNow, 60);
-        if (window.SF_STORE) {
-          const startIso = typeof _toLocalDateStr === 'function' ? _toLocalDateStr(_weeklyStartDate) : _weeklyStartDate.toISOString().split('T')[0];
-          const sunDate = new Date(_weeklyStartDate.getTime() + 6 * 86400000);
-          const endIso = typeof _toLocalDateStr === 'function' ? _toLocalDateStr(sunDate) : sunDate.toISOString().split('T')[0];
-          window.SF_STORE.dispatch('planner/LOAD_RANGE', { start: startIso, end: endIso, view: 'weekly' });
+      }
+
+      // Synchronize selectedDate with weekly navigation
+      if (window.SF_STORE && window.SF_STORE.getSlice('planner')) {
+        const plannerState = window.SF_STORE.getSlice('planner');
+        const currSel = plannerState.selectedDate;
+        if (currSel && action !== 'today') {
+          const parts = currSel.split('-').map(Number);
+          const selDate = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0, 0);
+          if (action === 'prev') selDate.setDate(selDate.getDate() - 7);
+          else if (action === 'next') selDate.setDate(selDate.getDate() + 7);
+          const newSelStr = typeof _toLocalDateStr === 'function' ? _toLocalDateStr(selDate) : selDate.toISOString().split('T')[0];
+          try { localStorage.setItem('sf_last_selected_date', newSelStr); } catch(e) {}
+          window.SF_STORE.dispatch('planner/SELECT_DATE', newSelStr);
+        } else if (action === 'today') {
+          const todayStr = typeof _toLocalDateStr === 'function' ? _toLocalDateStr() : new Date().toLocaleDateString('en-CA');
+          try { localStorage.setItem('sf_last_selected_date', todayStr); } catch(e) {}
+          window.SF_STORE.dispatch('planner/SELECT_DATE', todayStr);
         }
-        return;
       }
 
       renderWeeklyUI();
+      if (action === 'today' && typeof scrollWeeklyGridToNow === 'function') {
+        setTimeout(scrollWeeklyGridToNow, 60);
+      }
       if (window.SF_STORE && _weeklyStartDate) {
         const startIso = typeof _toLocalDateStr === 'function' ? _toLocalDateStr(_weeklyStartDate) : _weeklyStartDate.toISOString().split('T')[0];
         const sunDate = new Date(_weeklyStartDate.getTime() + 6 * 86400000);
         const endIso = typeof _toLocalDateStr === 'function' ? _toLocalDateStr(sunDate) : sunDate.toISOString().split('T')[0];
         window.SF_STORE.dispatch('planner/LOAD_RANGE', { start: startIso, end: endIso, view: 'weekly' });
       }
+      return;
     }
 
     function renderWeeklyUI() {
@@ -4682,6 +4978,20 @@
       const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       const todayStr = typeof _toLocalDateStr === 'function' ? _toLocalDateStr() : new Date().toLocaleDateString('en-CA');
 
+      // Use the same priority chain as switchPlannerView to avoid stale store reads.
+      // _pendingWeeklySelectedDate is set synchronously by navigateToWeeklyForDate
+      // and is the most reliable source while the async SELECT_DATE dispatch flushes.
+      let selectedDateStr = window._pendingWeeklySelectedDate || null;
+      if (!selectedDateStr) {
+        selectedDateStr = window.SF_STORE && window.SF_STORE.getSlice('planner') && window.SF_STORE.getSlice('planner').selectedDate;
+      }
+      if (!selectedDateStr) {
+        try { selectedDateStr = localStorage.getItem('sf_last_selected_date'); } catch(e) {}
+      }
+      if (!selectedDateStr || !/^\d{4}-\d{2}-\d{2}$/.test(selectedDateStr)) {
+        selectedDateStr = todayStr;
+      }
+
       const gridCols = document.querySelectorAll('#weeklyCellsGrid .weekly-col');
 
       let html = '';
@@ -4689,6 +4999,7 @@
         const d = new Date(_weeklyStartDate.getTime() + i * 86400000);
         const dateStr = d.toLocaleDateString('en-CA');
         const isToday = (dateStr === todayStr);
+        const isSelected = (dateStr === selectedDateStr);
         const isWeekend = (i === 5 || i === 6);
 
         // Dynamically update corresponding column background in #weeklyCellsGrid per 4.2.2 requirements
@@ -4696,16 +5007,18 @@
           gridCols[i].className = `weekly-col relative border-r last:border-r-0 border-[#1C1C24]/60 ${isToday ? 'bg-[#A855F7]/[0.035]' : (isWeekend ? 'bg-[#0B0B13]' : 'bg-[#050508]')}`;
         }
 
-        let cellClasses = 'py-1.5 px-2 text-center flex flex-col items-center justify-center space-y-0.5 border-r border-[#1C1C24] last:border-r-0 transition-all duration-300 select-none ';
+        let cellClasses = 'py-1.5 px-2 text-center flex flex-col items-center justify-center space-y-0.5 border-r border-[#1C1C24] last:border-r-0 transition-all duration-300 select-none cursor-pointer ';
         if (isToday) {
           cellClasses += 'bg-[#1E1035]/95 border-b-2 border-[#A855F7] text-white shadow-[0_0_15px_rgba(168,85,247,0.25)]';
+        } else if (isSelected) {
+          cellClasses += 'bg-[#1E1035]/60 border-b-2 border-[#D8B4FE] text-white';
         } else if (isWeekend) {
-          cellClasses += 'bg-[#0C0C14] text-[#D4D4D8]';
+          cellClasses += 'bg-[#0C0C14] text-[#D4D4D8] hover:bg-[#1E1035]/30';
         } else {
-          cellClasses += 'bg-[#0A0A0E] text-white';
+          cellClasses += 'bg-[#0A0A0E] text-white hover:bg-[#1E1035]/30';
         }
 
-        const dayNameClass = isToday ? 'text-[#D8B4FE]' : 'text-[#A1A1AA]';
+        const dayNameClass = isToday ? 'text-[#D8B4FE]' : (isSelected ? 'text-[#E9D5FF]' : 'text-[#A1A1AA]');
         const dateClass = isToday
           ? 'text-sm font-bold text-white tracking-tight leading-none font-mono mt-0.5'
           : 'text-sm font-bold text-white/90 font-mono leading-none mt-0.5';
@@ -4715,7 +5028,7 @@
           : '';
 
         html += `
-          <div class="${cellClasses}">
+          <div onclick="openDailyViewForDate('${dateStr}')" title="View ${dateStr} in Daily Planner" class="${cellClasses}">
             <span class="text-[10px] font-semibold tracking-wider uppercase ${dayNameClass}">${dayNames[i]}</span>
             <span class="${dateClass}">${d.getDate()}</span>
             ${todayBadge}
@@ -5586,12 +5899,369 @@
       }
     }
 
+    let _monthlyRenderedEventsMap = {};
+    let _monthlyHoverTimer = null;
+    let _monthlyDragState = null;
+
+    function _ensureMonthlyBaseStyles() {
+      if (document.getElementById('sf-monthly-base-styles')) return;
+      const style = document.createElement('style');
+      style.id = 'sf-monthly-base-styles';
+      style.textContent = `
+        @keyframes sfMonthlyShake {
+          0%, 100% { transform: translateX(0); }
+          20%, 60% { transform: translateX(-6px); }
+          40%, 80% { transform: translateX(6px); }
+        }
+        .sf-monthly-shake {
+          animation: sfMonthlyShake 0.4s ease-in-out;
+        }
+        .sf-monthly-drop-target {
+          background-color: rgba(168, 85, 247, 0.18) !important;
+          border: 2px dashed #A855F7 !important;
+          box-shadow: 0 0 25px rgba(168, 85, 247, 0.4), inset 0 0 20px rgba(168, 85, 247, 0.2) !important;
+          transform: scale(1.02) !important;
+          z-index: 50 !important;
+          transition: all 0.15s ease-out !important;
+        }
+        .sf-monthly-dragging-cursor, .sf-monthly-dragging-cursor * {
+          cursor: grabbing !important;
+        }
+        .sf-monthly-chip-dragging {
+          opacity: 0.45 !important;
+          transform: scale(0.95) !important;
+          border: 1px dashed #D8B4FE !important;
+          box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3) !important;
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    function showMonthlyContextMenu(event, dateStr) {
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      hideMonthlyContextMenu();
+      hideMonthlyChipHoverCard();
+
+      let menu = document.getElementById('monthlyContextMenu');
+      if (!menu) {
+        menu = document.createElement('div');
+        menu.id = 'monthlyContextMenu';
+        menu.className = 'fixed z-[999999] rounded-[14px] bg-[#12121A]/95 border border-[#2A2A38] shadow-[0_12px_30px_rgba(0,0,0,0.7)] backdrop-blur-xl p-1.5 min-w-[175px] flex flex-col gap-1 font-sans text-xs select-none animate-fadeIn';
+        document.body.appendChild(menu);
+      }
+
+      menu.innerHTML = `
+        <button onclick="hideMonthlyContextMenu(); navigateToDailyForDate('${dateStr}', { openAddModal: false });" class="w-full text-left px-3 py-2 rounded-lg hover:bg-[#A855F7]/15 text-[#E4E4E7] hover:text-white flex items-center gap-2.5 transition-all duration-150 font-semibold focus:outline-none focus:ring-1 focus:ring-[#A855F7]">
+          <svg class="w-3.5 h-3.5 shrink-0 text-[#A855F7]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          <span>Open Day</span>
+        </button>
+        <button onclick="hideMonthlyContextMenu(); navigateToDailyForDate('${dateStr}', { openAddModal: true });" class="w-full text-left px-3 py-2 rounded-lg hover:bg-[#A855F7]/15 text-[#E4E4E7] hover:text-white flex items-center gap-2.5 transition-all duration-150 font-semibold focus:outline-none focus:ring-1 focus:ring-[#A855F7]">
+          <svg class="w-3.5 h-3.5 shrink-0 text-[#A855F7]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          <span>Add Task</span>
+        </button>
+        <button onclick="hideMonthlyContextMenu(); navigateToWeeklyForDate('${dateStr}');" class="w-full text-left px-3 py-2 rounded-lg hover:bg-[#A855F7]/15 text-[#E4E4E7] hover:text-white flex items-center gap-2.5 transition-all duration-150 font-semibold focus:outline-none focus:ring-1 focus:ring-[#A855F7]">
+          <svg class="w-3.5 h-3.5 shrink-0 text-[#A855F7]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
+          <span>Open in Weekly</span>
+        </button>
+      `;
+
+      let x = event ? event.clientX : 100;
+      let y = event ? event.clientY : 100;
+      const menuWidth = 200;
+      const menuHeight = 130;
+      if (x + menuWidth > window.innerWidth) x = window.innerWidth - menuWidth - 16;
+      if (y + menuHeight > window.innerHeight) y = window.innerHeight - menuHeight - 16;
+
+      menu.style.left = `${Math.max(8, x)}px`;
+      menu.style.top  = `${Math.max(8, y)}px`;
+      menu.style.display = 'flex';
+
+      // Register all close triggers after a brief delay (avoids the current
+      // contextmenu event from immediately re-closing the menu)
+      setTimeout(() => {
+        document.addEventListener('click',   hideMonthlyContextMenu, { once: true, capture: true });
+        document.addEventListener('keydown',  _monthlyMenuEscHandler);
+        window.addEventListener('scroll',     hideMonthlyContextMenu, { passive: true });
+        document.addEventListener('scroll',   hideMonthlyContextMenu, { passive: true, capture: true });
+        // Also catch scroll inside the planner / monthly grid containers
+        const containers = ['monthlyCellsGrid', 'monthlyView', 'plannerContainer', 'mainContent'];
+        containers.forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.addEventListener('scroll', hideMonthlyContextMenu, { passive: true });
+        });
+      }, 10);
+    }
+    window.showMonthlyContextMenu = showMonthlyContextMenu;
+
+    function _monthlyMenuEscHandler(e) {
+      if (e.key === 'Escape') hideMonthlyContextMenu();
+    }
+
+    function hideMonthlyContextMenu() {
+      const menu = document.getElementById('monthlyContextMenu');
+      if (menu) menu.style.display = 'none';
+
+      // Remove all registered close listeners
+      document.removeEventListener('click',   hideMonthlyContextMenu, { capture: true });
+      document.removeEventListener('keydown',  _monthlyMenuEscHandler);
+      window.removeEventListener('scroll',    hideMonthlyContextMenu);
+      document.removeEventListener('scroll',  hideMonthlyContextMenu, { capture: true });
+      const containers = ['monthlyCellsGrid', 'monthlyView', 'plannerContainer', 'mainContent'];
+      containers.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.removeEventListener('scroll', hideMonthlyContextMenu);
+      });
+    }
+    window.hideMonthlyContextMenu = hideMonthlyContextMenu;
+
+    function showMonthlyChipHoverCard(event, eventId) {
+      hideMonthlyChipHoverCard();
+      if (!event || !eventId) return;
+      const ev = _monthlyRenderedEventsMap[eventId];
+      if (!ev) return;
+
+      const targetEl = event.currentTarget || event.target;
+      const rect = targetEl.getBoundingClientRect();
+
+      _monthlyHoverTimer = setTimeout(() => {
+        let card = document.getElementById('monthlyChipHoverCard');
+        if (!card) {
+          card = document.createElement('div');
+          card.id = 'monthlyChipHoverCard';
+          card.className = 'fixed z-[999999] p-3.5 rounded-[14px] bg-[#13131A]/98 border border-[#A855F7]/40 shadow-[0_12px_32px_rgba(0,0,0,0.85),0_0_24px_rgba(168,85,247,0.22)] backdrop-blur-xl text-white font-sans text-xs min-w-[220px] max-w-[280px] pointer-events-none transition-opacity duration-150 select-none flex flex-col gap-1.5';
+          document.body.appendChild(card);
+        }
+
+        const title = ev.title || 'Untitled Block';
+        const startStr = typeof _formatTimeDisplay === 'function' ? _formatTimeDisplay(ev.startTimeDisplay || ev.startTime || '') : '';
+        const endStr = typeof _formatTimeDisplay === 'function' ? _formatTimeDisplay(ev.endTimeDisplay || ev.endTime || '') : '';
+        const durationStr = typeof _formatDuration === 'function' ? _formatDuration(ev) : '';
+
+        let detailsHtml = '';
+        if (ev.subject) detailsHtml += `<div class="flex items-center justify-between"><span class="text-[#A1A1AA]">Subject</span><span class="font-medium text-[#E4E4E7] truncate ml-2">${ev.subject}</span></div>`;
+        if (ev.priority) detailsHtml += `<div class="flex items-center justify-between"><span class="text-[#A1A1AA]">Priority</span><span class="font-medium text-[#E4E4E7] capitalize">${ev.priority}</span></div>`;
+        if (ev.category) detailsHtml += `<div class="flex items-center justify-between"><span class="text-[#A1A1AA]">Category</span><span class="font-medium text-[#E4E4E7] capitalize">${ev.category}</span></div>`;
+        if (durationStr) detailsHtml += `<div class="flex items-center justify-between"><span class="text-[#A1A1AA]">Duration</span><span class="font-mono text-[#D8B4FE] font-semibold">${durationStr}</span></div>`;
+
+        let descHtml = '';
+        if (ev.description) {
+          descHtml = `<div class="mt-1 pt-1.5 border-t border-[#24242E] line-clamp-2 text-[#A1A1AA] text-[11px] italic leading-relaxed">${ev.description}</div>`;
+        }
+
+        card.innerHTML = `
+          <div class="font-semibold text-white text-sm truncate pr-1">${title}</div>
+          <div class="h-[1px] bg-[#24242E] my-0.5"></div>
+          <div class="font-mono text-[#D8B4FE] text-[11px] font-semibold flex items-center justify-between">
+            <span>${startStr ? `${startStr} &ndash; ${endStr}` : 'All Day / Scheduled'}</span>
+          </div>
+          ${detailsHtml ? `<div class="flex flex-col gap-1 mt-1 pt-1.5 border-t border-[#24242E]">${detailsHtml}</div>` : ''}
+          ${descHtml}
+        `;
+
+        card.style.display = 'flex';
+        const cardWidth = card.offsetWidth || 240;
+        const cardHeight = card.offsetHeight || 160;
+
+        let left = rect.right + 10;
+        let top = rect.top;
+
+        if (left + cardWidth > window.innerWidth - 16) {
+          left = rect.left - cardWidth - 10;
+        }
+        if (left < 16) {
+          left = Math.max(16, rect.left + (rect.width - cardWidth) / 2);
+          top = rect.bottom + 10;
+          if (top + cardHeight > window.innerHeight - 16) {
+            top = rect.top - cardHeight - 10;
+          }
+        } else if (top + cardHeight > window.innerHeight - 16) {
+          top = Math.max(16, window.innerHeight - cardHeight - 16);
+        }
+
+        card.style.left = `${Math.max(16, left)}px`;
+        card.style.top = `${Math.max(16, top)}px`;
+      }, 300);
+    }
+    window.showMonthlyChipHoverCard = showMonthlyChipHoverCard;
+
+    function hideMonthlyChipHoverCard() {
+      if (_monthlyHoverTimer) {
+        clearTimeout(_monthlyHoverTimer);
+        _monthlyHoverTimer = null;
+      }
+      const card = document.getElementById('monthlyChipHoverCard');
+      if (card && card.style.display !== 'none') {
+        card.style.display = 'none';
+      }
+    }
+    window.hideMonthlyChipHoverCard = hideMonthlyChipHoverCard;
+
+    function onMonthlyChipDragStart(event, eventId, sourceDateStr) {
+      hideMonthlyChipHoverCard();
+      hideMonthlyContextMenu();
+      if (!eventId || !_monthlyRenderedEventsMap[eventId]) return;
+      _monthlyDragState = {
+        eventId,
+        sourceDateStr,
+        ev: Object.assign({}, _monthlyRenderedEventsMap[eventId])
+      };
+      if (event && event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move';
+        event.dataTransfer.setData('text/plain', JSON.stringify({ eventId, sourceDateStr }));
+      }
+      document.body.classList.add('sf-monthly-dragging-cursor');
+      setTimeout(() => {
+        if (event.target && event.target.classList) {
+          event.target.classList.add('sf-monthly-chip-dragging');
+        }
+      }, 0);
+    }
+    window.onMonthlyChipDragStart = onMonthlyChipDragStart;
+
+    function onMonthlyChipDragEnd(event) {
+      document.body.classList.remove('sf-monthly-dragging-cursor');
+      if (event && event.target && event.target.classList) {
+        event.target.classList.remove('sf-monthly-chip-dragging');
+      }
+      document.querySelectorAll('.sf-monthly-drop-target').forEach(el => el.classList.remove('sf-monthly-drop-target'));
+      _monthlyDragState = null;
+    }
+    window.onMonthlyChipDragEnd = onMonthlyChipDragEnd;
+
+    function onMonthlyCellDragOver(event, targetDateStr) {
+      const todayStr = typeof _toLocalDateStr === 'function' ? _toLocalDateStr() : new Date().toLocaleDateString('en-CA');
+      const sourceDateStr = _monthlyDragState ? _monthlyDragState.sourceDateStr : null;
+      if (sourceDateStr && targetDateStr < todayStr && sourceDateStr >= todayStr) {
+        return;
+      }
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+      const cellEl = event.currentTarget || (event.target && event.target.closest('[data-monthly-cell-date]'));
+      if (cellEl && !cellEl.classList.contains('sf-monthly-drop-target')) {
+        cellEl.classList.add('sf-monthly-drop-target');
+      }
+    }
+    window.onMonthlyCellDragOver = onMonthlyCellDragOver;
+
+    function onMonthlyCellDragLeave(event, targetDateStr) {
+      const cellEl = event.currentTarget || (event.target && event.target.closest('[data-monthly-cell-date]'));
+      if (cellEl && (!event.relatedTarget || !cellEl.contains(event.relatedTarget))) {
+        cellEl.classList.remove('sf-monthly-drop-target');
+      }
+    }
+    window.onMonthlyCellDragLeave = onMonthlyCellDragLeave;
+
+    function onMonthlyCellDrop(event, targetDateStr) {
+      event.preventDefault();
+      document.querySelectorAll('.sf-monthly-drop-target').forEach(el => el.classList.remove('sf-monthly-drop-target'));
+
+      if (!_monthlyDragState && event && event.dataTransfer) {
+        try {
+          const raw = event.dataTransfer.getData('text/plain');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed && parsed.eventId && _monthlyRenderedEventsMap[parsed.eventId]) {
+              _monthlyDragState = {
+                eventId: parsed.eventId,
+                sourceDateStr: parsed.sourceDateStr,
+                ev: Object.assign({}, _monthlyRenderedEventsMap[parsed.eventId])
+              };
+            }
+          }
+        } catch(e) {}
+      }
+      if (!_monthlyDragState) return;
+      const { ev, sourceDateStr } = _monthlyDragState;
+      if (targetDateStr === sourceDateStr) {
+        onMonthlyChipDragEnd(event);
+        return;
+      }
+
+      const todayStr = typeof _toLocalDateStr === 'function' ? _toLocalDateStr() : new Date().toLocaleDateString('en-CA');
+      if (targetDateStr < todayStr && sourceDateStr >= todayStr) {
+        const cellEl = event.currentTarget || (event.target && event.target.closest('[data-monthly-cell-date]'));
+        if (cellEl) {
+          cellEl.classList.add('sf-monthly-shake');
+          setTimeout(() => cellEl.classList.remove('sf-monthly-shake'), 450);
+        }
+        if (window.SF_COMPONENTS?.showToast) {
+          window.SF_COMPONENTS.showToast('Cannot move a future/current task to a past date.', 'error');
+        }
+        onMonthlyChipDragEnd(event);
+        return;
+      }
+
+      const targetId = ev.id || ev._id;
+      if (!targetId) {
+        onMonthlyChipDragEnd(event);
+        return;
+      }
+
+      const patch = { date: targetDateStr };
+      if (ev.startTime && typeof ev.startTime === 'string') {
+        if (ev.startTime.includes('T')) {
+          patch.startTime = `${targetDateStr}T${ev.startTime.split('T')[1]}`;
+        } else {
+          patch.startTime = ev.startTime;
+        }
+      }
+      if (ev.endTime && typeof ev.endTime === 'string') {
+        if (ev.endTime.includes('T')) {
+          patch.endTime = `${targetDateStr}T${ev.endTime.split('T')[1]}`;
+        } else {
+          patch.endTime = ev.endTime;
+        }
+      }
+
+      // Optimistic update in local block and store slice right away
+      Object.assign(ev, patch);
+      if (window.SF_STORE) {
+        const slice = window.SF_STORE.getSlice('planner');
+        if (slice) {
+          if (slice.plannerEvents) {
+            const idx = slice.plannerEvents.findIndex(b => (b.id || b._id) === targetId);
+            if (idx !== -1) Object.assign(slice.plannerEvents[idx], patch);
+          }
+          if (slice.dailyBlocks) {
+            const idx = slice.dailyBlocks.findIndex(b => (b.id || b._id) === targetId);
+            if (idx !== -1) Object.assign(slice.dailyBlocks[idx], patch);
+          }
+        }
+      }
+
+      // Refresh views immediately without rebuild/page reload
+      if (typeof renderMonthlyCalendar === 'function') renderMonthlyCalendar();
+      const weeklyView = document.getElementById('weeklyView');
+      if (weeklyView && !weeklyView.classList.contains('hidden') && typeof renderWeeklyUI === 'function') renderWeeklyUI();
+      const dailyView = document.getElementById('dailyView');
+      if (dailyView && !dailyView.classList.contains('hidden') && typeof renderDailyPlanner === 'function') renderDailyPlanner();
+
+      if (window.SF_COMPONENTS?.showToast) {
+        window.SF_COMPONENTS.showToast(`Task moved to ${targetDateStr}`, 'success');
+      }
+
+      onMonthlyChipDragEnd(event);
+
+      // Persist to server via store action
+      if (window.SF_STORE && typeof window.SF_STORE.dispatch === 'function') {
+        window.SF_STORE.dispatch('planner/UPDATE', { id: targetId, patch }).catch(e => {
+          console.error('[Monthly Drag] UPDATE failed:', e);
+          if (window.SF_COMPONENTS?.showToast) window.SF_COMPONENTS.showToast('Failed to save move on server.', 'error');
+        });
+      }
+    }
+    window.onMonthlyCellDrop = onMonthlyCellDrop;
+
     // ==========================================
     // SPRINT 4.4: MONTHLY PLANNER FOUNDATION & EVENT RENDERING
     // ==========================================
     let _monthlyCurrentDate = null;
 
     function initMonthlyPlannerFoundation() {
+      _ensureMonthlyBaseStyles();
       if (_monthlyCurrentDate === null) {
         const now = typeof _toLocalDateStr === 'function' ? new Date(_toLocalDateStr() + 'T12:00:00') : new Date();
         _monthlyCurrentDate = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -5614,6 +6284,7 @@
     }
 
     function navigateMonthlyDate(action) {
+      if (typeof hideMonthlyContextMenu === 'function') hideMonthlyContextMenu();
       if (_monthlyCurrentDate === null) {
         initMonthlyPlannerFoundation();
         if (action === 'today') return;
@@ -5640,6 +6311,22 @@
         openAddBlockModal({ date: dateStr });
       }
     }
+
+    function selectMonthlyDate(dateStr) {
+      if (!dateStr) return;
+      try { localStorage.setItem('sf_last_selected_date', dateStr); } catch(e) {}
+      if (window.SF_STORE && window.SF_STORE.getSlice('planner')) {
+        const curr = window.SF_STORE.getSlice('planner').selectedDate;
+        if (curr !== dateStr && window.SF_STORE.dispatch) {
+          window.SF_STORE.dispatch('planner/SELECT_DATE', dateStr);
+        }
+      }
+      window._selectedSlotDate = dateStr;
+      if (typeof renderMonthlyCalendar === 'function') {
+        renderMonthlyCalendar();
+      }
+    }
+    window.selectMonthlyDate = selectMonthlyDate;
 
     function renderMonthlyUI() {
       if (!_monthlyCurrentDate) return;
@@ -5675,11 +6362,38 @@
       const gridStart = new Date(firstDay.getTime() + diffToMon * 86400000);
       const todayStr = typeof _toLocalDateStr === 'function' ? _toLocalDateStr() : new Date().toLocaleDateString('en-CA');
 
+      // Determine exact number of week rows required (Adaptive 5 vs 6 rows, and rare 4 weeks)
+      let numWeeks = 6;
+      let week6HasCurrentMonth = false;
+      for (let i = 35; i < 42; i++) {
+        const cellDate = new Date(gridStart.getTime() + i * 86400000);
+        if (cellDate.getMonth() === currentMonthNum) {
+          week6HasCurrentMonth = true;
+          break;
+        }
+      }
+      if (!week6HasCurrentMonth) {
+        numWeeks = 5;
+        let week5HasCurrentMonth = false;
+        for (let i = 28; i < 35; i++) {
+          const cellDate = new Date(gridStart.getTime() + i * 86400000);
+          if (cellDate.getMonth() === currentMonthNum) {
+            week5HasCurrentMonth = true;
+            break;
+          }
+        }
+        if (!week5HasCurrentMonth) {
+          numWeeks = 4;
+        }
+      }
+      const totalDaysToRender = numWeeks * 7;
+
       let totalMonthlyEvents = 0;
       let totalMonthlyMins = 0;
+      _monthlyRenderedEventsMap = {};
 
       let html = '';
-      for (let i = 0; i < 42; i++) {
+      for (let i = 0; i < totalDaysToRender; i++) {
         const cellDate = new Date(gridStart.getTime() + i * 86400000);
         const dateStr = cellDate.toLocaleDateString('en-CA');
         const isToday = (dateStr === todayStr);
@@ -5704,7 +6418,8 @@
           });
         }
 
-        let cellBg = isToday ? 'bg-[#A855F7]/[0.05] shadow-[inset_0_0_25px_rgba(168,85,247,0.08)] z-10' : (isCurrentMonth ? (isWeekend ? 'bg-[#0B0B13]' : 'bg-[#050508]') : 'bg-[#0A0A0E]/50 opacity-40');
+        const isSelected = (dateStr === fallbackDateStr);
+        let cellBg = isToday ? 'bg-[#A855F7]/[0.06] shadow-[inset_0_0_25px_rgba(168,85,247,0.08)] z-10 border-[#A855F7]/50' : (isSelected ? 'bg-[#1E1035]/50 border-[#D8B4FE]/60 shadow-[inset_0_0_20px_rgba(168,85,247,0.12)] z-10' : (isCurrentMonth ? (isWeekend ? 'bg-[#0B0B13]' : 'bg-[#050508]') : 'bg-[#0A0A0E]/50 opacity-40'));
         let dayNumStyle = isToday ? 'w-6 h-6 rounded-full bg-[#A855F7] text-white flex items-center justify-center shadow-[0_0_12px_rgba(168,85,247,0.8)] font-mono text-xs font-bold' : (isCurrentMonth ? 'text-white/90 font-mono text-xs font-bold' : 'text-[#52525B] font-mono text-xs');
 
         let eventsHtml = '';
@@ -5714,15 +6429,15 @@
 
           displayEvents.forEach(ev => {
             const hexColor = typeof getWeeklyCardTheme === 'function' ? getWeeklyCardTheme(ev, goals).hexColor : '#A855F7';
-
             const evTitle = ev.title || 'Untitled Block';
-            const evId = ev.id || ev._id || '';
             const timeStr = typeof _formatTimeDisplay === 'function' ? _formatTimeDisplay(ev.startTimeDisplay || ev.startTime || '') : '';
+            const evId = ev.id || ev._id || `block-${dateStr}-${Math.random()}`;
+            _monthlyRenderedEventsMap[evId] = ev;
 
             eventsHtml += `
-              <div onclick="event.stopPropagation(); if (typeof openEditBlockModal === 'function') openEditBlockModal('${evId}')" class="px-1.5 py-1 rounded-lg bg-[#1E1035]/85 hover:bg-[#1E1035] border border-[#A855F7]/30 hover:border-[#A855F7] text-white font-sans text-[10px] leading-tight flex items-center gap-1.5 truncate shadow-sm transition cursor-pointer group/card">
-                <span class="w-1.5 h-1.5 rounded-full shrink-0 group-hover/card:scale-125 transition-transform" style="background-color: ${hexColor}"></span>
-                ${timeStr ? `<span class="font-mono text-[9px] text-[#D8B4FE] shrink-0 font-semibold">${timeStr}</span>` : ''}
+              <div draggable="true" ondragstart="onMonthlyChipDragStart(event, '${evId}', '${dateStr}')" ondragend="onMonthlyChipDragEnd(event)" onmouseenter="showMonthlyChipHoverCard(event, '${evId}')" onmouseleave="hideMonthlyChipHoverCard()" onclick="event.stopPropagation(); openDailyViewForDate('${dateStr}')" ondblclick="event.stopPropagation(); openDailyViewForDate('${dateStr}')" class="px-3 py-2 rounded-lg bg-[#1E1035]/90 hover:bg-[#281545] border border-[#A855F7]/40 text-white font-sans text-xs leading-normal flex items-center gap-2 truncate shadow-sm transition pointer-events-auto cursor-pointer group/card select-none">
+                <span class="w-2.5 h-2.5 rounded-full shrink-0" style="background-color: ${hexColor}"></span>
+                ${timeStr ? `<span class="font-mono text-[10px] text-[#D8B4FE] shrink-0 font-semibold">${timeStr}</span>` : ''}
                 <span class="truncate font-semibold text-white/95">${evTitle}</span>
               </div>
             `;
@@ -5730,20 +6445,19 @@
 
           if (moreCount > 0) {
             eventsHtml += `
-              <div class="text-[9px] font-mono font-bold text-[#A855F7] hover:text-[#D8B4FE] px-1 py-0.5 rounded bg-[#A855F7]/10 hover:bg-[#A855F7]/20 transition text-center mt-0.5 select-none">
-                +${moreCount} more event${moreCount === 1 ? '' : 's'}
+              <div onclick="event.stopPropagation(); openDailyViewForDate('${dateStr}')" class="text-[10px] font-mono font-bold text-[#A855F7] px-2.5 py-1.5 rounded bg-[#A855F7]/10 hover:bg-[#A855F7]/20 transition text-center mt-1 select-none pointer-events-auto cursor-pointer">
+                +${moreCount} more
               </div>
             `;
           }
         }
 
         html += `
-          <div onclick="openAddBlockModalForDate('${dateStr}')" class="min-h-[84px] p-1.5 sm:p-2 flex flex-col justify-between relative group hover:bg-[#1E1035]/20 transition duration-150 select-none cursor-pointer border-r border-b border-[#1C1C24]/60 ${cellBg}">
-            <div class="flex items-center justify-between mb-1.5">
-              <span class="opacity-0 group-hover:opacity-100 transition duration-200 text-[9px] font-mono font-bold text-[#A855F7] px-1 py-0.5 rounded bg-[#A855F7]/10 tracking-wider uppercase">+ Create</span>
-              <span class="${dayNumStyle} ml-auto">${cellDate.getDate()}</span>
+          <div data-monthly-cell-date="${dateStr}" onclick="selectMonthlyDate('${dateStr}')" ondblclick="openDailyViewForDate('${dateStr}')" oncontextmenu="showMonthlyContextMenu(event, '${dateStr}')" ondragover="onMonthlyCellDragOver(event, '${dateStr}')" ondragleave="onMonthlyCellDragLeave(event, '${dateStr}')" ondrop="onMonthlyCellDrop(event, '${dateStr}')" class="h-full min-h-0 p-3 sm:p-3.5 flex flex-col justify-between relative group hover:bg-[#1E1035]/35 hover:-translate-y-[1px] hover:shadow-[0_4px_16px_rgba(168,85,247,0.15)] transition-all duration-150 select-none cursor-pointer border-r border-b border-[#1C1C24]/60 ${cellBg}">
+            <div class="flex items-center justify-end mb-2.5 pointer-events-none shrink-0">
+              <span class="${dayNumStyle}">${cellDate.getDate()}</span>
             </div>
-            <div class="flex-1 flex flex-col gap-1 overflow-hidden">
+            <div class="flex-1 flex flex-col gap-2 overflow-hidden pointer-events-none min-h-0">
               ${eventsHtml}
             </div>
           </div>
@@ -5751,6 +6465,11 @@
       }
 
       cellsGrid.innerHTML = html;
+      cellsGrid.oncontextmenu = (e) => { e.preventDefault(); if (!e.target.closest('[data-monthly-cell-date]')) return false; };
+      cellsGrid.style.gridTemplateRows = `repeat(${numWeeks}, minmax(${numWeeks <= 4 ? '150px' : (numWeeks <= 5 ? '130px' : '110px')}, 1fr))`;
+      if (typeof _calculatePlannerCalendarHeights === 'function') {
+        _calculatePlannerCalendarHeights();
+      }
 
       // Handle subtle floating empty state for monthly view
       let emptyStateEl = document.getElementById('monthlyEmptyState');
@@ -5760,15 +6479,12 @@
           emptyStateEl.id = 'monthlyEmptyState';
           emptyStateEl.className = 'absolute bottom-6 right-6 z-20 pointer-events-none select-none';
           emptyStateEl.innerHTML = `
-            <div class="w-[220px] p-3.5 rounded-2xl bg-[#0A0A0E]/55 border border-[#1C1C24]/80 shadow-md backdrop-blur-md text-center pointer-events-auto transition hover:bg-[#0A0A0E]/85">
+            <div class="w-[220px] p-3.5 rounded-2xl bg-[#0A0A0E]/65 border border-[#1C1C24]/80 shadow-md backdrop-blur-md text-center pointer-events-none transition">
               <div class="flex items-center justify-center gap-1.5 text-[#A855F7] mb-1">
                 <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
-                <span class="text-xs font-bold text-white tracking-tight">No Events</span>
+                <span class="text-xs font-bold text-white tracking-tight">No tasks scheduled</span>
               </div>
-              <p class="text-[10px] text-[#A1A1AA] leading-tight mb-2.5">Click any day cell or add a block to begin.</p>
-              <button onclick="openAddBlockModal()" class="w-full py-1.5 rounded-xl bg-[#1E1035] hover:bg-[#A855F7] text-[#D8B4FE] hover:text-white text-[11px] font-bold border border-[#A855F7]/30 transition shadow-sm">
-                + Add Block
-              </button>
+              <p class="text-[10px] text-[#A1A1AA] leading-tight">Click any day cell to view or manage tasks in Daily Planner.</p>
             </div>
           `;
           cellsGrid.appendChild(emptyStateEl);
@@ -5804,48 +6520,99 @@
 
     function switchPlannerView(view) {
       try { localStorage.setItem('sf_last_planner_view', view); } catch(e) {}
-      const dailyView = document.getElementById('dailyView');
       window._currentPlannerView = view;
-      const weeklyView = document.getElementById('weeklyView');
+
+      // Always close the monthly context menu when changing views
+      if (typeof hideMonthlyContextMenu === 'function') hideMonthlyContextMenu();
+
+      const dailyView   = document.getElementById('dailyView');
+      const weeklyView  = document.getElementById('weeklyView');
       const monthlyView = document.getElementById('monthlyView');
-      
-      const tabDaily = document.getElementById('tabDaily');
-      const tabWeekly = document.getElementById('tabWeekly');
+
+      const tabDaily   = document.getElementById('tabDaily');
+      const tabWeekly  = document.getElementById('tabWeekly');
       const tabMonthly = document.getElementById('tabMonthly');
 
-      const pageTitle = document.getElementById('pageTitle');
+      const pageTitle    = document.getElementById('pageTitle');
       const pageSubtitle = document.getElementById('pageSubtitle');
-      const titleEmoji = document.getElementById('titleEmoji');
 
       // Hide all views
-      if (dailyView) dailyView.classList.add('hidden');
-      if (weeklyView) weeklyView.classList.add('hidden');
+      if (dailyView)   dailyView.classList.add('hidden');
+      if (weeklyView)  weeklyView.classList.add('hidden');
       if (monthlyView) monthlyView.classList.add('hidden');
 
       // Reset tabs
-      const activeTabStyle = "px-4 py-2 rounded-xl bg-[#1E1035] border border-[#A855F7]/40 text-white font-bold text-xs flex items-center gap-1.5 shadow-[0_0_15px_rgba(168,85,247,0.3)] transition";
+      const activeTabStyle   = "px-4 py-2 rounded-xl bg-[#1E1035] border border-[#A855F7]/40 text-white font-bold text-xs flex items-center gap-1.5 shadow-[0_0_15px_rgba(168,85,247,0.3)] transition";
       const inactiveTabStyle = "px-4 py-2 rounded-xl text-[#A1A1AA] hover:text-white font-semibold text-xs flex items-center gap-1.5 transition";
-
-      if (tabDaily) tabDaily.className = inactiveTabStyle;
-      if (tabWeekly) tabWeekly.className = inactiveTabStyle;
+      if (tabDaily)   tabDaily.className   = inactiveTabStyle;
+      if (tabWeekly)  tabWeekly.className  = inactiveTabStyle;
       if (tabMonthly) tabMonthly.className = inactiveTabStyle;
+
+      const todayStrCheck = typeof _toLocalDateStr === 'function' ? _toLocalDateStr() : new Date().toLocaleDateString('en-CA');
+
+      // Priority order for resolving the current selected date:
+      // 1. _pendingWeeklySelectedDate — set synchronously by navigateToWeeklyForDate BEFORE
+      //    switchPlannerView is called, so it always carries the correct clicked date.
+      // 2. Store slice — may still hold the old date if SELECT_DATE dispatch hasn't flushed.
+      // 3. localStorage
+      // 4. today
+      let currentSelected = window._pendingWeeklySelectedDate || null;
+      if (!currentSelected) {
+        currentSelected = window.SF_STORE && window.SF_STORE.getSlice('planner') && window.SF_STORE.getSlice('planner').selectedDate;
+      }
+      if (!currentSelected) {
+        try { currentSelected = localStorage.getItem('sf_last_selected_date'); } catch(e) {}
+      }
+      if (!currentSelected || !/^\d{4}-\d{2}-\d{2}$/.test(currentSelected)) {
+        currentSelected = todayStrCheck;
+      }
+
+      // Persist resolved date
+      try { localStorage.setItem('sf_last_selected_date', currentSelected); } catch(e) {}
 
       if (view === 'daily') {
         if (dailyView) dailyView.classList.remove('hidden');
-        if (tabDaily) tabDaily.className = activeTabStyle;
-        if (pageTitle) pageTitle.innerHTML = '<span>Daily Timeline</span> <span id="titleEmoji">✨</span>';
+        if (tabDaily)  tabDaily.className = activeTabStyle;
+        if (pageTitle)    pageTitle.innerHTML    = '<span>Daily Timeline</span> <span id="titleEmoji">✨</span>';
         if (pageSubtitle) pageSubtitle.textContent = 'Plan your day smartly, stay consistent, and achieve your goals.';
+        if (typeof navigateDailyDate === 'function') {
+          navigateDailyDate(currentSelected);
+        } else if (typeof renderDailyPlanner === 'function') {
+          renderDailyPlanner();
+        }
+        if (currentSelected === todayStrCheck) {
+          window._dailyFlexForceNextScroll = true;
+          if (typeof scrollDailyGridToNow === 'function') setTimeout(scrollDailyGridToNow, 60);
+        }
+
       } else if (view === 'weekly') {
         if (weeklyView) weeklyView.classList.remove('hidden');
-        if (tabWeekly) tabWeekly.className = activeTabStyle;
-        if (pageTitle) pageTitle.innerHTML = '<span>Weekly Planner</span> <span id="titleEmoji">✨</span>';
+        if (tabWeekly)  tabWeekly.className = activeTabStyle;
+        if (pageTitle)    pageTitle.innerHTML    = '<span>Weekly Planner</span> <span id="titleEmoji">✨</span>';
         if (pageSubtitle) pageSubtitle.textContent = 'Plan your week, stay consistent, and crush your academic goals.';
+        
+        // Only recompute _weeklyStartDate when NOT called from navigateToWeeklyForDate.
+        // navigateToWeeklyForDate pre-computes the correct Monday and sets _weeklyStartDate
+        // synchronously, then signals this via _pendingWeeklySelectedDate. If that flag
+        // is absent, this is a plain tab click and we must compute the week ourselves.
+        if (!window._pendingWeeklySelectedDate) {
+          const parts = currentSelected.split('-').map(Number);
+          const targetDate = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0, 0);
+          const dayOfWeek = targetDate.getDay();
+          const diffToMon = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+          window._weeklyStartDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate() + diffToMon, 0, 0, 0, 0);
+        }
+
         initWeeklyPlannerFoundation();
       } else if (view === 'monthly') {
         if (monthlyView) monthlyView.classList.remove('hidden');
         if (tabMonthly) tabMonthly.className = activeTabStyle;
         if (pageTitle) pageTitle.innerHTML = '<span>Monthly Planner</span> <span id="titleEmoji">🗓️</span>';
         if (pageSubtitle) pageSubtitle.textContent = 'Plan your month, stay consistent, and achieve your academic goals.';
+        
+        const parts = currentSelected.split('-').map(Number);
+        window._monthlyCurrentDate = new Date(parts[0], parts[1] - 1, 1, 12, 0, 0, 0);
+
         initMonthlyPlannerFoundation();
       }
       if (typeof _applyPlannerFullscreenState === 'function') _applyPlannerFullscreenState(view);
@@ -6227,6 +6994,10 @@
         cardElement.classList.remove('scale-[1.02]', 'opacity-60', 'z-50', 'cursor-grabbing');
       }
 
+      if (!hasMovedBeyondThreshold || (currentStartMin === originalStartMin && currentEndMin === originalEndMin && (currentDateStr || originalDateStr) === originalDateStr)) {
+        return;
+      }
+
       const overlaps = _findPlannerTimeOverlaps(blockId, currentStartMin, currentEndMin, currentDateStr || originalDateStr);
       const hasOverlapOnDrop = _checkPlannerTimeConflict(blockId, currentStartMin, currentEndMin, currentDateStr || originalDateStr);
       const hasOverlap = overlaps.length > 0 || hasOverlapOnDrop;
@@ -6234,10 +7005,6 @@
       const executeWeeklyUpdate = async () => {
         if (!validatePlannerTime(currentDateStr || originalDateStr, currentStartMin, { isEditing: true, origDateStr: originalDateStr, origStartTime: originalStartMin }).valid) {
           if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
-          return;
-        }
-
-        if (!hasMovedBeyondThreshold || (currentStartMin === originalStartMin && currentEndMin === originalEndMin && currentDateStr === originalDateStr)) {
           return;
         }
 
@@ -6286,6 +7053,24 @@
           if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
           return;
         } else {
+          const createdNewOverlap = typeof _isNewPlannerOverlap === 'function' && _isNewPlannerOverlap(blockId, currentStartMin, currentEndMin, currentDateStr || originalDateStr, originalStartMin, originalEndMin, originalDateStr);
+          if (!createdNewOverlap) {
+            await executeWeeklyUpdate();
+            return;
+          }
+          console.log(
+            "[Conflict Dialog]",
+            "Caller:",
+            "_onWeeklyDragResizeEnd",
+            {
+              planningStyle: typeof _getPlanningStyle === 'function' ? _getPlanningStyle() : 'flexible',
+              hasMovedBeyondThreshold: hasMovedBeyondThreshold,
+              timeChanged: (currentStartMin !== originalStartMin || currentEndMin !== originalEndMin || (currentDateStr || originalDateStr) !== originalDateStr),
+              createdNewOverlap: createdNewOverlap,
+              action: mode || 'drag',
+              blockId: blockId
+            }
+          );
           showPlannerConflictDialog({
             timeStr: `${_formatMinutesToAMPM(currentStartMin)} – ${_formatMinutesToAMPM(currentEndMin)}`,
             existingTitles: Array.from(new Set(overlaps.map(t => t.title || t.subject || 'Untitled Block'))),
@@ -6660,6 +7445,19 @@
             return Math.max(newStartMin, bsMin) < Math.min(newEndMin, beMin);
           });
 
+          console.log(
+            "[Conflict Dialog]",
+            "Caller:",
+            "duplicatePlannerBlock",
+            {
+              planningStyle: typeof _getPlanningStyle === 'function' ? _getPlanningStyle() : 'flexible',
+              hasMovedBeyondThreshold: false,
+              timeChanged: true,
+              createdNewOverlap: true,
+              action: 'duplicate',
+              blockId: blockId
+            }
+          );
           showPlannerConflictDialog({
             timeStr: `${newBlock.startTimeDisplay || toHHMM(newStartMin)} – ${newBlock.endTimeDisplay || toHHMM(newEndMin)}`,
             existingTitles: Array.from(new Set(overlaps.map(t => t.title || t.subject || 'Untitled Block'))),
@@ -6851,39 +7649,68 @@
 
     function _findAllOverlappingTasks() {
       const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
-      const allRaw = [...(plannerState?.plannerEvents || []), ...(plannerState?.dailyBlocks || [])];
-      const byDate = {};
+      const allDayGroupBlocks = Object.values(plannerState?.dayGroups || {}).flat();
+      const allRaw = [...(plannerState?.plannerEvents || []), ...(plannerState?.dailyBlocks || []), ...allDayGroupBlocks];
+      
+      const dateSet = new Set();
+      if (window._selectedSlotDate) dateSet.add(window._selectedSlotDate);
+      if (window._currentDateStr) dateSet.add(window._currentDateStr);
+      
       allRaw.forEach(ev => {
         if (!ev) return;
         const dateStr = ev.date || (ev.startTime && typeof ev.startTime === 'string' && ev.startTime.split('T')[0]);
-        if (!dateStr) return;
-        if (!byDate[dateStr]) byDate[dateStr] = [];
-        byDate[dateStr].push(ev);
+        if (dateStr) dateSet.add(dateStr);
       });
       
+      try {
+        const baseDateStr = window._selectedSlotDate || window._currentDateStr || new Date().toISOString().split('T')[0];
+        const dt = new Date(baseDateStr);
+        if (!isNaN(dt.getTime())) {
+          const dayOfWeek = dt.getDay();
+          const diffToMon = (dayOfWeek === 0 ? -6 : 1) - dayOfWeek;
+          for (let i = 0; i < 7; i++) {
+            const tempDt = new Date(dt);
+            tempDt.setDate(dt.getDate() + diffToMon + i);
+            const y = tempDt.getFullYear();
+            const m = String(tempDt.getMonth() + 1).padStart(2, '0');
+            const d = String(tempDt.getDate()).padStart(2, '0');
+            dateSet.add(`${y}-${m}-${d}`);
+          }
+        }
+      } catch (err) {}
+
       const overlappingBlocksSet = new Set();
       const dateOverlaps = [];
       
-      Object.keys(byDate).sort().forEach(dateStr => {
+      Array.from(dateSet).sort().forEach(dateStr => {
         const dayBlocks = typeof expandWeeklyRecurrences === 'function'
-          ? expandWeeklyRecurrences(byDate[dateStr], new Date(`${dateStr}T00:00:00.000Z`), new Date(`${dateStr}T23:59:59.999Z`), dateStr)
-          : byDate[dateStr];
+          ? expandWeeklyRecurrences(allRaw, new Date(`${dateStr}T00:00:00.000Z`), new Date(`${dateStr}T23:59:59.999Z`), dateStr)
+          : allRaw.filter(b => (b.date || (b.startTime && typeof b.startTime === 'string' && b.startTime.split('T')[0])) === dateStr);
           
+        const cleanBlocks = _deduplicateBlockArray(dayBlocks);
         const dayOverlaps = new Set();
-        for (let i = 0; i < dayBlocks.length; i++) {
-          for (let j = i + 1; j < dayBlocks.length; j++) {
-            const a = dayBlocks[i];
-            const b = dayBlocks[j];
-            const aStart = typeof _parseTimeToMinutes === 'function' ? _parseTimeToMinutes(a.startTime || a.start || '') : 0;
-            const aEnd   = typeof _parseTimeToMinutes === 'function' ? _parseTimeToMinutes(a.endTime || a.end || '') : 0;
-            const bStart = typeof _parseTimeToMinutes === 'function' ? _parseTimeToMinutes(b.startTime || b.start || '') : 0;
-            const bEnd   = typeof _parseTimeToMinutes === 'function' ? _parseTimeToMinutes(b.endTime || b.end || '') : 0;
+        for (let i = 0; i < cleanBlocks.length; i++) {
+          for (let j = i + 1; j < cleanBlocks.length; j++) {
+            const a = cleanBlocks[i];
+            const b = cleanBlocks[j];
+            if (!a || !b) continue;
+            if (_isSameOrDuplicateBlock(a, b)) continue;
+            if (!a.startTimeDisplay && !a.startTime && !a.endTimeDisplay && !a.endTime) continue;
+            if (!b.startTimeDisplay && !b.startTime && !b.endTimeDisplay && !b.endTime) continue;
+            
+            const aStart = _timeStrToMinutes(a.startTimeDisplay || a.startTime || '');
+            let aEnd = _timeStrToMinutes(a.endTimeDisplay || a.endTime || '');
+            if (!aEnd || aEnd <= aStart) aEnd = aStart + 60;
+            
+            const bStart = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '');
+            let bEnd = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '');
+            if (!bEnd || bEnd <= bStart) bEnd = bStart + 60;
             
             if (aStart < bEnd && aEnd > bStart) {
               dayOverlaps.add(a);
               dayOverlaps.add(b);
-              overlappingBlocksSet.add(a.id || a._id || a._instanceId);
-              overlappingBlocksSet.add(b.id || b._id || b._instanceId);
+              overlappingBlocksSet.add(a.id || a._id || a.virtualId || a.masterId || a._instanceId || `a_${i}`);
+              overlappingBlocksSet.add(b.id || b._id || b.virtualId || b.masterId || b._instanceId || `b_${j}`);
             }
           }
         }
@@ -6902,31 +7729,36 @@
 
     function _checkBlockOverlapsOnDay(block, targetDateStr) {
       if (!block) return false;
-      const blockId = block.id || block._id || block._instanceId;
+      const blockId = block.id || block._id || block.virtualId || block.masterId || block._instanceId;
       if (!blockId) return false;
-      const startMin = typeof _timeStrToMinutes === 'function' ? _timeStrToMinutes(block.startTimeDisplay || block.startTime || '09:00 AM') : 0;
-      let endMin = typeof _timeStrToMinutes === 'function' ? _timeStrToMinutes(block.endTimeDisplay || block.endTime || '10:00 AM') : startMin + 60;
+      if (!block.startTimeDisplay && !block.startTime && !block.endTimeDisplay && !block.endTime) return false;
+
+      const startMin = _timeStrToMinutes(block.startTimeDisplay || block.startTime || '');
+      let endMin = _timeStrToMinutes(block.endTimeDisplay || block.endTime || '');
       if (!endMin || endMin <= startMin) endMin = startMin + 60;
 
       const dateStr = targetDateStr || block.date || (block.startTime && typeof block.startTime === 'string' && block.startTime.split('T')[0]) || window._selectedSlotDate || '';
       if (!dateStr) return false;
       
       const plannerState = window.SF_STORE ? window.SF_STORE.getSlice('planner') : null;
-      const allRaw = [...(plannerState?.plannerEvents || []), ...(plannerState?.dailyBlocks || [])];
-      const byDate = allRaw.filter(ev => {
-        const d = ev.date || (ev.startTime && typeof ev.startTime === 'string' && ev.startTime.split('T')[0]);
-        return d === dateStr;
-      });
+      const allDayGroupBlocks = Object.values(plannerState?.dayGroups || {}).flat();
+      const allRaw = [...(plannerState?.plannerEvents || []), ...(plannerState?.dailyBlocks || []), ...allDayGroupBlocks];
+      
       const dayBlocks = typeof expandWeeklyRecurrences === 'function'
-        ? expandWeeklyRecurrences(byDate, new Date(`${dateStr}T00:00:00.000Z`), new Date(`${dateStr}T23:59:59.999Z`), dateStr)
-        : byDate;
+        ? expandWeeklyRecurrences(allRaw, new Date(`${dateStr}T00:00:00.000Z`), new Date(`${dateStr}T23:59:59.999Z`), dateStr)
+        : allRaw.filter(b => (b.date || (b.startTime && typeof b.startTime === 'string' && b.startTime.split('T')[0])) === dateStr);
         
-      for (let i = 0; i < dayBlocks.length; i++) {
-        const b = dayBlocks[i];
-        const bId = b.id || b._id || b._instanceId;
-        if (bId === blockId) continue;
-        const bStart = typeof _parseTimeToMinutes === 'function' ? _parseTimeToMinutes(b.startTime || b.start || '') : 0;
-        const bEnd   = typeof _parseTimeToMinutes === 'function' ? _parseTimeToMinutes(b.endTime || b.end || '') : 0;
+      const cleanBlocks = _deduplicateBlockArray(dayBlocks);
+      for (let i = 0; i < cleanBlocks.length; i++) {
+        const b = cleanBlocks[i];
+        if (!b) continue;
+        if (_isSameOrDuplicateBlock(block, b) || _isTargetBlockMatch(blockId, b)) continue;
+        if (!b.startTimeDisplay && !b.startTime && !b.endTimeDisplay && !b.endTime) continue;
+        
+        const bStart = _timeStrToMinutes(b.startTimeDisplay || b.startTime || '');
+        let bEnd = _timeStrToMinutes(b.endTimeDisplay || b.endTime || '');
+        if (!bEnd || bEnd <= bStart) bEnd = bStart + 60;
+        
         if (startMin < bEnd && endMin > bStart) {
           return true;
         }
@@ -6935,10 +7767,35 @@
     }
     window._checkBlockOverlapsOnDay = _checkBlockOverlapsOnDay;
 
+    function _isNewPlannerOverlap(targetBlockId, newStartMin, newEndMin, newDateStr, origStartMin, origEndMin, origDateStr) {
+      if (newStartMin === origStartMin && newEndMin === origEndMin && (newDateStr || origDateStr) === origDateStr) {
+        return false;
+      }
+      const newOverlaps = _findPlannerTimeOverlaps(targetBlockId, newStartMin, newEndMin, newDateStr);
+      if (newOverlaps.length === 0 && !_checkPlannerTimeConflict(targetBlockId, newStartMin, newEndMin, newDateStr)) {
+        return false;
+      }
+      const origOverlaps = _findPlannerTimeOverlaps(targetBlockId, origStartMin, origEndMin, origDateStr);
+      if (origOverlaps.length === 0 && !_checkPlannerTimeConflict(targetBlockId, origStartMin, origEndMin, origDateStr)) {
+        return true;
+      }
+      const origIds = new Set(origOverlaps.map(b => b.id || b._id || b.virtualId || b.masterId || b._instanceId));
+      for (let i = 0; i < newOverlaps.length; i++) {
+        const nb = newOverlaps[i];
+        const nId = nb.id || nb._id || nb.virtualId || nb.masterId || nb._instanceId;
+        if (!origIds.has(nId)) {
+          return true;
+        }
+      }
+      return false;
+    }
+    window._isNewPlannerOverlap = _isNewPlannerOverlap;
+
     function _renderConflictBadgeIfAny(block) {
       const currentStyle = _getPlanningStyle();
-      if (currentStyle === 'flexible' || currentStyle === 'focus' || window._isReviewingConflicts) {
-        if (_checkBlockOverlapsOnDay(block, block.date || window._selectedSlotDate)) {
+      if (window._isReviewingConflicts === true || currentStyle === 'focus') {
+        const targetDate = block.date || (block.startTime && typeof block.startTime === 'string' ? block.startTime.split('T')[0] : null) || window._selectedSlotDate;
+        if (_checkBlockOverlapsOnDay(block, targetDate)) {
           return `<span class="sf-conflict-badge inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#F59E0B]/15 text-[#F59E0B] border border-[#F59E0B]/30 text-[10px] font-semibold tracking-normal select-none shrink-0" title="Existing task overlap on schedule.">⚠ Existing Conflict</span>`;
         }
       }
@@ -6948,8 +7805,9 @@
 
     function _hasConflictStyle(block) {
       const currentStyle = _getPlanningStyle();
-      if (currentStyle === 'focus' || window._isReviewingConflicts) {
-        if (_checkBlockOverlapsOnDay(block, block.date || window._selectedSlotDate)) {
+      if (window._isReviewingConflicts === true || currentStyle === 'focus') {
+        const targetDate = block.date || (block.startTime && typeof block.startTime === 'string' ? block.startTime.split('T')[0] : null) || window._selectedSlotDate;
+        if (_checkBlockOverlapsOnDay(block, targetDate)) {
           return ' ring-2 !ring-[#F59E0B]/80 shadow-[0_0_18px_rgba(245,158,11,0.25)]';
         }
       }
@@ -7050,10 +7908,23 @@
         }
       }, 150);
       if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-        window.SF_COMPONENTS.showToast('Resolve highlighted conflicts before switching.', 'warning');
+        window.SF_COMPONENTS.showToast('Resolve highlighted conflicts before switching to Focus Planner.', 'warning');
       }
     }
     window._reviewConflictsOnSwitch = _reviewConflictsOnSwitch;
+
+    function _cancelSwitchPlanningStyle() {
+      const confirmModal = document.getElementById('switchPlanningStyleConfirmModal');
+      if (confirmModal) confirmModal.classList.add('hidden');
+      window._pendingSwitchOverlaps = null;
+      window._isReviewingConflicts = false;
+      if (typeof renderDailyPlanner === 'function') {
+        const dailyState = window.SF_STORE ? window.SF_STORE.getSlice('planner') : null;
+        renderDailyPlanner(dailyState || {});
+      }
+      if (typeof renderWeeklyEvents === 'function') renderWeeklyEvents();
+    }
+    window._cancelSwitchPlanningStyle = _cancelSwitchPlanningStyle;
 
     function _proceedSwitchAnyway() {
       const confirmModal = document.getElementById('switchPlanningStyleConfirmModal');
@@ -7095,13 +7966,12 @@
 
     function _finishWelcomeOnboarding() {
       const chosen = window._welcomeSelectedStyle || 'focus';
+      localStorage.setItem('sf_planner_onboarding_completed', 'true');
       localStorage.setItem('studyflow_planning_style_onboarded', 'true');
+      localStorage.setItem('sf_planner_style', chosen);
       const modal = document.getElementById('firstLaunchWelcomeModal');
       if (modal) modal.classList.add('hidden');
       setPlanningStyle(chosen, false, true);
-      if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-        window.SF_COMPONENTS.showToast(`Welcome! ${chosen === 'flexible' ? 'Flexible' : 'Focus'} Planner configured.`, 'success');
-      }
     }
     window._finishWelcomeOnboarding = _finishWelcomeOnboarding;
 
@@ -7246,7 +8116,7 @@
               </div>
               <div class="pt-4 border-t border-[#24242E] flex flex-wrap items-center justify-end gap-2.5">
                 <button type="button" onclick="window._reviewConflictsOnSwitch()" class="px-4 py-2 rounded-xl bg-[#F59E0B]/15 hover:bg-[#F59E0B]/25 text-[#F59E0B] border border-[#F59E0B]/30 font-bold text-xs transition">Review Conflicts</button>
-                <button type="button" onclick="document.getElementById('switchPlanningStyleConfirmModal').classList.add('hidden')" class="px-4 py-2 rounded-xl bg-[#1C1C24] hover:bg-[#2A2A38] text-[#A1A1AA] hover:text-white font-bold text-xs transition">Cancel</button>
+                <button type="button" onclick="window._cancelSwitchPlanningStyle()" class="px-4 py-2 rounded-xl bg-[#1C1C24] hover:bg-[#2A2A38] text-[#A1A1AA] hover:text-white font-bold text-xs transition">Cancel</button>
                 <button type="button" onclick="window._proceedSwitchAnyway()" class="px-4 py-2 rounded-xl bg-[#A855F7] hover:bg-[#9333EA] text-white font-bold text-xs shadow-lg transition">Switch Anyway</button>
               </div>
             </div>
@@ -7260,7 +8130,7 @@
         setTimeout(() => {
           if (typeof window._reviewConflictsOnSwitch === 'function') window._reviewConflictsOnSwitch();
         }, 250);
-      } else if (!localStorage.getItem('studyflow_planning_style_onboarded')) {
+      } else if (!localStorage.getItem('studyflow_planning_style_onboarded') && !localStorage.getItem('sf_planner_onboarding_completed') && !localStorage.getItem('sf_planner_style')) {
         setTimeout(() => {
           if (typeof window.showFirstLaunchWelcomeModal === 'function') window.showFirstLaunchWelcomeModal();
         }, 150);

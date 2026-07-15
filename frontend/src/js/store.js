@@ -371,6 +371,20 @@ window.SF_STORE = (function () {
 
     // ── Planner ─────────────────────────────────────────────────────────────
 
+    'planner/SELECT_DATE'(payload) {
+      const dateStr = typeof payload === 'string' ? payload : payload?.date || payload;
+      if (dateStr) {
+        _patch('planner', { selectedDate: dateStr });
+      }
+    },
+
+    'planner/SET_SELECTED_DATE'(payload) {
+      const dateStr = typeof payload === 'string' ? payload : payload?.date || payload;
+      if (dateStr) {
+        _patch('planner', { selectedDate: dateStr });
+      }
+    },
+
     async 'planner/LOAD'(payload) {
       const dateStr = payload?.date || _state.planner.selectedDate || new Date().toISOString().split('T')[0];
       const isDateChangeOnly = payload && payload.date && payload.date !== _state.planner.selectedDate && _state.planner.weeklyStats !== null;

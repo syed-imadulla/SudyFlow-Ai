@@ -249,7 +249,7 @@
               </div>
               <div class="pt-4 border-t border-[#24242E] flex flex-wrap items-center justify-end gap-2.5">
                 <button type="button" onclick="window._reviewConflictsOnSwitch()" class="px-4 py-2 rounded-xl bg-[#F59E0B]/15 hover:bg-[#F59E0B]/25 text-[#F59E0B] border border-[#F59E0B]/30 font-bold text-xs transition">Review Conflicts</button>
-                <button type="button" onclick="document.getElementById('switchPlanningStyleConfirmModal').classList.add('hidden')" class="px-4 py-2 rounded-xl bg-[#1C1C24] hover:bg-[#2A2A38] text-[#A1A1AA] hover:text-white font-bold text-xs transition">Cancel</button>
+                <button type="button" onclick="window._cancelSwitchPlanningStyle()" class="px-4 py-2 rounded-xl bg-[#1C1C24] hover:bg-[#2A2A38] text-[#A1A1AA] hover:text-white font-bold text-xs transition">Cancel</button>
                 <button type="button" onclick="window._proceedSwitchAnyway()" class="px-4 py-2 rounded-xl bg-[#A855F7] hover:bg-[#9333EA] text-white font-bold text-xs shadow-lg transition">Switch Anyway</button>
               </div>
             </div>
@@ -295,7 +295,8 @@
       try {
         const slice = window.SF_STORE ? window.SF_STORE.getSlice('planner') : null;
         if (slice) {
-          allEvents = [...(slice.plannerEvents || []), ...(slice.dailyBlocks || [])];
+          const allDayGroups = Object.values(slice.dayGroups || {}).flat();
+          allEvents = [...(slice.plannerEvents || []), ...(slice.dailyBlocks || []), ...allDayGroups];
         }
       } catch(e) {}
       if (!allEvents.length) {
@@ -307,37 +308,83 @@
       const byDate = {};
       allEvents.forEach(ev => {
         if (!ev) return;
-        const d = ev.date || (ev.startTime && ev.startTime.split('T')[0]);
+        const d = ev.date || (ev.startTime && typeof ev.startTime === 'string' && ev.startTime.split('T')[0]);
         if (d) {
           if (!byDate[d]) byDate[d] = [];
           byDate[d].push(ev);
         }
       });
-      let totalOverlapsCount = 0;
+
+      const isSameBlock = (a, b) => {
+        if (!a || !b) return false;
+        if (a === b) return true;
+        const aId = a.id || a._id || a.virtualId || a._instanceId || '';
+        const bId = b.id || b._id || b.virtualId || b._instanceId || '';
+        if (aId && bId && aId === bId) return true;
+        const aBase = aId.includes('::') ? aId.split('::')[0] : (a.masterId || a.seriesId || aId);
+        const bBase = bId.includes('::') ? bId.split('::')[0] : (b.masterId || b.seriesId || bId);
+        if (aBase && bBase && aBase === bBase) {
+          const aDate = a.date || (a.startTime && typeof a.startTime === 'string' ? a.startTime.split('T')[0] : '');
+          const bDate = b.date || (b.startTime && typeof b.startTime === 'string' ? b.startTime.split('T')[0] : '');
+          if (!aDate || !bDate || aDate === bDate) return true;
+        }
+        return false;
+      };
+
+      const deduplicate = (arr) => {
+        if (window._deduplicateBlockArray) return window._deduplicateBlockArray(arr);
+        const res = [];
+        for (let i = 0; i < arr.length; i++) {
+          const item = arr[i];
+          if (!item) continue;
+          let dup = false;
+          for (let k = 0; k < res.length; k++) {
+            if (isSameBlock(res[k], item)) {
+              dup = true;
+              break;
+            }
+          }
+          if (!dup) res.push(item);
+        }
+        return res;
+      };
+
+      const allOverlappingIds = new Set();
       const dateOverlaps = [];
       Object.keys(byDate).sort().forEach(dateStr => {
-        const evs = byDate[dateStr];
-        const overlappingIds = new Set();
+        const evs = deduplicate(byDate[dateStr]);
+        const dayOverlappingIds = new Set();
         for (let i = 0; i < evs.length; i++) {
           for (let j = i + 1; j < evs.length; j++) {
             const b1 = evs[i], b2 = evs[j];
-            const s1 = (b1.startTimeDisplay || b1.startTime || '').includes(':') ? _timeToMins(b1.startTimeDisplay || b1.startTime) : 540;
-            let e1 = (b1.endTimeDisplay || b1.endTime || '').includes(':') ? _timeToMins(b1.endTimeDisplay || b1.endTime) : s1 + 60;
-            const s2 = (b2.startTimeDisplay || b2.startTime || '').includes(':') ? _timeToMins(b2.startTimeDisplay || b2.startTime) : 540;
-            let e2 = (b2.endTimeDisplay || b2.endTime || '').includes(':') ? _timeToMins(b2.endTimeDisplay || b2.endTime) : s2 + 60;
-            if (Math.max(s1, s2) < Math.min(e1, e2)) {
-              overlappingIds.add(b1.id || b1._id || i);
-              overlappingIds.add(b2.id || b2._id || j);
+            if (!b1 || !b2) continue;
+            if (isSameBlock(b1, b2) || (window._isSameOrDuplicateBlock && window._isSameOrDuplicateBlock(b1, b2))) continue;
+            if (!b1.startTimeDisplay && !b1.startTime && !b1.endTimeDisplay && !b1.endTime) continue;
+            if (!b2.startTimeDisplay && !b2.startTime && !b2.endTimeDisplay && !b2.endTime) continue;
+            
+            const s1 = _timeToMins(b1.startTimeDisplay || b1.startTime || '');
+            let e1 = _timeToMins(b1.endTimeDisplay || b1.endTime || '');
+            if (!e1 || e1 <= s1) e1 = s1 + 60;
+            const s2 = _timeToMins(b2.startTimeDisplay || b2.startTime || '');
+            let e2 = _timeToMins(b2.endTimeDisplay || b2.endTime || '');
+            if (!e2 || e2 <= s2) e2 = s2 + 60;
+            if (s1 < e2 && e1 > s2) {
+              const id1 = b1.id || b1._id || b1.virtualId || `b1_${i}`;
+              const id2 = b2.id || b2._id || b2.virtualId || `b2_${j}`;
+              dayOverlappingIds.add(id1);
+              dayOverlappingIds.add(id2);
+              allOverlappingIds.add(id1);
+              allOverlappingIds.add(id2);
             }
           }
         }
-        if (overlappingIds.size > 0) {
-          totalOverlapsCount += overlappingIds.size;
-          dateOverlaps.push({ dateStr, count: overlappingIds.size });
+        if (dayOverlappingIds.size > 0) {
+          dateOverlaps.push({ dateStr, count: dayOverlappingIds.size });
         }
       });
-      return { totalOverlapsCount, dateOverlaps };
+      return { totalOverlapsCount: allOverlappingIds.size, dateOverlaps };
     }
+
 
     function _timeToMins(timeStr) {
       if (!timeStr) return 0;
@@ -386,17 +433,21 @@
       pSettings.planningStyle = style;
       if ('schedulingMode' in pSettings) delete pSettings.schedulingMode;
       localStorage.setItem('studyflow_planner_settings', JSON.stringify(pSettings));
+      localStorage.setItem('sf_planner_onboarding_completed', 'true');
+      localStorage.setItem('studyflow_planning_style_onboarded', 'true');
+      localStorage.setItem('sf_planner_style', style);
       const styleLabel = document.getElementById('settingPlannerStyleLabel');
       if (styleLabel) styleLabel.textContent = style === 'flexible' ? 'Flexible Planner' : 'Focus Planner';
       const chip = document.getElementById('settingCurrentStyleChip');
       if (chip) chip.innerHTML = style === 'flexible' ? '🔵 Flexible Planner' : '🟣 Focus Planner';
       const labelStr = style === 'flexible' ? 'Flexible Planner' : 'Focus Planner';
+      const msg = `Planning Style updated. You're now using ${labelStr}.`;
       if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
-        window.SF_COMPONENTS.showToast(`Planning Style updated. You're now using ${labelStr}.`, 'success');
+        window.SF_COMPONENTS.showToast(msg, 'success');
       } else {
         const toast = document.createElement('div');
         toast.className = 'fixed bottom-5 right-5 z-[9999999] bg-[#10B981] text-black font-extrabold px-5 py-3 rounded-2xl shadow-2xl transition-all duration-300 animate-fadeIn text-xs flex items-center gap-2';
-        toast.innerHTML = `<span>✓</span> <span>Planning Style updated. You're now using ${labelStr}.</span>`;
+        toast.innerHTML = `<span>✓</span> <span>${msg}</span>`;
         document.body.appendChild(toast);
         setTimeout(() => {
           toast.style.opacity = '0';
@@ -419,9 +470,20 @@
     }
     window._reviewConflictsOnSwitch = _reviewConflictsOnSwitch;
 
+    function _cancelSwitchPlanningStyle() {
+      const confirmModal = document.getElementById('switchPlanningStyleConfirmModal');
+      if (confirmModal) confirmModal.classList.add('hidden');
+      window._pendingSwitchOverlaps = null;
+      sessionStorage.removeItem('studyflow_review_conflicts');
+      window._isReviewingConflicts = false;
+    }
+    window._cancelSwitchPlanningStyle = _cancelSwitchPlanningStyle;
+
     function _proceedSwitchAnyway() {
       const confirmModal = document.getElementById('switchPlanningStyleConfirmModal');
       if (confirmModal) confirmModal.classList.add('hidden');
+      sessionStorage.removeItem('studyflow_review_conflicts');
+      window._isReviewingConflicts = false;
       _commitPlanningStyle('focus');
     }
     window._proceedSwitchAnyway = _proceedSwitchAnyway;
