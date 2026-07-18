@@ -24,11 +24,18 @@ window.plannerService = (function () {
 
   async function getDailyBlocks(dateStr) {
     console.log('[AUDIT: plannerService.js] getDailyBlocks called for date:', dateStr);
-    const query = dateStr ? `?date=${encodeURIComponent(dateStr)}` : '';
-    const { MOCK_DAILY_BLOCKS = null } = await _getMocks();
-    const res = await window.SF_HTTP.request(`/planner/daily${query}`, MOCK_DAILY_BLOCKS);
-    console.log('[AUDIT: plannerService.js] getDailyBlocks response received:', res);
-    return res;
+    
+    // Derive absolute UTC bounds for the user's local day to bypass the backend's flawed UTC-based date query
+    let targetDate = new Date();
+    if (dateStr && typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      const parts = dateStr.split('-').map(Number);
+      targetDate = new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+    
+    const startOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0, 0);
+    const endOfDay = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59, 999);
+    
+    return await getEventsByRange(startOfDay.toISOString(), endOfDay.toISOString());
   }
 
   async function getEventsByRange(startIso, endIso) {
@@ -58,10 +65,20 @@ window.plannerService = (function () {
 
   async function createBlock(payload) {
     const genId = payload?.id || payload?._id || ('blk-' + Date.now() + '-' + Math.floor(Math.random()*1000));
+    
+    // Dynamically compute endTime if duration is provided but endTime is missing
+    let computedEndTime = payload.endTime;
+    if (!computedEndTime && payload.startTime && payload.duration) {
+      const startMs = new Date(payload.startTime).getTime();
+      const endMs = startMs + (payload.duration * 60000);
+      computedEndTime = new Date(endMs).toISOString();
+    }
+
     const newBlock = {
       completed: false,
       color: '#A855F7',
       ...payload,
+      endTime: computedEndTime || payload.endTime,
       id: genId,
       _id: genId
     };
@@ -71,9 +88,13 @@ window.plannerService = (function () {
         mocks.MOCK_DAILY_BLOCKS.push(newBlock);
       }
     }
+    // Strip the frontend-generated blk-... id/_id before sending to the real API.
+    // MongoDB/Mongoose must auto-generate its own ObjectId _id.
+    // Sending "blk-1234" causes: CastError: Cast to ObjectId failed for value "blk-1234" at path "_id".
+    const { id: _sid, _id: _smid, ...apiPayload } = newBlock;
     return window.SF_HTTP.request('/planner', newBlock, {
       method: 'POST',
-      body: JSON.stringify(payload)
+      body: JSON.stringify(apiPayload)
     });
   }
 

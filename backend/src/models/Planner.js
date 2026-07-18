@@ -45,6 +45,19 @@ const plannerSchema = new mongoose.Schema(
       ref: 'Goal',
       default: null
     },
+    milestoneId: {
+      type: String,
+      default: null
+    },
+    duration: {
+      type: Number,
+      default: null
+    },
+    status: {
+      type: String,
+      enum: ['planned', 'in-progress', 'completed', 'missed'],
+      default: 'planned'
+    },
     // ── Recurrence Fields (Sprint 3D) ─────────────────────────────────────────
     isRecurring: {
       type: Boolean,

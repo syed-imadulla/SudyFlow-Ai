@@ -83,7 +83,7 @@ window.SF_STORE = (function () {
     },
 
     planner: {
-      selectedDate:      new Date().toLocaleDateString('en-CA'),
+      selectedDate:      (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })(),
       selectedView:      'day',
       selectedRange:     { start: null, end: null },
       plannerEvents:     [],
@@ -199,9 +199,13 @@ window.SF_STORE = (function () {
     if (_state.planner.selectedView === 'day') return events;
     return events.filter(e => {
       if (!e.startTime) return true;
-      const eDate = new Date(e.startTime).toLocaleDateString('en-CA');
-      const utcDate = new Date(e.startTime).toISOString().split('T')[0];
-      return eDate === dateStr || utcDate === dateStr;
+      const dt = new Date(e.startTime);
+      if (isNaN(dt.getTime())) return true;
+      const y = dt.getFullYear();
+      const m = String(dt.getMonth() + 1).padStart(2, '0');
+      const d = String(dt.getDate()).padStart(2, '0');
+      const localDateStr = `${y}-${m}-${d}`;
+      return localDateStr === dateStr;
     });
   }
 
@@ -386,7 +390,7 @@ window.SF_STORE = (function () {
     },
 
     async 'planner/LOAD'(payload) {
-      const dateStr = payload?.date || _state.planner.selectedDate || new Date().toLocaleDateString('en-CA');
+      const dateStr = payload?.date || _state.planner.selectedDate || (() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; })();
       const isDateChangeOnly = payload && payload.date && payload.date !== _state.planner.selectedDate && _state.planner.weeklyStats !== null;
       console.log('[AUDIT: store.js] planner/LOAD started for date:', dateStr, '| isDateChangeOnly:', isDateChangeOnly);
       
@@ -419,7 +423,10 @@ window.SF_STORE = (function () {
 
     async 'planner/LOAD_RANGE'(payload) {
       const { start, end, view = _state.planner.selectedView || 'day' } = payload || {};
-      const dateStr = payload?.date || _state.planner.selectedDate || new Date().toLocaleDateString('en-CA');
+      const dateStr = payload?.date || _state.planner.selectedDate || (() => {
+        const dt = new Date();
+        return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+      })();
       console.log('[AUDIT: store.js] planner/LOAD_RANGE started for range:', start, 'to', end, '| view:', view);
       
       const loadRangePatch = { loading: true, error: null, selectedView: view, selectedRange: { start, end } };
