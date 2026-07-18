@@ -398,7 +398,7 @@
               </div>
 
               <!-- Calendar Grid Body -->
-              <div id="weeklyGridScrollBody" class="relative flex overflow-y-auto h-[calc(100vh-210px)] min-h-[640px] max-h-[880px] custom-scroll bg-[#09090B]">
+              <div id="weeklyGridScrollBody" class="relative flex overflow-y-auto h-[calc(100vh-140px)] min-h-[640px] max-h-[1400px] custom-scroll bg-[#09090B]">
                 <!-- Sticky Left Time Axis Column -->
                 <div id="weeklyTimeAxis" class="sticky left-0 z-20 w-[70px] shrink-0 bg-[#13131A]/95 backdrop-blur-md border-r border-[#24242E] select-none">
                   <!-- Generated dynamically by renderWeeklyTimeAxis() -->
@@ -417,27 +417,6 @@
                   <div id="weeklySelectedOverlay" class="absolute inset-0 pointer-events-none" style="z-index:50;"></div>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Bottom Quick Add Floating Action Panel -->
-        <div id="weeklyQuickAddPanel" class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 sm:px-6 sm:py-3.5 rounded-[20px] bg-[#13131A]/90 border border-[#24242E] shadow-xl backdrop-blur-xl">
-          <div class="flex items-center gap-3.5">
-            <button onclick="openAddBlockModal()" class="w-9 h-9 rounded-[14px] bg-[#A855F7] hover:bg-[#9333EA] text-white flex items-center justify-center font-bold text-lg shadow-[0_0_15px_rgba(168,85,247,0.4)] transition shrink-0">+</button>
-            <div>
-              <h4 class="text-sm font-bold text-white tracking-tight">Quick Add</h4>
-              <p class="text-[11px] text-[#A1A1AA]">Drag or click to create a new time block</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="text-xs font-semibold text-[#6B7280] mr-1">Category:</span>
-            <button onclick="openAddBlockModal('STUDY')" class="px-3 py-1 rounded-full bg-[#1E1035] border border-[#A855F7]/30 text-white font-medium text-xs hover:bg-[#A855F7] transition">Study</button>
-            <button onclick="openAddBlockModal('TASK')" class="px-3 py-1 rounded-full bg-[#1E1035] border border-[#24242E] text-[#D4D4D8] font-medium text-xs hover:bg-[#1E1035] hover:border-[#A855F7]/40 transition">Task</button>
-            <button onclick="openAddBlockModal('PRACTICE')" class="px-3 py-1 rounded-full bg-[#1E1035] border border-[#24242E] text-[#D4D4D8] font-medium text-xs hover:bg-[#1E1035] hover:border-[#A855F7]/40 transition">Practice</button>
-            <button onclick="openAddBlockModal('NOTE')" class="px-3 py-1 rounded-full bg-[#1E1035] border border-[#24242E] text-[#D4D4D8] font-medium text-xs hover:bg-[#1E1035] hover:border-[#A855F7]/40 transition">Note</button>
-            <button onclick="openAddBlockModal('EXAM')" class="px-3 py-1 rounded-full bg-[#1E1035] border border-[#A855F7]/40 text-[#D8B4FE] font-medium text-xs hover:bg-[#A855F7] hover:text-white transition">Exam</button>
-          </div>
         </div>
       </section>
 
@@ -556,30 +535,13 @@
               </div>
               
               <!-- Dynamic Grid Cells Body -->
-              <div id="monthlyCellsGrid" class="grid grid-cols-7 divide-x divide-y divide-[#24242E]/60 text-xs font-mono bg-[#09090B] relative min-h-[640px] max-h-[880px] overflow-y-auto custom-scroll">
+              <div id="monthlyCellsGrid" class="grid grid-cols-7 divide-x divide-y divide-[#24242E]/60 text-xs font-mono bg-[#09090B] relative overflow-y-auto custom-scroll max-h-[640px]" style="grid-auto-rows: minmax(128px, auto);">
                 <!-- Generated dynamically by renderMonthlyCalendar() -->
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Bottom Quick Add Floating Action Panel -->
-        <div id="monthlyQuickAddPanel" class="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 sm:px-6 sm:py-3.5 rounded-[20px] bg-[#13131A]/90 border border-[#24242E] shadow-xl backdrop-blur-xl">
-          <div class="flex items-center gap-3.5">
-            <button onclick="openAddBlockModal()" class="w-9 h-9 rounded-[14px] bg-[#A855F7] hover:bg-[#9333EA] text-white flex items-center justify-center font-bold text-lg shadow-[0_0_15px_rgba(168,85,247,0.4)] transition shrink-0">+</button>
-            <div>
-              <h4 class="text-sm font-bold text-white tracking-tight">Quick Add</h4>
-              <p class="text-[11px] text-[#A1A1AA]">Drag or click to create a new time block</p>
-            </div>
-          </div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="text-xs font-semibold text-[#6B7280] mr-1">Category:</span>
-            <button onclick="openAddBlockModal('STUDY')" class="px-3 py-1 rounded-full bg-[#1E1035] border border-[#A855F7]/30 text-white font-medium text-xs hover:bg-[#A855F7] transition">Study</button>
-            <button onclick="openAddBlockModal('TASK')" class="px-3 py-1 rounded-full bg-[#1E1035] border border-[#24242E] text-[#D4D4D8] font-medium text-xs hover:bg-[#1E1035] hover:border-[#A855F7]/40 transition">Task</button>
-            <button onclick="openAddBlockModal('PRACTICE')" class="px-3 py-1 rounded-full bg-[#1E1035] border border-[#24242E] text-[#D4D4D8] font-medium text-xs hover:bg-[#1E1035] hover:border-[#A855F7]/40 transition">Practice</button>
-            <button onclick="openAddBlockModal('NOTE')" class="px-3 py-1 rounded-full bg-[#1E1035] border border-[#24242E] text-[#D4D4D8] font-medium text-xs hover:bg-[#1E1035] hover:border-[#A855F7]/40 transition">Note</button>
-            <button onclick="openAddBlockModal('EXAM')" class="px-3 py-1 rounded-full bg-[#1E1035] border border-[#A855F7]/40 text-[#D8B4FE] font-medium text-xs hover:bg-[#A855F7] hover:text-white transition">Exam</button>
-          </div>
         </div>
       </section>
 
