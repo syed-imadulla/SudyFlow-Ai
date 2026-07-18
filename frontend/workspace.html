@@ -102,6 +102,31 @@
       if (cardsContainer) {
         cardsContainer.innerHTML = goals.map(goal => window.SF_COMPONENTS.renderGoalCard(goal, 'grid')).join('');
       }
+
+      // Auto-scroll to selected goal if hash exists
+      if (window.location.hash && window.location.hash.startsWith('#goal-')) {
+        setTimeout(() => {
+          const target = document.querySelector(window.location.hash);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Apply premium highlight & pulse
+            target.classList.add('ring-2', 'ring-[#A855F7]', 'shadow-[0_0_30px_rgba(168,85,247,0.3)]', 'animate-pulse', 'bg-[#151520]');
+            target.style.transition = 'all 0.5s ease-out';
+            
+            setTimeout(() => {
+              target.classList.remove('animate-pulse');
+            }, 1000);
+
+            setTimeout(() => {
+              target.classList.remove('ring-2', 'ring-[#A855F7]', 'shadow-[0_0_30px_rgba(168,85,247,0.3)]', 'bg-[#151520]');
+              // Clear hash to prevent re-triggering on subsequent renders without messing up history
+              if (window.history && window.history.replaceState) {
+                window.history.replaceState(null, null, window.location.pathname);
+              }
+            }, 2500);
+          }
+        }, 150);
+      }
     }
 
     document.addEventListener('DOMContentLoaded', async () => {

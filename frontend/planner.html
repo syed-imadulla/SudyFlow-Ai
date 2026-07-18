@@ -157,64 +157,14 @@
           <div class="lg:col-span-5 bg-[#0A0A0E] border border-[#1C1C24] p-6 rounded-[24px] shadow-[0_10px_30px_rgba(0,0,0,0.5)] flex flex-col justify-between h-full">
             <div>
               <div class="flex items-center justify-between pb-4 mb-5 border-b border-[#1C1C24]">
-                <h3 class="text-base font-bold text-white tracking-tight">Upcoming Deadlines</h3>
-                <span class="text-xs text-[#6B7280] font-mono">Next 7 days</span>
+                <h3 class="text-base font-bold text-white tracking-tight">Upcoming Milestones</h3>
+                <span id="upcomingMilestonesSubtitle" class="text-xs text-[#6B7280] font-mono">Goals due soon</span>
               </div>
 
-              <div class="space-y-4">
-                <!-- Deadline 1 -->
-                <div class="p-4 rounded-2xl bg-[#050508] border border-[#1C1C24] flex items-center justify-between group hover:border-[#facc15]/40 transition">
-                  <div class="flex items-start space-x-3">
-                    <span class="w-2.5 h-2.5 rounded-full bg-[#facc15] mt-1.5 shrink-0 shadow-[0_0_8px_rgba(250,204,21,0.8)]"></span>
-                    <div>
-                      <h4 class="font-bold text-sm text-white">OS Assignment</h4>
-                      <p class="text-xs text-[#6B7280] mt-0.5">Memory Management • Submission</p>
-                    </div>
-                  </div>
-                  <span class="px-2.5 py-1 rounded-xl bg-[#312205] border border-[#eab308]/30 text-[#facc15] font-mono text-xs font-bold shrink-0">Tomorrow</span>
-                </div>
-
-                <!-- Deadline 2 -->
-                <div class="p-4 rounded-2xl bg-[#050508] border border-[#1C1C24] flex items-center justify-between group hover:border-[#A855F7]/40 transition">
-                  <div class="flex items-start space-x-3">
-                    <span class="w-2.5 h-2.5 rounded-full bg-[#A855F7] mt-1.5 shrink-0"></span>
-                    <div>
-                      <h4 class="font-bold text-sm text-white">DBMS Project Demo</h4>
-                      <p class="text-xs text-[#6B7280] mt-0.5">Project Presentation & Explanation</p>
-                    </div>
-                  </div>
-                  <span class="text-[#A1A1AA] font-mono text-xs shrink-0">3 days left</span>
-                </div>
-
-                <!-- Deadline 3 -->
-                <div class="p-4 rounded-2xl bg-[#050508] border border-[#1C1C24] flex items-center justify-between group hover:border-[#A1A1AA]/40 transition">
-                  <div class="flex items-start space-x-3">
-                    <span class="w-2.5 h-2.5 rounded-full bg-[#6B7280] mt-1.5 shrink-0"></span>
-                    <div>
-                      <h4 class="font-bold text-sm text-white">CN Lab Report</h4>
-                      <p class="text-xs text-[#6B7280] mt-0.5">Analysis & Documentation</p>
-                    </div>
-                  </div>
-                  <span class="text-[#6B7280] font-mono text-xs shrink-0">5 days left</span>
-                </div>
-
-                <!-- Deadline 4 -->
-                <div class="p-4 rounded-2xl bg-[#050508] border border-[#1C1C24] flex items-center justify-between group hover:border-[#A855F7]/40 transition">
-                  <div class="flex items-start space-x-3">
-                    <span class="w-2.5 h-2.5 rounded-full bg-[#A855F7] mt-1.5 shrink-0"></span>
-                    <div>
-                      <h4 class="font-bold text-sm text-white">Math Quiz</h4>
-                      <p class="text-xs text-[#6B7280] mt-0.5">Probability & Statistics</p>
-                    </div>
-                  </div>
-                  <span class="text-[#6B7280] font-mono text-xs shrink-0">6 days left</span>
-                </div>
+              <div id="upcomingDeadlinesContainer" class="space-y-4">
+                <!-- Dynamically populated -->
               </div>
             </div>
-
-            <button onclick="alert('✨ All Deadlines View opened')" class="text-xs font-bold text-[#A855F7] hover:text-[#D8B4FE] self-end mt-6 flex items-center gap-1 transition">
-              <span>View all deadlines</span> <span>→</span>
-            </button>
           </div>
         </div>
 
@@ -569,6 +519,13 @@
             <div>
               <label class="block text-xs font-semibold text-[#A1A1AA] mb-1">Description / Notes</label>
               <textarea id="sf-add-block-desc" rows="2" placeholder="Key topics or focus goals..." class="w-full px-3.5 py-2 rounded-xl bg-[#151515] border border-[#2A2A2A] text-white text-xs placeholder-[#6B7280] focus:outline-none focus:border-[#A855F7] transition resize-none"></textarea>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-[#A1A1AA] mb-1 flex items-center justify-between">
+                <span>Due Date (Optional)</span>
+              </label>
+              <input type="date" id="sf-add-block-due" class="w-full px-3.5 py-2 rounded-xl bg-[#151515] border border-[#2A2A2A] text-white text-xs placeholder-[#6B7280] focus:outline-none focus:border-[#A855F7] transition [color-scheme:dark]">
             </div>
 
             <div class="grid grid-cols-2 gap-3.5">
@@ -2385,6 +2342,215 @@
       }
     }
 
+    function getDeadlineRelativeLabel(dueDateStr) {
+      if (!dueDateStr) return '';
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      const due = new Date(dueDateStr);
+      due.setHours(0, 0, 0, 0);
+      
+      const diffTime = due - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays < 0) return `Overdue by ${Math.abs(diffDays)} day${Math.abs(diffDays) > 1 ? 's' : ''}`;
+      if (diffDays === 0) return 'Today';
+      if (diffDays === 1) return 'Tomorrow';
+      if (diffDays < 7) return `In ${diffDays} days`;
+      if (diffDays < 14) return 'Next Week';
+      return `In ${diffDays} days`;
+    }
+
+    function renderUpcomingMilestones(snapshot) {
+      const container = document.getElementById('upcomingDeadlinesContainer');
+      if (!container) return;
+
+      const goalsState = snapshot || (window.SF_STORE && window.SF_STORE.getSlice('goals'));
+      if (!goalsState || !goalsState.items) {
+        return;
+      }
+
+      const goals = goalsState.items;
+      
+      // Extract all active subtasks that have a valid dueDate
+      let milestones = [];
+      goals.forEach(goal => {
+        if (goal.archived || goal.deleted || goal.status === 'archived' || goal.status === 'deleted') return;
+        
+        if (goal.subtasks && Array.isArray(goal.subtasks)) {
+          const totalSubtasks = goal.subtasks.length;
+          const completedSubtasks = goal.subtasks.filter(s => s.completed).length;
+
+            let originalIndex = 0;
+            goal.subtasks.forEach(sub => {
+            originalIndex++;
+            if (sub.completed || !sub.title || sub.title.trim() === '') return;
+            
+            let dueObj = null;
+            if (sub.dueDate) {
+              const parts = sub.dueDate.split('-');
+              if (parts.length === 3) {
+                const y = parseInt(parts[0], 10);
+                const m = parseInt(parts[1], 10) - 1;
+                const d = parseInt(parts[2], 10);
+                dueObj = new Date(y, m, d);
+              }
+            } else if (sub.deadlineDisplay) {
+              const display = sub.deadlineDisplay.toLowerCase().trim();
+              const todayMidnight = new Date();
+              todayMidnight.setHours(0, 0, 0, 0);
+              let diffDays = null;
+              if (display === 'today') diffDays = 0;
+              else if (display === 'tomorrow') diffDays = 1;
+              else if (display === 'yesterday' || display === 'overdue') diffDays = -1;
+              else if (display.startsWith('in ') && display.includes('days')) {
+                const num = parseInt(display.replace(/[^\d]/g, ''), 10);
+                if (!isNaN(num)) diffDays = num;
+              }
+              if (diffDays !== null) {
+                dueObj = new Date(todayMidnight.getTime() + diffDays * 86400000);
+              }
+            }
+            
+            if (!dueObj || isNaN(dueObj.getTime())) return;
+
+            milestones.push({
+              ...sub,
+              goalId: goal.id,
+              goalTitle: goal.title,
+              dueObj: dueObj,
+              originalIndex: originalIndex
+            });
+          });
+        }
+      });
+      
+      const priorityMap = { 'URGENT': 0, 'HIGH': 1, 'MEDIUM': 2, 'LOW': 3 };
+      milestones.sort((a, b) => {
+        const timeDiff = a.dueObj.getTime() - b.dueObj.getTime();
+        if (timeDiff !== 0) return timeDiff;
+        
+        const prioA = priorityMap[(a.priority || 'MEDIUM').toUpperCase()] || 2;
+        const prioB = priorityMap[(b.priority || 'MEDIUM').toUpperCase()] || 2;
+        if (prioA !== prioB) return prioA - prioB;
+        
+        return a.originalIndex - b.originalIndex;
+      });
+
+      const subtitleEl = document.getElementById('upcomingMilestonesSubtitle');
+      if (subtitleEl) {
+        if (milestones.length === 0) {
+          subtitleEl.textContent = '🎉 You\'re ahead of schedule';
+        } else {
+          const completedCount = goals.reduce((sum, g) => sum + (g.subtasks || []).filter(s => s.completed).length, 0);
+          const totalCount = goals.reduce((sum, g) => sum + (g.subtasks || []).length, 0);
+          if (milestones.length === 1) {
+            const diffTime = milestones[0].dueObj.getTime() - (new Date().setHours(0,0,0,0));
+            const isToday = Math.ceil(diffTime / 86400000) === 0;
+            subtitleEl.textContent = isToday ? '1 milestone due today' : '1 milestone due soon';
+          } else {
+            subtitleEl.textContent = `${milestones.length} upcoming milestones • ${completedCount}/${totalCount} done`;
+          }
+        }
+      }
+
+      if (milestones.length === 0) {
+        const hasGoals = goals.length > 0;
+        const titleText = hasGoals ? "🎉 You're ahead of schedule." : "🎯 Create your first Goal";
+        const descText = hasGoals ? "No milestones are due soon." : "Create a Goal and break it into milestones to start planning your progress.";
+        const btnText = hasGoals ? 'Open Goals' : 'Create Goal';
+        container.innerHTML = `
+          <div class="p-6 rounded-2xl bg-[#050508] border border-[#1C1C24] flex flex-col items-center justify-center text-center space-y-3">
+            <div class="w-12 h-12 rounded-full bg-[#38BDF8]/10 flex items-center justify-center text-[#38BDF8] text-xl mb-1">
+              ${hasGoals ? '🎉' : '🎯'}
+            </div>
+            <div>
+              <h4 class="font-bold text-sm text-white">${titleText}</h4>
+              <p class="text-xs text-[#6B7280] mt-1 max-w-[200px] leading-relaxed mx-auto">${descText}</p>
+            </div>
+            <button onclick="window.location.href='workspace.html'" class="mt-2 px-4 py-1.5 rounded-lg bg-[#38BDF8]/10 text-[#38BDF8] text-xs font-bold border border-[#38BDF8]/30 hover:bg-[#38BDF8]/20 transition">
+              ${btnText}
+            </button>
+          </div>
+        `;
+        return;
+      }
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const renderLimit = 5;
+      const visibleMilestones = milestones.slice(0, renderLimit);
+      const hiddenCount = milestones.length - renderLimit;
+
+      let html = visibleMilestones.map(block => {
+        const diffTime = block.dueObj.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        let labelColor = 'text-[#6B7280]';
+        let accentLine = 'bg-[#6B7280]';
+        let displayStr = block.deadlineDisplay || getDeadlineRelativeLabel(block.dueDate);
+        
+        if (diffDays < 0) {
+          labelColor = 'text-red-500';
+          accentLine = 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]';
+          displayStr = `Overdue by ${Math.abs(diffDays)} day${Math.abs(diffDays)>1?'s':''}`;
+        } else if (diffDays === 0) {
+          labelColor = 'text-[#f97316]'; // orange-500
+          accentLine = 'bg-[#f97316] shadow-[0_0_8px_rgba(249,115,22,0.5)]';
+          displayStr = `Today • Due today`;
+        } else if (diffDays === 1) {
+          labelColor = 'text-[#facc15]'; // yellow-400
+          accentLine = 'bg-[#facc15] shadow-[0_0_8px_rgba(250,204,21,0.5)]';
+          displayStr = `Tomorrow • 1 day left`;
+        } else if (diffDays < 7) {
+          labelColor = 'text-[#A855F7]'; // purple-500
+          accentLine = 'bg-[#A855F7] shadow-[0_0_8px_rgba(168,85,247,0.5)]';
+          displayStr = `In ${diffDays} days`;
+        } else {
+          displayStr = `In ${diffDays} days`;
+        }
+
+        const labelClasses = `${labelColor} font-bold text-[11px] sm:text-xs shrink-0`;
+        const goalIcon = block.goalIcon || '🎯';
+        const goalColor = block.goalColor || '';
+        return `
+          <div tabindex="0" role="button" onclick="window.location.href='workspace.html#goal-${block.goalId}'" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); window.location.href='workspace.html#goal-${block.goalId}';}" class="p-2.5 rounded-2xl bg-[#050508] border border-[#1C1C24] group hover:bg-[#0A0A0E] hover:-translate-y-0.5 hover:border-[#A855F7]/50 hover:shadow-[0_4px_20px_rgba(168,85,247,0.1)] transition-all duration-200 ease-in-out cursor-pointer relative overflow-hidden flex flex-col justify-center focus:outline-none focus:ring-2 focus:ring-[#A855F7]">
+            <div class="absolute left-0 top-0 bottom-0 w-1 ${accentLine} opacity-80 group-hover:opacity-100 transition-opacity"></div>
+            <div class="pl-2 pr-1">
+              <div class="flex items-center justify-between gap-3">
+                <h4 class="font-semibold text-[14px] sm:text-[15px] text-white truncate min-w-0">${block.title}</h4>
+                <span class="${labelClasses} text-right whitespace-nowrap">${displayStr}</span>
+              </div>
+              <div class="flex items-center justify-between mt-0.5">
+                <p class="text-xs text-[#6B7280] truncate flex items-center gap-1.5 flex-1 min-w-0">
+                  <span class="opacity-80" ${goalColor ? `style="color: ${goalColor};"` : ''}>${goalIcon}</span>
+                  <span class="truncate min-w-0" ${goalColor ? `style="color: ${goalColor}; opacity: 0.9;"` : ''}>${block.goalTitle}</span>
+                </p>
+                <div class="flex items-center shrink-0 ml-2">
+                  <span class="text-[10px] font-bold text-[#A855F7] opacity-0 group-hover:opacity-100 transition-opacity flex items-center whitespace-nowrap bg-[#0A0A0E] px-1 z-10">
+                    View Goal &rarr;
+                  </span>
+                </div>
+              </div>
+              <div class="ai-recommendation-placeholder hidden text-xs text-[#A1A1AA] mt-2 border-t border-[#1C1C24] pt-2"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      html += `
+        <div class="flex items-center ${hiddenCount > 0 ? 'justify-between' : 'justify-end'} pt-2 mt-2">
+          ${hiddenCount > 0 ? `<span class="text-xs text-[#6B7280] font-mono">+${hiddenCount} more milestones</span>` : ''}
+          <button onclick="window.location.href='workspace.html'" class="text-xs font-bold text-[#A855F7] hover:text-[#D8B4FE] flex items-center gap-1 transition">
+            <span>View all goals</span> <span>&rarr;</span>
+          </button>
+        </div>
+      `;
+      
+      container.innerHTML = html;
+    }
+
     function renderDailyPlanner(snapshot) {
       const container = document.getElementById('dailyTimelineContainer');
       if (!container) return;
@@ -3012,6 +3178,7 @@
       _scheduleNextMinute();
 
       if (window.SF_STORE) {
+        window.SF_STORE.subscribe('goals', (snapshot) => renderUpcomingMilestones(snapshot));
         window.SF_STORE.subscribe('planner', (snapshot) => {
           renderDailyPlanner(snapshot);
           const weeklyView = document.getElementById('weeklyView');
@@ -3507,6 +3674,7 @@
       const goalSelect = document.getElementById('sf-add-block-goal');
       const titleInput = document.getElementById('sf-add-block-title');
       const descInput = document.getElementById('sf-add-block-desc');
+      const dueInput = document.getElementById('sf-add-block-due');
       const typeInput = document.getElementById('sf-add-block-type');
       const startInput = document.getElementById('sf-add-block-start');
       const endInput = document.getElementById('sf-add-block-end');
@@ -3548,6 +3716,7 @@
 
       if (titleInput) titleInput.value = block.title || '';
       if (descInput) descInput.value = block.description || block.subject || '';
+      if (dueInput) dueInput.value = block.dueDate || '';
       
       if (typeInput) {
         const cat = (block.type || block.category || 'STUDY').toUpperCase();
@@ -3867,6 +4036,7 @@
 
       const titleInput = document.getElementById('sf-add-block-title');
       const descInput = document.getElementById('sf-add-block-desc');
+      const dueInput = document.getElementById('sf-add-block-due');
       const typeInput = document.getElementById('sf-add-block-type');
       const goalInput = document.getElementById('sf-add-block-goal');
       const startInput = document.getElementById('sf-add-block-start');
@@ -3966,6 +4136,7 @@
           id: genId,
           title,
           description: descInput ? descInput.value.trim() : '',
+          dueDate: (dueInput && dueInput.value) ? dueInput.value : null,
           type: (typeInput ? typeInput.value : 'study').toUpperCase(),
           date: targetDateStr,
           startTime,

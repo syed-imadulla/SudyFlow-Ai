@@ -240,7 +240,7 @@
       } else if (mode === 'expanded') {
         const subtasksHtml = (goal.subtasks || []).map(sub => this.renderTaskCard(sub, { mode: 'workspace', goalId: goal.id })).join('');
         return `
-          <div class="card bg-[#0E0E0E] border border-[#202020] p-6 rounded-[20px] space-y-4 shadow-saas animate-fadeIn relative group hover:border-[#A855F7]/40 transition-all duration-200">
+          <div id="goal-${goal.id}" class="card bg-[#0E0E0E] border border-[#202020] p-6 rounded-[20px] space-y-4 shadow-saas animate-fadeIn relative group hover:border-[#A855F7]/40 transition-all duration-200">
             <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-[#1C1C1C]">
               <div class="flex items-start space-x-3.5 min-w-0 flex-1">
                 <div class="w-10 h-10 rounded-xl bg-[#A855F7]/15 border border-[#A855F7]/30 flex items-center justify-center text-[#A855F7] font-bold text-sm shrink-0 shadow-[0_0_15px_rgba(168,85,247,0.2)]">
