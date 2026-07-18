@@ -2960,6 +2960,17 @@
         dateHeader.textContent = 'Today';
       }
 
+      // Enable horizontal mouse wheel scrolling for Daily Planner filter bar
+      const filterBar = document.getElementById('sf-planner-filters');
+      if (filterBar) {
+        filterBar.addEventListener('wheel', (e) => {
+          if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+            e.preventDefault();
+            filterBar.scrollLeft += e.deltaY;
+          }
+        }, { passive: false });
+      }
+
       document.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
           const searchInput = document.getElementById('sf-planner-search');
