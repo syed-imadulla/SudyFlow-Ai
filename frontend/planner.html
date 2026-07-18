@@ -2465,6 +2465,7 @@
       container.classList.add('space-y-4', 'before:absolute', 'before:left-12', 'before:top-2', 'before:bottom-2', 'before:w-px', 'before:bg-[#1C1C24]');
       container.innerHTML = _renderPlannerCards(sortedBlocks, goals);
       _requestTimeVisualsUpdate();
+      if (typeof _calculatePlannerCalendarHeights === 'function') _calculatePlannerCalendarHeights();
     }
     window.renderDailyPlanner = renderDailyPlanner;
 
@@ -2622,11 +2623,11 @@
 
     function _renderDailyFlexible(container, sortedBlocks, goals) {
       container.style.overflowY = 'auto';
-      container.style.maxHeight = '520px';
+      container.style.maxHeight = 'none';
       container.style.height = 'auto';
       container.style.paddingLeft = '0px';
-      container.classList.remove('overflow-y-visible', 'max-h-none', 'space-y-4', 'before:absolute', 'before:left-12', 'before:top-2', 'before:bottom-2', 'before:w-px', 'before:bg-[#1C1C24]');
-      container.classList.add('overflow-y-auto', 'max-h-[520px]', 'custom-scroll');
+      container.classList.remove('overflow-y-visible', 'max-h-none', 'space-y-4', 'before:absolute', 'before:left-12', 'before:top-2', 'before:bottom-2', 'before:w-px', 'before:bg-[#1C1C24]', 'max-h-[520px]');
+      container.classList.add('overflow-y-auto', 'custom-scroll');
 
       const layoutMap = (typeof calculateOverlapGroups === 'function')
         ? calculateOverlapGroups(sortedBlocks || [])
@@ -4574,6 +4575,8 @@
       const mNav = document.getElementById('monthlyNavigationBar');
       const wHead = document.getElementById('weeklyHeaderRow');
       const mHead = document.getElementById('monthlyHeaderRow');
+      const dBody = document.getElementById('dailyTimelineContainer');
+      const isFlexible = typeof _getPlanningStyle === 'function' && _getPlanningStyle() === 'flexible';
 
       if (window._isPlannerFullscreen) {
         if (wBody) {
@@ -4590,22 +4593,40 @@
           mBody.style.maxHeight = 'none';
           mBody.style.minHeight = '0px';
         }
+        if (dBody && isFlexible) {
+          dBody.style.height = Math.max(200, window.innerHeight - 100) + 'px';
+          dBody.style.maxHeight = 'none';
+          dBody.style.minHeight = '0px';
+        }
       } else {
+        const calculateTargetH = (fallbackTop) => Math.max(550, window.innerHeight - fallbackTop + 76);
+
         if (wBody) {
           const rect = wBody.getBoundingClientRect();
           const top = rect.top > 0 ? rect.top : (wNav ? wNav.getBoundingClientRect().bottom + (wHead ? wHead.offsetHeight : 36) : 340);
-          const targetH = Math.max(400, window.innerHeight - top - 24);
-          wBody.style.height = targetH + 'px';
+          wBody.style.height = calculateTargetH(top) + 'px';
           wBody.style.maxHeight = 'none';
           wBody.style.minHeight = '0px';
         }
         if (mBody) {
           const rect = mBody.getBoundingClientRect();
           const top = rect.top > 0 ? rect.top : (mNav ? mNav.getBoundingClientRect().bottom + (mHead ? mHead.offsetHeight : 36) : 340);
-          const targetH = Math.max(550, window.innerHeight - top + 76); // +100px from original -24
-          mBody.style.height = targetH + 'px';
+          mBody.style.height = calculateTargetH(top) + 'px';
           mBody.style.maxHeight = 'none';
           mBody.style.minHeight = '0px';
+        }
+        if (dBody) {
+          if (isFlexible) {
+            const rect = dBody.getBoundingClientRect();
+            const top = rect.top > 0 ? rect.top : 340;
+            dBody.style.height = calculateTargetH(top) + 'px';
+            dBody.style.maxHeight = 'none';
+            dBody.style.minHeight = '0px';
+          } else {
+            dBody.style.height = '';
+            dBody.style.maxHeight = '';
+            dBody.style.minHeight = '';
+          }
         }
       }
     }
