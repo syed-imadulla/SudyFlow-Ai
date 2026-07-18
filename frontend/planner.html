@@ -4594,7 +4594,7 @@
         if (wBody) {
           const rect = wBody.getBoundingClientRect();
           const top = rect.top > 0 ? rect.top : (wNav ? wNav.getBoundingClientRect().bottom + (wHead ? wHead.offsetHeight : 36) : 340);
-          const targetH = Math.max(550, window.innerHeight - top + 76);
+          const targetH = Math.max(520, window.innerHeight - top + 46); // Adjusted to visually match Monthly
           wBody.style.height = targetH + 'px';
           wBody.style.maxHeight = 'none';
           wBody.style.minHeight = '0px';
