@@ -39,6 +39,7 @@
           }
           const res = await window.authService.login(email, password);
           if (res && res.user) {
+            try { localStorage.removeItem('sf_planner_ui_state'); } catch(e) {}
             window.location.href = 'dashboard.html';
           }
         } catch (err) {

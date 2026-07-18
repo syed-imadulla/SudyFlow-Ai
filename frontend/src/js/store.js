@@ -83,7 +83,7 @@ window.SF_STORE = (function () {
     },
 
     planner: {
-      selectedDate:      new Date().toISOString().split('T')[0],
+      selectedDate:      new Date().toLocaleDateString('en-CA'),
       selectedView:      'day',
       selectedRange:     { start: null, end: null },
       plannerEvents:     [],
@@ -386,10 +386,15 @@ window.SF_STORE = (function () {
     },
 
     async 'planner/LOAD'(payload) {
-      const dateStr = payload?.date || _state.planner.selectedDate || new Date().toISOString().split('T')[0];
+      const dateStr = payload?.date || _state.planner.selectedDate || new Date().toLocaleDateString('en-CA');
       const isDateChangeOnly = payload && payload.date && payload.date !== _state.planner.selectedDate && _state.planner.weeklyStats !== null;
       console.log('[AUDIT: store.js] planner/LOAD started for date:', dateStr, '| isDateChangeOnly:', isDateChangeOnly);
-      _patch('planner', { loading: true, error: null, selectedDate: dateStr, selectedView: 'day' });
+      
+      if (payload?.date) {
+        _patch('planner', { loading: true, error: null, selectedDate: dateStr, selectedView: 'day' });
+      } else {
+        _patch('planner', { loading: true, error: null });
+      }
       try {
         if (isDateChangeOnly) {
           const dailyBlocks = await window.plannerService.getDailyBlocks(dateStr);
@@ -414,9 +419,12 @@ window.SF_STORE = (function () {
 
     async 'planner/LOAD_RANGE'(payload) {
       const { start, end, view = _state.planner.selectedView || 'day' } = payload || {};
-      const dateStr = payload?.date || _state.planner.selectedDate || new Date().toISOString().split('T')[0];
+      const dateStr = payload?.date || _state.planner.selectedDate || new Date().toLocaleDateString('en-CA');
       console.log('[AUDIT: store.js] planner/LOAD_RANGE started for range:', start, 'to', end, '| view:', view);
-      _patch('planner', { loading: true, error: null, selectedView: view, selectedDate: dateStr, selectedRange: { start, end } });
+      
+      const loadRangePatch = { loading: true, error: null, selectedView: view, selectedRange: { start, end } };
+      if (payload?.date) loadRangePatch.selectedDate = payload.date;
+      _patch('planner', loadRangePatch);
       try {
         const events = await window.plannerService.getEventsByRange(start, end);
         const dailyBlocks = _deriveDailyBlocks(events, dateStr);

@@ -213,6 +213,7 @@ window.authService = (function () {
       localStorage.removeItem(key);
     }
     localStorage.removeItem(LS_USER_KEY);
+    try { localStorage.removeItem('sf_planner_ui_state'); } catch(e) {}
     window.location.href = 'login.html';
     return true;
   }

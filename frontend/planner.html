@@ -2920,7 +2920,7 @@
         window._dailyFlexForceNextScroll = true;
       }
 
-      try { localStorage.setItem('sf_last_selected_date', targetStr); } catch(e) {}
+      if (typeof _savePlannerUIState === 'function') _savePlannerUIState({ date: targetStr });
       if (window.SF_STORE) {
         window.SF_STORE.dispatch('planner/SELECT_DATE', targetStr);
         await window.SF_STORE.dispatch('planner/LOAD', { date: targetStr });
@@ -2966,32 +2966,29 @@
     function navigateToWeeklyForDate(dateStr) {
       if (!dateStr) return;
 
-      // Synchronously compute the Monday of the target week.
-      // Do NOT rely on async dispatch timing — compute it here and
-      // write _weeklyStartDate directly so switchPlannerView reads
-      // the correct value immediately.
       const parts = dateStr.split('-').map(Number);
       const targetDate = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0, 0);
-      const dow = targetDate.getDay(); // 0=Sun…6=Sat
+      const dow = targetDate.getDay();
       const diffToMon = dow === 0 ? -6 : 1 - dow;
       const mon = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate() + diffToMon, 0, 0, 0, 0);
 
       // Set state synchronously before any view switch
-      window._weeklyStartDate = mon;
-      try { localStorage.setItem('sf_last_selected_date', dateStr); } catch(e) {}
-      try { localStorage.setItem('sf_last_planner_view', 'weekly'); } catch(e) {}
+      _weeklyStartDate = mon;
+      if (typeof _savePlannerUIState === 'function') {
+        _savePlannerUIState({ 
+          weekStart: typeof _toLocalDateStr === 'function' ? _toLocalDateStr(mon) : mon.toISOString().split('T')[0], 
+          date: dateStr, 
+          view: 'weekly' 
+        });
+      }
       if (window.SF_STORE && window.SF_STORE.getSlice) {
         // Directly patch the internal state (SELECT_DATE is sync in the handler body)
         window.SF_STORE.dispatch('planner/SELECT_DATE', dateStr);
       }
-      // Tell switchPlannerView which date to use, bypassing stale-store reads
-      window._pendingWeeklySelectedDate = dateStr;
 
       if (typeof switchPlannerView === 'function') {
         switchPlannerView('weekly');
       }
-
-      delete window._pendingWeeklySelectedDate;
     }
     window.navigateToWeeklyForDate = navigateToWeeklyForDate;
 
@@ -3054,23 +3051,30 @@
           }
         });
         await window.SF_STORE.bootstrap(['user', 'goals', 'planner']);
-        try {
-          const savedSel = localStorage.getItem('sf_last_selected_date');
-          if (savedSel && savedSel.match(/^\d{4}-\d{2}-\d{2}$/)) {
-            window.SF_STORE.dispatch('planner/SELECT_DATE', savedSel);
-          }
-        } catch(e) {}
       }
 
-      try {
-        if (localStorage.getItem('sf_planner_is_fullscreen') === 'true') {
-          _isPlannerFullscreen = true;
-          window._isPlannerFullscreen = true;
-        }
-      } catch(e) {}
-      let initialTab = window.location.hash.replace('#', '');
+      const savedUI = typeof _loadPlannerUIState === 'function' ? _loadPlannerUIState() : {};
+      
+      if (savedUI.date && /^\d{4}-\d{2}-\d{2}$/.test(savedUI.date)) {
+        if (window.SF_STORE) window.SF_STORE.dispatch('planner/SELECT_DATE', savedUI.date);
+      }
+      if (savedUI.weekStart && /^\d{4}-\d{2}-\d{2}$/.test(savedUI.weekStart)) {
+        const p = savedUI.weekStart.split('-').map(Number);
+        _weeklyStartDate = new Date(p[0], p[1]-1, p[2], 0, 0, 0, 0);
+      }
+      if (savedUI.monthISO && /^\d{4}-\d{2}$/.test(savedUI.monthISO)) {
+        const [y, m] = savedUI.monthISO.split('-').map(Number);
+        _monthlyCurrentDate = new Date(y, m-1, 1, 12, 0, 0, 0);
+      }
+      if (savedUI.fullscreen) {
+        _isPlannerFullscreen = true;
+        window._isPlannerFullscreen = true;
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      let initialTab = params.get('view') || window.location.hash.replace('#', '');
       if (!['daily', 'weekly', 'monthly'].includes(initialTab)) {
-        try { initialTab = localStorage.getItem('sf_last_planner_view') || 'daily'; } catch(e) { initialTab = 'daily'; }
+        initialTab = savedUI.view || 'daily';
       }
       if (!['daily', 'weekly', 'monthly'].includes(initialTab)) initialTab = 'daily';
       if (typeof switchPlannerView === 'function') switchPlannerView(initialTab);
@@ -4350,7 +4354,7 @@
     function togglePlannerFullscreen(viewType) {
       _isPlannerFullscreen = !_isPlannerFullscreen;
       window._isPlannerFullscreen = _isPlannerFullscreen;
-      try { localStorage.setItem('sf_planner_is_fullscreen', _isPlannerFullscreen ? 'true' : 'false'); } catch(e) {}
+      if (typeof _savePlannerUIState === 'function') _savePlannerUIState({ fullscreen: _isPlannerFullscreen });
       _applyPlannerFullscreenState(viewType);
     }
     window.togglePlannerFullscreen = togglePlannerFullscreen;
@@ -4766,6 +4770,19 @@
     // =========================================================
     // SPRINT 4.2: WEEKLY PLANNER FOUNDATION (UI LAYOUT ONLY)
     // =========================================================
+    function _savePlannerUIState(patch) {
+      try {
+        const current = JSON.parse(localStorage.getItem('sf_planner_ui_state') || '{}');
+        localStorage.setItem('sf_planner_ui_state', JSON.stringify({ ...current, ...patch }));
+      } catch(e) {}
+    }
+
+    function _loadPlannerUIState() {
+      try {
+        return JSON.parse(localStorage.getItem('sf_planner_ui_state') || '{}');
+      } catch(e) { return {}; }
+    }
+
     let _weeklyStartDate = null;
     let _weeklyNowTimer = null;
 
@@ -4911,18 +4928,23 @@
       if (window.SF_STORE && window.SF_STORE.getSlice('planner')) {
         const plannerState = window.SF_STORE.getSlice('planner');
         const currSel = plannerState.selectedDate;
+        let newSelStr = currSel;
         if (currSel && action !== 'today') {
           const parts = currSel.split('-').map(Number);
           const selDate = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0, 0);
           if (action === 'prev') selDate.setDate(selDate.getDate() - 7);
           else if (action === 'next') selDate.setDate(selDate.getDate() + 7);
-          const newSelStr = typeof _toLocalDateStr === 'function' ? _toLocalDateStr(selDate) : selDate.toISOString().split('T')[0];
-          try { localStorage.setItem('sf_last_selected_date', newSelStr); } catch(e) {}
+          newSelStr = typeof _toLocalDateStr === 'function' ? _toLocalDateStr(selDate) : selDate.toISOString().split('T')[0];
           window.SF_STORE.dispatch('planner/SELECT_DATE', newSelStr);
         } else if (action === 'today') {
-          const todayStr = typeof _toLocalDateStr === 'function' ? _toLocalDateStr() : new Date().toLocaleDateString('en-CA');
-          try { localStorage.setItem('sf_last_selected_date', todayStr); } catch(e) {}
-          window.SF_STORE.dispatch('planner/SELECT_DATE', todayStr);
+          newSelStr = typeof _toLocalDateStr === 'function' ? _toLocalDateStr() : new Date().toLocaleDateString('en-CA');
+          window.SF_STORE.dispatch('planner/SELECT_DATE', newSelStr);
+        }
+        if (typeof _savePlannerUIState === 'function') {
+          _savePlannerUIState({ 
+            weekStart: typeof _toLocalDateStr === 'function' ? _toLocalDateStr(_weeklyStartDate) : _weeklyStartDate.toISOString().split('T')[0], 
+            date: newSelStr 
+          });
         }
       }
 
@@ -4978,13 +5000,8 @@
       const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
       const todayStr = typeof _toLocalDateStr === 'function' ? _toLocalDateStr() : new Date().toLocaleDateString('en-CA');
 
-      // Use the same priority chain as switchPlannerView to avoid stale store reads.
-      // _pendingWeeklySelectedDate is set synchronously by navigateToWeeklyForDate
-      // and is the most reliable source while the async SELECT_DATE dispatch flushes.
-      let selectedDateStr = window._pendingWeeklySelectedDate || null;
-      if (!selectedDateStr) {
-        selectedDateStr = window.SF_STORE && window.SF_STORE.getSlice('planner') && window.SF_STORE.getSlice('planner').selectedDate;
-      }
+      // Use the same priority chain as switchPlannerView
+      let selectedDateStr = window.SF_STORE && window.SF_STORE.getSlice('planner') && window.SF_STORE.getSlice('planner').selectedDate;
       if (!selectedDateStr) {
         try { selectedDateStr = localStorage.getItem('sf_last_selected_date'); } catch(e) {}
       }
@@ -6299,6 +6316,9 @@
         _monthlyCurrentDate = new Date(now.getFullYear(), now.getMonth(), 1);
       }
 
+      if (_monthlyCurrentDate && typeof _savePlannerUIState === 'function') {
+        _savePlannerUIState({ monthISO: typeof _toLocalDateStr === 'function' ? _toLocalDateStr(_monthlyCurrentDate).slice(0, 7) : _monthlyCurrentDate.toISOString().slice(0, 7) });
+      }
       initMonthlyPlannerFoundation();
     }
 
@@ -6519,7 +6539,7 @@
     }
 
     function switchPlannerView(view) {
-      try { localStorage.setItem('sf_last_planner_view', view); } catch(e) {}
+      if (typeof _savePlannerUIState === 'function') _savePlannerUIState({ view });
       window._currentPlannerView = view;
 
       // Always close the monthly context menu when changing views
@@ -6550,25 +6570,18 @@
 
       const todayStrCheck = typeof _toLocalDateStr === 'function' ? _toLocalDateStr() : new Date().toLocaleDateString('en-CA');
 
-      // Priority order for resolving the current selected date:
-      // 1. _pendingWeeklySelectedDate — set synchronously by navigateToWeeklyForDate BEFORE
-      //    switchPlannerView is called, so it always carries the correct clicked date.
-      // 2. Store slice — may still hold the old date if SELECT_DATE dispatch hasn't flushed.
-      // 3. localStorage
-      // 4. today
-      let currentSelected = window._pendingWeeklySelectedDate || null;
-      if (!currentSelected) {
-        currentSelected = window.SF_STORE && window.SF_STORE.getSlice('planner') && window.SF_STORE.getSlice('planner').selectedDate;
-      }
-      if (!currentSelected) {
-        try { currentSelected = localStorage.getItem('sf_last_selected_date'); } catch(e) {}
+      let currentSelected = window.SF_STORE && window.SF_STORE.getSlice('planner') && window.SF_STORE.getSlice('planner').selectedDate;
+      if (!currentSelected || !/^\d{4}-\d{2}-\d{2}$/.test(currentSelected)) {
+        currentSelected = typeof _loadPlannerUIState === 'function' ? _loadPlannerUIState().date : null;
       }
       if (!currentSelected || !/^\d{4}-\d{2}-\d{2}$/.test(currentSelected)) {
         currentSelected = todayStrCheck;
       }
 
       // Persist resolved date
-      try { localStorage.setItem('sf_last_selected_date', currentSelected); } catch(e) {}
+      if (typeof _savePlannerUIState === 'function') {
+        _savePlannerUIState({ date: currentSelected });
+      }
 
       if (view === 'daily') {
         if (dailyView) dailyView.classList.remove('hidden');
@@ -6591,16 +6604,12 @@
         if (pageTitle)    pageTitle.innerHTML    = '<span>Weekly Planner</span> <span id="titleEmoji">✨</span>';
         if (pageSubtitle) pageSubtitle.textContent = 'Plan your week, stay consistent, and crush your academic goals.';
         
-        // Only recompute _weeklyStartDate when NOT called from navigateToWeeklyForDate.
-        // navigateToWeeklyForDate pre-computes the correct Monday and sets _weeklyStartDate
-        // synchronously, then signals this via _pendingWeeklySelectedDate. If that flag
-        // is absent, this is a plain tab click and we must compute the week ourselves.
-        if (!window._pendingWeeklySelectedDate) {
+        if (!_weeklyStartDate) {
           const parts = currentSelected.split('-').map(Number);
           const targetDate = new Date(parts[0], parts[1] - 1, parts[2], 12, 0, 0, 0);
           const dayOfWeek = targetDate.getDay();
           const diffToMon = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-          window._weeklyStartDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate() + diffToMon, 0, 0, 0, 0);
+          _weeklyStartDate = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate() + diffToMon, 0, 0, 0, 0);
         }
 
         initWeeklyPlannerFoundation();
@@ -6610,8 +6619,10 @@
         if (pageTitle) pageTitle.innerHTML = '<span>Monthly Planner</span> <span id="titleEmoji">🗓️</span>';
         if (pageSubtitle) pageSubtitle.textContent = 'Plan your month, stay consistent, and achieve your academic goals.';
         
-        const parts = currentSelected.split('-').map(Number);
-        window._monthlyCurrentDate = new Date(parts[0], parts[1] - 1, 1, 12, 0, 0, 0);
+        if (!_monthlyCurrentDate) {
+          const parts = currentSelected.split('-').map(Number);
+          _monthlyCurrentDate = new Date(parts[0], parts[1] - 1, 1, 12, 0, 0, 0);
+        }
 
         initMonthlyPlannerFoundation();
       }
