@@ -639,6 +639,14 @@ window.SF_ROUTER = window.SF_ROUTER || {
       handler.init();
     }
   },
+  navigate(page, queryParams = {}) {
+    let url = page.endsWith('.html') ? page : `${page}.html`;
+    const qs = new URLSearchParams(queryParams).toString();
+    if (qs) {
+      url += `?${qs}`;
+    }
+    window.location.href = url;
+  },
   dispatch() {
     const page = window.location.pathname.split('/').pop() || 'dashboard.html';
     const routeKey = page.replace('.html', '') || 'dashboard';

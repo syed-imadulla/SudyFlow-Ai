@@ -4,6 +4,27 @@
 
 ---
 
+## Phase 2 — Planner Upgrades (v1.1.0)
+
+**Period:** July 2026
+**Status:** ✅ Milestone 2.1 Complete | ✅ Milestone 2.2 Complete
+**Branch:** `main`
+
+### Goals
+- [x] Milestone 2.1: Planner Foundation & UI Polish
+- [x] Milestone 2.2: Planner Block Linking (Two-way Workspace ↔ Planner navigation)
+  - [x] Duplicate scheduling prevention
+  - [x] Persistence regression fixes (Store synchronization and dynamic linking)
+- [ ] Milestone 2.3: Weekly & Monthly Planner Views (Upcoming)
+
+### Architecture Decisions
+| Decision | Rationale |
+|---|---|
+| Planner Store Caching | Used `planner.allBlocks` fetching `/planner/events` to ensure milestones scheduled in the future map cleanly to the workspace UI without backend schema changes. |
+| Query Param Navigation | Used `?highlightBlock=` and `SF_ROUTER.navigate` rather than fragile anchor links to achieve scroll-and-pulse animations across view boundaries. |
+
+---
+
 ## Sprint 1 — Foundation (v1.0.0)
 
 **Period:** June 2025  

@@ -1294,12 +1294,18 @@
         let goalHtml = '';
         if (block.goalId) {
           const linkedGoal = goals.find(g => g.id === block.goalId || g._id === block.goalId);
-          const goalTitle = linkedGoal ? (linkedGoal.title || 'Linked Goal') : (block.goalTitle || 'Linked Goal');
-          goalHtml = `<div class="mt-1.5"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#A855F7]/10 border border-[#A855F7]/30 text-[10px] text-[#D8B4FE] font-medium">🎯 ${goalTitle}</span></div>`;
+          let goalTitle = linkedGoal ? (linkedGoal.title || 'Linked Goal') : (block.goalTitle || 'Linked Goal');
+          if (block.milestoneId && linkedGoal && linkedGoal.subtasks) {
+            const milestone = linkedGoal.subtasks.find(m => m.id === block.milestoneId || m._id === block.milestoneId);
+            if (milestone && milestone.title) {
+              goalTitle = `${goalTitle} &gt; ${milestone.title}`;
+            }
+          }
+          goalHtml = `<div class="mt-1.5"><button onclick="window.SF_ROUTER.navigate('workspace', { highlightGoal: '${block.goalId}', highlightMilestone: '${block.milestoneId || ''}' })" class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#A855F7]/10 hover:bg-[#A855F7]/20 border border-[#A855F7]/30 hover:border-[#A855F7]/50 text-[10px] text-[#D8B4FE] font-medium cursor-pointer transition-colors text-left" title="View in Workspace">🎯 ${goalTitle}</button></div>`;
         }
 
         return `
-              <div class="relative group sf-planner-card transition-all duration-200 cursor-grab active:cursor-grabbing select-none rounded-2xl" data-id="${id}" data-start-min="${sMin}" data-end-min="${eMin}" onpointerdown="initPlannerBlockDrag(event, '${id}')">
+              <div id="planner-block-${id}" class="relative group sf-planner-card transition-all duration-200 cursor-grab active:cursor-grabbing select-none rounded-2xl" data-id="${id}" data-start-min="${sMin}" data-end-min="${eMin}" onpointerdown="initPlannerBlockDrag(event, '${id}')">
                 <span class="absolute -left-14 top-3 font-mono text-[11px] text-[#6B7280]">${startTime}</span>
                 <!-- Top Resize Handle -->
                 <div class="sf-resize-handle absolute -top-1.5 inset-x-6 h-3.5 flex items-center justify-center z-20 cursor-ns-resize opacity-0 group-hover:opacity-100 transition-opacity duration-150" onpointerdown="initPlannerBlockResize(event, '${id}', 'top')">
@@ -3213,11 +3219,36 @@
 
       const params = new URLSearchParams(window.location.search);
       let initialTab = params.get('view') || window.location.hash.replace('#', '');
-      if (!['daily', 'weekly', 'monthly'].includes(initialTab)) {
-        initialTab = savedUI.view || 'daily';
+      const highlightBlock = params.get('highlightBlock');
+      const highlightDate = params.get('date');
+
+      if (highlightBlock) {
+        setTimeout(() => {
+          if (highlightDate && typeof window.navigateToDailyForDate === 'function') {
+            window.navigateToDailyForDate(highlightDate);
+          } else if (typeof switchPlannerView === 'function') {
+            switchPlannerView('daily');
+          }
+          
+          setTimeout(() => {
+            if (window.SF_COMPONENTS) {
+              window.SF_COMPONENTS.scrollToAndHighlight('planner-block-' + highlightBlock);
+            }
+            if (window.history && window.history.replaceState) {
+              const newUrl = new URL(window.location.href);
+              newUrl.searchParams.delete('highlightBlock');
+              newUrl.searchParams.delete('date');
+              window.history.replaceState(null, null, newUrl.toString());
+            }
+          }, 300);
+        }, 150);
+      } else {
+        if (!['daily', 'weekly', 'monthly'].includes(initialTab)) {
+          initialTab = savedUI.view || 'daily';
+        }
+        if (!['daily', 'weekly', 'monthly'].includes(initialTab)) initialTab = 'daily';
+        if (typeof switchPlannerView === 'function') switchPlannerView(initialTab);
       }
-      if (!['daily', 'weekly', 'monthly'].includes(initialTab)) initialTab = 'daily';
-      if (typeof switchPlannerView === 'function') switchPlannerView(initialTab);
     });
 
     window._currentEditingBlockId = null;

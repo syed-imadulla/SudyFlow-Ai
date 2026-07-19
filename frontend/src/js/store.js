@@ -399,6 +399,16 @@ window.SF_STORE = (function () {
       } else {
         _patch('planner', { loading: true, error: null });
       }
+
+      if (!_state.planner.allBlocksLoaded) {
+        try {
+          const allBlocks = await window.SF_HTTP.request('/planner/events?limit=2000');
+          _patch('planner', { allBlocks, allBlocksLoaded: true });
+        } catch (e) {
+          console.error('[SF_STORE] Failed to load all blocks for linking', e);
+        }
+      }
+
       try {
         if (isDateChangeOnly) {
           const dailyBlocks = await window.plannerService.getDailyBlocks(dateStr);
@@ -476,11 +486,20 @@ window.SF_STORE = (function () {
         }
         // Ensure the new block remains present if LOAD/LOAD_RANGE did not return it yet
         const afterEvents = _state.planner.plannerEvents || [];
+        const currentAllBlocks = _state.planner.allBlocks || [];
+        const patches = {};
+        
         if (blockToAdd && (blockToAdd.id || blockToAdd._id) && !afterEvents.some(b => (b.id && b.id === blockToAdd.id) || (b._id && b._id === blockToAdd._id))) {
-          _patch('planner', {
-            plannerEvents: [...afterEvents, blockToAdd],
-            dailyBlocks: [...(_state.planner.dailyBlocks || []), blockToAdd]
-          });
+          patches.plannerEvents = [...afterEvents, blockToAdd];
+          patches.dailyBlocks = [...(_state.planner.dailyBlocks || []), blockToAdd];
+        }
+        
+        if (blockToAdd && !currentAllBlocks.some(b => (b.id && b.id === blockToAdd.id) || (b._id && b._id === blockToAdd._id))) {
+          patches.allBlocks = [...currentAllBlocks, blockToAdd];
+        }
+        
+        if (Object.keys(patches).length > 0) {
+          _patch('planner', patches);
         }
         return newBlock;
       } catch (e) {

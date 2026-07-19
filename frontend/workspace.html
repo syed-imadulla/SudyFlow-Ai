@@ -235,13 +235,9 @@
       errEl.classList.add('hidden');
       
       try {
-        if (!window.plannerService || typeof window.plannerService.createBlock !== 'function') {
-          throw new Error('Planner service is not available.');
-        }
-
         const startIso = new Date(`${dateVal}T${timeVal}`).toISOString();
         
-        await window.plannerService.createBlock({
+        await window.SF_STORE.dispatch('planner/CREATE', {
           title: milestoneTitle,
           startTime: startIso,
           duration: parseInt(durationVal, 10),
@@ -250,12 +246,6 @@
           milestoneId: milestoneId,
           type: 'STUDY'
         });
-        
-        // Refresh planner store slice if loaded
-        try {
-          const todayStr = new Date().toISOString().split('T')[0];
-          await window.SF_STORE.dispatch('planner/FETCH_DAILY_BLOCKS', { date: todayStr });
-        } catch (_) { /* non-critical */ }
         
         window.closePlannerScheduleModal();
         if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
@@ -299,27 +289,29 @@
         cardsContainer.innerHTML = goals.map(goal => window.SF_COMPONENTS.renderGoalCard(goal, 'grid')).join('');
       }
 
-      // Auto-scroll to selected goal if hash exists
-      if (window.location.hash && window.location.hash.startsWith('#goal-')) {
+      // Auto-scroll to selected goal or milestone if specified in query params
+      const urlParams = new URLSearchParams(window.location.search);
+      const hGoal = urlParams.get('highlightGoal');
+      const hMilestone = urlParams.get('highlightMilestone');
+      
+      if (hGoal || hMilestone) {
         setTimeout(() => {
-          const target = document.querySelector(window.location.hash);
-          if (target) {
-            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            // Apply premium highlight & pulse
-            target.classList.add('ring-2', 'ring-[#A855F7]', 'shadow-[0_0_30px_rgba(168,85,247,0.3)]', 'animate-pulse', 'bg-[#151520]');
-            target.style.transition = 'all 0.5s ease-out';
-            
-            setTimeout(() => {
-              target.classList.remove('animate-pulse');
-            }, 1000);
-
-            setTimeout(() => {
-              target.classList.remove('ring-2', 'ring-[#A855F7]', 'shadow-[0_0_30px_rgba(168,85,247,0.3)]', 'bg-[#151520]');
-              // Clear hash to prevent re-triggering on subsequent renders without messing up history
-              if (window.history && window.history.replaceState) {
-                window.history.replaceState(null, null, window.location.pathname);
-              }
-            }, 2500);
+          let target = null;
+          if (hMilestone) {
+            target = document.getElementById('milestone-' + hMilestone);
+          }
+          if (!target && hGoal) {
+            target = document.getElementById('goal-' + hGoal);
+          }
+          if (target && window.SF_COMPONENTS) {
+            window.SF_COMPONENTS.scrollToAndHighlight(target.id);
+            // Clear params to prevent re-triggering on subsequent renders
+            if (window.history && window.history.replaceState) {
+              const newUrl = new URL(window.location.href);
+              newUrl.searchParams.delete('highlightGoal');
+              newUrl.searchParams.delete('highlightMilestone');
+              window.history.replaceState(null, null, newUrl.toString());
+            }
           }
         }, 150);
       }
@@ -331,10 +323,11 @@
       if (container && window.SF_COMPONENTS) container.innerHTML = window.SF_COMPONENTS.renderSkeleton('compact', 2);
       if (cardsContainer && window.SF_COMPONENTS) cardsContainer.innerHTML = window.SF_COMPONENTS.renderSkeleton('grid', 2);
 
-      // Re-render when goals slice changes (e.g. after subtask toggle)
+      // Re-render when goals or planner slice changes (e.g. after subtask toggle or scheduling)
       window.SF_STORE.subscribe('goals', () => renderWorkspaceGoals());
+      window.SF_STORE.subscribe('planner', () => renderWorkspaceGoals());
 
-      await window.SF_STORE.bootstrap(['user', 'goals']);
+      await window.SF_STORE.bootstrap(['user', 'goals', 'planner']);
 
       const tabs = document.querySelectorAll('.ws-tab');
       const panels = document.querySelectorAll('.ws-panel');

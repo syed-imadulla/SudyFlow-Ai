@@ -22,6 +22,14 @@ window.plannerService = (function () {
 
   // ─── Service Methods ──────────────────────────────────────────────────────
 
+  function getBlockForMilestone(milestoneId) {
+    if (!window.SF_STORE) return null;
+    const plannerSlice = window.SF_STORE.getSlice('planner');
+    if (!plannerSlice) return null;
+    const blocks = plannerSlice.allBlocks || plannerSlice.plannerEvents || plannerSlice.dailyBlocks || [];
+    return blocks.find(b => b.milestoneId === milestoneId) || null;
+  }
+
   async function getDailyBlocks(dateStr) {
     console.log('[AUDIT: plannerService.js] getDailyBlocks called for date:', dateStr);
     
@@ -163,6 +171,7 @@ window.plannerService = (function () {
     getMonthlyCalendar,
     createBlock,
     updateBlock,
-    deleteBlock
+    deleteBlock,
+    getBlockForMilestone
   };
 })();

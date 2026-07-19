@@ -102,6 +102,25 @@
   });
 
   window.SF_COMPONENTS = {
+    scrollToAndHighlight(elementId) {
+      setTimeout(() => {
+        const target = document.getElementById(elementId);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          target.classList.add('ring-2', 'ring-[#A855F7]', 'shadow-[0_0_30px_rgba(168,85,247,0.3)]', 'animate-pulse', 'bg-[#151520]');
+          target.style.transition = 'all 0.5s ease-out';
+          
+          setTimeout(() => {
+            target.classList.remove('animate-pulse');
+          }, 1500);
+
+          setTimeout(() => {
+            target.classList.remove('ring-2', 'ring-[#A855F7]', 'shadow-[0_0_30px_rgba(168,85,247,0.3)]', 'bg-[#151520]');
+          }, 3000);
+        }
+      }, 150);
+    },
+
     /**
      * Render Goal Action Overflow Menu (Sprint 1D.2)
      */
@@ -300,9 +319,17 @@
       const goalId = options.goalId || sub.goalId;
       const badgeColor = sub.priority === 'High' ? 'bg-red-500/10 border border-red-500/30 text-red-400' : sub.priority === 'Medium' ? 'bg-yellow-500/10 border border-yellow-500/30 text-yellow-400' : 'bg-green-500/10 border border-green-500/30 text-green-400';
 
+      const scheduledBlock = window.plannerService ? window.plannerService.getBlockForMilestone(sub.id) : null;
+      let badgeHTML = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${badgeColor}">${sub.priority || 'High'}</span>`;
+      if (scheduledBlock) {
+        let dateStr = scheduledBlock.date || 'Soon';
+        let timeStr = scheduledBlock.startTime ? new Date(scheduledBlock.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Anytime';
+        badgeHTML = `<div class="flex flex-col text-right"><span class="text-[#A855F7] font-bold text-[10px]">📅 Scheduled</span><span class="text-[#6B7280] text-[9px]">${dateStr} • ${timeStr}</span></div>`;
+      }
+
       if (mode === 'dashboard') {
         return `
-          <div class="flex items-center justify-between p-3.5 rounded-xl bg-[#0A0A0A] border border-[#202020] hover:border-[#343434] transition group gap-4">
+          <div id="milestone-${sub.id}" class="flex items-center justify-between p-3.5 rounded-xl bg-[#0A0A0A] border border-[#202020] hover:border-[#343434] transition group gap-4">
             <div class="flex items-center space-x-3.5 overflow-hidden">
               <input type="checkbox" aria-label="Mark task ${sub.title} completed" onchange="SF_STORE.dispatch('goals/TOGGLE_SUBTASK',{goalId:'${goalId}',subtaskId:'${sub.id}'})" ${sub.completed ? 'checked' : ''} class="w-4 h-4 rounded border-[#2A2A2A] bg-[#161616] text-[#A855F7] focus:ring-[#A855F7] cursor-pointer shrink-0" />
               <div class="truncate">
@@ -315,7 +342,7 @@
               </div>
             </div>
             <div class="flex items-center space-x-2.5 shrink-0">
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${badgeColor}">${sub.priority || 'High'}</span>
+              ${badgeHTML}
               <button onclick="window.location.href='focus.html'" class="p-1.5 rounded-lg bg-[#151515] hover:bg-[#A855F7]/20 text-[#A855F7] transition" title="Start Focus Block">
                 <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
               </button>
@@ -323,8 +350,16 @@
           </div>
         `;
       } else if (mode === 'workspace') {
+        let scheduleBtn = `<button onclick="window.openPlannerScheduleModal({ goalId: '${goalId}', milestoneId: '${sub.id}' })" class="p-1.5 rounded-md hover:bg-[#A855F7]/20 text-[#A855F7] transition flex items-center justify-center" title="Schedule Milestone">
+                  <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"/></svg>
+                </button>`;
+        if (scheduledBlock) {
+          scheduleBtn = `<button onclick="window.SF_ROUTER.navigate('planner', { highlightBlock: '${scheduledBlock.id}', date: '${scheduledBlock.date || ''}' })" class="p-1.5 rounded-md bg-[#A855F7]/10 hover:bg-[#A855F7]/20 text-[#A855F7] transition flex items-center justify-center" title="View in Planner">
+                  <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm4.2 14.2L11 13V7h1.5v5.2l4.5 2.7-.8 1.3z"/></svg>
+                </button>`;
+        }
         return `
-          <div class="flex items-center justify-between p-3.5 rounded-xl bg-[#0A0A0A] border border-[#202020] hover:border-[#343434] transition group gap-4">
+          <div id="milestone-${sub.id}" class="flex items-center justify-between p-3.5 rounded-xl bg-[#0A0A0A] border border-[#202020] hover:border-[#343434] transition group gap-4">
             <div class="flex items-center space-x-3.5 overflow-hidden">
               <input type="checkbox" aria-label="Mark task ${sub.title} completed" onchange="window.SF_STORE.dispatch('goals/TOGGLE_SUBTASK',{goalId:'${goalId}',subtaskId:'${sub.id}'})" ${sub.completed ? 'checked' : ''} class="w-4 h-4 rounded border-[#2A2A2A] bg-[#161616] text-[#A855F7] focus:ring-[#A855F7] cursor-pointer shrink-0" />
               <div class="truncate">
@@ -337,14 +372,12 @@
               </div>
             </div>
             <div class="flex items-center space-x-2.5 shrink-0">
-              <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${badgeColor}">${sub.priority || 'High'}</span>
+              ${badgeHTML}
               <div class="flex items-center bg-[#151520] rounded-lg border border-[#252535] p-0.5 space-x-0.5">
                 <button onclick="window.openSubtaskIdeaLab('${goalId}', '${sub.id}')" class="p-1.5 rounded-md hover:bg-[#A855F7]/20 text-[#A855F7] transition flex items-center justify-center" title="Open IdeaLab Guide">
                   <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/></svg>
                 </button>
-                <button onclick="window.openPlannerScheduleModal({ goalId: '${goalId}', milestoneId: '${sub.id}' })" class="p-1.5 rounded-md hover:bg-[#A855F7]/20 text-[#A855F7] transition flex items-center justify-center" title="Schedule Milestone">
-                  <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zM9 14H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2zm-8 4H7v-2h2v2zm4 0h-2v-2h2v2zm4 0h-2v-2h2v2z"/></svg>
-                </button>
+                ${scheduleBtn}
                 <button onclick="window.location.href='focus.html'" class="p-1.5 rounded-md hover:bg-[#FACC15]/20 text-[#FACC15] transition flex items-center justify-center" title="Start Focus Timer">
                   <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                 </button>
