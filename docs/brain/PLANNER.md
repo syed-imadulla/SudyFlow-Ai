@@ -5,8 +5,8 @@
 **Last Updated**: 2026-07-19
 **Last Verified Against Code**: 2026-07-19
 **Current Phase**: Phase 2
-**Current Milestone**: Milestone 2.2
-**Related Documents**: [WORKSPACE.md](WORKSPACE.md), [DATABASE.md](DATABASE.md), [ROUTING.md](ROUTING.md), [STATE_MANAGEMENT.md](STATE_MANAGEMENT.md)
+**Current Milestone**: Milestone 2.3
+**Related Documents**: [FEATURES.md](FEATURES.md), [WORKSPACE.md](WORKSPACE.md), [DATABASE.md](DATABASE.md), [ROUTING.md](ROUTING.md), [STATE_MANAGEMENT.md](STATE_MANAGEMENT.md)
 
 ---
 
@@ -20,6 +20,10 @@ The Planner operates almost entirely through `SF_STORE` and `plannerService.js`.
 Because calendar apps require fetching massive amounts of data for monthly views, but very specific data for a daily view, the Planner uses two separate caches in `SF_STORE`:
 1. `planner.dailyBlocks`: Fetched via `GET /api/planner/daily?date=...`. Used specifically to render the high-fidelity Daily Timeline view.
 2. `planner.allBlocks`: Fetched via `GET /api/planner/events?limit=2000`. Used as a global lookup table so other modules (like the Workspace) can instantly check if a milestone is scheduled without needing to know *what date* it was scheduled for.
+
+### Reusable Architecture Helpers
+To prevent business logic from leaking into presentation components like the Dashboard or Workspace, `plannerService.js` provides shared utilities:
+- `plannerService.getUpcomingScheduledMilestones(limit)`: Retrieves `allBlocks`, filters out completed tasks, cross-references with `goalsSlice` to append milestone metadata (`milestoneTitle`, `goalTitle`), and returns a UI-ready array of scheduled items.
 
 ## 3. Rendering Pipeline
 ```mermaid

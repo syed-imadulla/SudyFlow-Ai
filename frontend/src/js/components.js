@@ -324,7 +324,25 @@
       if (scheduledBlock) {
         let dateStr = scheduledBlock.date || 'Soon';
         let timeStr = scheduledBlock.startTime ? new Date(scheduledBlock.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Anytime';
-        badgeHTML = `<div class="flex flex-col text-right"><span class="text-[#A855F7] font-bold text-[10px]">📅 Scheduled</span><span class="text-[#6B7280] text-[9px]">${dateStr} • ${timeStr}</span></div>`;
+        if (scheduledBlock.startTime) {
+           const blockDate = new Date(scheduledBlock.startTime);
+           const today = new Date();
+           const tomorrow = new Date(today);
+           tomorrow.setDate(tomorrow.getDate() + 1);
+           
+           const isToday = blockDate.getDate() === today.getDate() && blockDate.getMonth() === today.getMonth() && blockDate.getFullYear() === today.getFullYear();
+           const isTomorrow = blockDate.getDate() === tomorrow.getDate() && blockDate.getMonth() === tomorrow.getMonth() && blockDate.getFullYear() === tomorrow.getFullYear();
+           
+           if (isToday) dateStr = 'Today';
+           else if (isTomorrow) dateStr = 'Tomorrow';
+           else dateStr = blockDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+        let durStr = '';
+        if (scheduledBlock.duration) {
+          const d = scheduledBlock.duration;
+          durStr = (d >= 60 && d % 60 === 0) ? `${d/60} Hour${d/60>1?'s':''}` : `${d} Mins`;
+        }
+        badgeHTML = `<div class="flex flex-col text-right"><span class="text-[#A855F7] font-bold text-[10px]">🗓 Scheduled</span><span class="text-[#6B7280] text-[9px] font-mono mt-0.5">${dateStr} ${timeStr}${durStr ? ' • ' + durStr : ''}</span></div>`;
       }
 
       if (mode === 'dashboard') {

@@ -5,13 +5,20 @@
 **Last Updated**: 2026-07-19
 **Last Verified Against Code**: 2026-07-19
 **Current Phase**: Phase 2
-**Current Milestone**: Milestone 2.2
+**Current Milestone**: Milestone 2.3
 **Related Documents**: [CURRENT_STATUS.md](CURRENT_STATUS.md)
 
 ---
 
 ## Phase 2 — Planner Upgrades (v1.1.0)
 *Status: In Progress (July 2026)*
+
+### Milestone 2.3: Sync Goal Status
+- **API Contract Alignment**: Rewrote the Mock API layer to strictly emulate the Backend API JSON schema, removing legacy structures and ensuring the frontend is fully environment-agnostic.
+- **Reactive UI Updates**: Upgraded `SF_STORE` to mutate `allBlocks` locally on UPDATE/DELETE, enabling instant re-renders.
+- **Dynamic Dashboard Timeline**: Rewrote the "Today's Schedule" widget on the Dashboard to reactively pull in and sort incomplete scheduled milestones.
+- **Architecture Refinement**: Extracted scheduling logic into a reusable `plannerService.getUpcomingScheduledMilestones()` helper to decouple presentation (Dashboard) from data transformation.
+- **Enhanced Workspace Badges**: Improved the scheduled milestone badges on Task Cards to display relative dates (e.g., Today, Tomorrow) and total durations.
 
 ### Milestone 2.2: Planner Block Linking
 - **Two-way Navigation**: Implemented dynamic linking between the Workspace and Planner. Users can click "View in Planner" on a scheduled milestone to jump to the exact time block, and click a planner badge to jump back to the Workspace goal.

@@ -1,0 +1,117 @@
+[
+  {
+    "_id": "6a411957e7e68d22c8b5310d",
+    "user": "6a4116cae7e68d22c8b530e2",
+    "title": "Master DSA",
+    "description": "Complete Striver A2Z Sheet",
+    "urgency": "URGENT",
+    "deadline": "2026-08-15",
+    "completed": false,
+    "subtasks": [],
+    "createdAt": "2026-06-28T12:53:43.928Z",
+    "updatedAt": "2026-06-28T12:55:12.149Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a411c85e7e68d22c8b53123",
+    "user": "6a411be2e7e68d22c8b5311b",
+    "title": "Learn DSA",
+    "description": "Complete Striver A2Z Sheet",
+    "urgency": "ACTIVE",
+    "deadline": "2026-08-15",
+    "completed": false,
+    "subtasks": [],
+    "createdAt": "2026-06-28T13:07:17.656Z",
+    "updatedAt": "2026-06-28T13:07:17.656Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a415c40515dc96a7560e3fd",
+    "user": "6a41588fa0c835f1c1a272a3",
+    "title": "Learn DSA",
+    "description": "Complete Arrays and Strings",
+    "urgency": "ACTIVE",
+    "completed": false,
+    "subtasks": [],
+    "createdAt": "2026-06-28T17:39:12.226Z",
+    "updatedAt": "2026-06-28T17:39:12.226Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a415c51515dc96a7560e400",
+    "user": "6a41588fa0c835f1c1a272a3",
+    "title": "Learn Backend",
+    "description": "Finish Express.js",
+    "urgency": "ACTIVE",
+    "completed": true,
+    "subtasks": [],
+    "createdAt": "2026-06-28T17:39:29.728Z",
+    "updatedAt": "2026-06-28T17:47:09.512Z",
+    "__v": 0,
+    "status": "COMPLETED"
+  },
+  {
+    "_id": "6a421859d79d128707c0b956",
+    "user": "6a4217c0d79d128707c0b950",
+    "title": "Learn DSA",
+    "description": "Complete Arrays",
+    "status": "COMPLETED",
+    "urgency": "ACTIVE",
+    "completed": true,
+    "subtasks": [],
+    "createdAt": "2026-06-29T07:01:45.201Z",
+    "updatedAt": "2026-06-29T07:02:56.997Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a421874d79d128707c0b959",
+    "user": "6a4217c0d79d128707c0b950",
+    "title": "Learn Backend",
+    "description": "Finish Express",
+    "status": "ACTIVE",
+    "urgency": "ACTIVE",
+    "completed": false,
+    "subtasks": [],
+    "createdAt": "2026-06-29T07:02:12.534Z",
+    "updatedAt": "2026-06-29T07:02:12.534Z",
+    "__v": 0
+  },
+  {
+    "_id": "6a5b6178d1ac9a78640ee17d",
+    "user": "6a43ea9fa32fffc712944fec",
+    "title": "Biology Exam Prep",
+    "description": "Created via AI Goal Breakdown Modal",
+    "status": "ACTIVE",
+    "urgency": "ACTIVE",
+    "subtasks": [
+      {
+        "title": "Complete Milestone 1",
+        "estimate": "Sprint 1 • 1.5h",
+        "priority": "High",
+        "deadlineDisplay": "Tomorrow",
+        "completed": false,
+        "_id": "6a5b6178d1ac9a78640ee17e"
+      },
+      {
+        "title": "Complete Milestone 2",
+        "estimate": "Sprint 2 • 1.5h",
+        "priority": "High",
+        "deadlineDisplay": "Tomorrow",
+        "completed": false,
+        "_id": "6a5b6178d1ac9a78640ee17f"
+      },
+      {
+        "title": "Final Review",
+        "estimate": "Sprint 3 • 1.5h",
+        "priority": "Medium",
+        "deadlineDisplay": "In 2 days",
+        "completed": false,
+        "_id": "6a5b6178d1ac9a78640ee180"
+      }
+    ],
+    "completed": false,
+    "createdAt": "2026-07-18T11:20:24.045Z",
+    "updatedAt": "2026-07-18T11:20:24.045Z",
+    "__v": 0
+  }
+]

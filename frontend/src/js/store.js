@@ -513,6 +513,12 @@ window.SF_STORE = (function () {
       const targetId = blockId || id;
       try {
         const updatedBlock = await window.plannerService.updateBlock(targetId, patch);
+        
+        if (_state.planner.allBlocks) {
+          const allBlocks = _state.planner.allBlocks.map(b => (b.id === targetId || b._id === targetId) ? { ...b, ...updatedBlock } : b);
+          _patch('planner', { allBlocks });
+        }
+        
         const activeView = _state.planner.selectedView || (typeof document !== 'undefined' && document.getElementById('weeklyView') && !document.getElementById('weeklyView').classList.contains('hidden') ? 'weekly' : 'day');
         if (activeView === 'weekly' || activeView === 'monthly' || (_state.planner.selectedRange?.start && _state.planner.selectedRange?.end)) {
           let start = _state.planner.selectedRange?.start;
@@ -543,6 +549,12 @@ window.SF_STORE = (function () {
       const targetId = blockId || id;
       try {
         await window.plannerService.deleteBlock(targetId, { editScope, exDate, seriesId });
+        
+        if (_state.planner.allBlocks) {
+          const allBlocks = _state.planner.allBlocks.filter(b => b.id !== targetId && b._id !== targetId);
+          _patch('planner', { allBlocks });
+        }
+
         const activeView = _state.planner.selectedView || (typeof document !== 'undefined' && document.getElementById('weeklyView') && !document.getElementById('weeklyView').classList.contains('hidden') ? 'weekly' : 'day');
         if (activeView === 'weekly' || activeView === 'monthly' || (_state.planner.selectedRange?.start && _state.planner.selectedRange?.end)) {
           let start = _state.planner.selectedRange?.start;

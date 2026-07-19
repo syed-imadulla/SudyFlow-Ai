@@ -30,6 +30,36 @@ window.plannerService = (function () {
     return blocks.find(b => b.milestoneId === milestoneId) || null;
   }
 
+  function getUpcomingScheduledMilestones(limit = 4) {
+    if (!window.SF_STORE) return [];
+    const plannerSlice = window.SF_STORE.getSlice('planner');
+    const goalsSlice = window.SF_STORE.getSlice('goals');
+    if (!plannerSlice || !goalsSlice) return [];
+
+    const blocks = plannerSlice.allBlocks || plannerSlice.plannerEvents || plannerSlice.dailyBlocks || [];
+    const goals = goalsSlice.items || [];
+
+    let scheduledBlocks = blocks
+      .filter(b => b.milestoneId && b.status !== 'completed' && !b.completed)
+      .sort((a, b) => new Date(a.startTime || 0) - new Date(b.startTime || 0));
+
+    // Enrich with milestoneTitle
+    scheduledBlocks = scheduledBlocks.map(block => {
+      let milestoneTitle = 'Task';
+      let goalTitle = 'Goal';
+      goals.forEach(g => {
+        if (g.id === block.goalId || g._id === block.goalId) {
+          goalTitle = g.title;
+          const sub = (g.subtasks || []).find(s => s.id === block.milestoneId || s._id === block.milestoneId);
+          if (sub) milestoneTitle = sub.title || sub.text;
+        }
+      });
+      return { ...block, milestoneTitle, goalTitle };
+    });
+
+    return scheduledBlocks.slice(0, limit);
+  }
+
   async function getDailyBlocks(dateStr) {
     console.log('[AUDIT: plannerService.js] getDailyBlocks called for date:', dateStr);
     
@@ -172,6 +202,7 @@ window.plannerService = (function () {
     createBlock,
     updateBlock,
     deleteBlock,
-    getBlockForMilestone
+    getBlockForMilestone,
+    getUpcomingScheduledMilestones
   };
 })();

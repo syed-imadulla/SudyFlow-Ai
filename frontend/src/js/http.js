@@ -214,9 +214,20 @@ window.SF_HTTP = (function () {
    * @param {*} mockData
    * @param {RequestInit} [options]
    */
-  function request(endpoint, mockData, options = {}) {
+  async function request(endpoint, mockData, options = {}) {
     if (window.SF_CONFIG?.USE_MOCK_API) {
-      return mockRequest(mockData);
+      if (mockData !== undefined) return mockRequest(mockData);
+      
+      if (endpoint.startsWith('/planner/events')) {
+        try {
+          const mocks = await loadMock('planner.mock.js');
+          return mockRequest(mocks.MOCK_DAILY_BLOCKS || []);
+        } catch (e) {
+          return mockRequest([]);
+        }
+      }
+      
+      return mockRequest(null);
     }
     return apiRequest(endpoint, options);
   }
