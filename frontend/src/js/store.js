@@ -293,6 +293,20 @@ window.SF_STORE = (function () {
       const { goalId, patch } = payload;
       try {
         const updatedGoal = await window.goalsService.updateGoal(goalId, patch);
+        
+        // Find if any subtasks were removed, and cascade delete their planner blocks
+        const oldGoal = _state.goals.items.find(g => g.id === goalId);
+        if (oldGoal && oldGoal.subtasks && updatedGoal.subtasks) {
+          const newSubIds = updatedGoal.subtasks.map(s => s.id || s._id);
+          const removedSubs = oldGoal.subtasks.filter(s => !newSubIds.includes(s.id || s._id));
+          if (removedSubs.length > 0) {
+            const removedIds = removedSubs.map(s => s.id || s._id);
+            const plannerEvents = _state.planner.plannerEvents.filter(b => b.goalId !== goalId || !removedIds.includes(b.milestoneId));
+            const dailyBlocks = _state.planner.dailyBlocks.filter(b => b.goalId !== goalId || !removedIds.includes(b.milestoneId));
+            _patch('planner', { plannerEvents, dailyBlocks });
+          }
+        }
+
         const items = _state.goals.items.map(g => g.id === goalId ? { ...g, ...updatedGoal } : g);
         _patch('goals', { items, lastSync: Date.now() });
         if (_state.idealab.activeGoalId === goalId) {
@@ -337,6 +351,12 @@ window.SF_STORE = (function () {
         if (_state.idealab.activeGoalId === goalId) {
           _patch('idealab', { activeGoalId: null, activeGoal: null });
         }
+        
+        // Cascading Data Integrity: Remove orphaned planner blocks
+        const plannerEvents = _state.planner.plannerEvents.filter(b => b.goalId !== goalId);
+        const dailyBlocks = _state.planner.dailyBlocks.filter(b => b.goalId !== goalId);
+        _patch('planner', { plannerEvents, dailyBlocks });
+        
         return true;
       } catch (e) {
         console.error('[SF_STORE] goals/DELETE failed:', e);

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Goal } from '../models/Goal.js';
 import { AppError } from '../utils/AppError.js';
 import { HTTP_STATUS, GOAL_STATUS } from '../constants/index.js';
@@ -109,6 +110,8 @@ export class GoalService {
     if (!result) {
       throw new AppError('Goal not found', HTTP_STATUS.NOT_FOUND);
     }
+    // Cascade delete associated planner events
+    await mongoose.model('Planner').deleteMany({ goalId: goalId, user: userId });
   }
 
   /**

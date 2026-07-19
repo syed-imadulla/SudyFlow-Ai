@@ -11,7 +11,13 @@
 ---
 
 ## Phase 2 — Planner Upgrades (v1.1.0)
-*Status: In Progress (July 2026)*
+*Status: Complete (July 2026)*
+
+### Milestone 2.4: QA & Polish
+- **Data Integrity (Backend)**: Added cascade deletion in `Goal.service.js` to automatically remove `Planner` events when their parent goal is deleted, preventing orphan blocks in the database.
+- **Data Integrity (Frontend)**: Updated `SF_STORE` to instantly purge orphaned planner blocks when a goal or subtask is deleted via `goals/DELETE` or `goals/UPDATE`.
+- **Accessibility & UX**: Added standard `aria-label` attributes to icon-only buttons (e.g., calendar navigation arrows, modal close buttons) in `workspace.html` and `components.js` to ensure basic MVP accessibility.
+- **Store Health Validation**: Verified no duplicate listeners exist due to the SPA `DOMContentLoaded` pattern and `Set` implementation.
 
 ### Milestone 2.3: Sync Goal Status
 - **API Contract Alignment**: Rewrote the Mock API layer to strictly emulate the Backend API JSON schema, removing legacy structures and ensuring the frontend is fully environment-agnostic.
