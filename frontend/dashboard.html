@@ -14,6 +14,7 @@
   <script src="src/js/services/authService.js"></script>
   <script src="src/js/services/userService.js"></script>
   <script src="src/js/services/goalsService.js"></script>
+  <script src="src/js/services/plannerService.js"></script>
   <script src="src/js/store.js"></script>
   <script src="src/js/components.js"></script>
   <script src="router.js"></script>
@@ -316,47 +317,76 @@
   <script>
     // ── Render helpers (unchanged UI logic) ──────────────────────────────────
     function renderDashboardTasks() {
+      // [TRACE-S6] Verify function fires
+      console.log('[TRACE-S6] renderDashboardTasks fired');
+
       const goalsSlice = window.SF_STORE.getSlice('goals');
       const goals = goalsSlice.items || [];
       const tasksContainer = document.getElementById('dashTasksList');
       const mainGoalsContainer = document.getElementById('dashMainGoalsList');
       const scheduleList = document.getElementById('dashScheduleList');
 
+      // [TRACE-S5] Verify DOM element
+      console.log('[TRACE-S5] scheduleList DOM element:', scheduleList);
+
+      // [TRACE-S1] Print full planner slice from store
+      const _plannerDbg = window.SF_STORE.getSlice('planner');
+      console.log('[TRACE-S1] planner.allBlocks length:', (_plannerDbg.allBlocks || []).length);
+      console.log('[TRACE-S1] planner.allBlocks:', _plannerDbg.allBlocks);
+      console.log('[TRACE-S1] planner.allBlocksLoaded:', _plannerDbg.allBlocksLoaded);
+      console.log('[TRACE-S1] planner.selectedDate:', _plannerDbg.selectedDate);
+      console.log('[TRACE-S1] planner.loading:', _plannerDbg.loading);
+      console.log('[TRACE-S1] planner.error:', _plannerDbg.error);
+
       if (scheduleList && window.plannerService) {
-        const scheduledBlocks = window.plannerService.getUpcomingScheduledMilestones(4);
+        // [TRACE-S3] Capture what getTodaySchedule returns
+        const scheduledBlocks = window.plannerService.getTodaySchedule();
+        console.log('[TRACE-S3] Dashboard received from getTodaySchedule(), length:', scheduledBlocks.length, '| data:', scheduledBlocks);
         
         if (scheduledBlocks.length === 0) {
-          scheduleList.innerHTML = `<div class="text-[11px] text-[#6B7280] italic py-2">No upcoming schedule.</div>`;
+          scheduleList.innerHTML = `<div class="text-[11px] text-[#6B7280] italic py-2">No sessions scheduled for today.</div>`;
         } else {
           scheduleList.innerHTML = scheduledBlocks.map(block => {
-            const milestoneTitle = block.milestoneTitle || 'Task';
-            const type = block.type || 'study';
-            let typeColor = 'bg-[#6B7280]', typeBadge = 'bg-[#151515] border-[#2A2A2A] text-[#A1A1AA]', typeName = 'Study';
-            if (type === 'focus') { typeColor = 'bg-[#A855F7]'; typeBadge = 'bg-[#A855F7]/15 border-[#A855F7]/40 text-[#A855F7] shadow-[0_0_12px_rgba(168,85,247,0.2)]'; typeName = 'Focus'; }
-            else if (type === 'review') { typeColor = 'bg-[#FACC15]'; typeBadge = 'bg-[#FACC15]/15 border-[#FACC15]/40 text-[#FACC15] shadow-[0_0_12px_rgba(250,204,21,0.2)]'; typeName = 'Review'; }
+            const title = block.milestoneTitle || block.title || 'Session';
+            const goalTitle = block.goalTitle || '';
+            const type = (block.type || 'STUDY').toUpperCase();
+            const isCompleted = block.completed || block.status === 'completed';
+            const isInProgress = block.status === 'in-progress';
 
-            let timeStr = block.startTime ? new Date(block.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Anytime';
-            if (block.startTime) {
-               const blockDate = new Date(block.startTime);
-               const today = new Date();
-               const tomorrow = new Date(); tomorrow.setDate(today.getDate()+1);
-               const isToday = blockDate.toDateString() === today.toDateString();
-               const isTomorrow = blockDate.toDateString() === tomorrow.toDateString();
-               if (!isToday && !isTomorrow) timeStr = blockDate.toLocaleDateString('en-US', {month: 'short', day: 'numeric'}) + ' • ' + timeStr;
-               else if (isTomorrow) timeStr = 'Tomorrow • ' + timeStr;
-            }
+            let dotColor = 'bg-[#A855F7]';
+            let typeName = 'Study';
+            let typeBadge = 'bg-[#A855F7]/15 border-[#A855F7]/40 text-[#A855F7]';
+            if (type === 'CLASS') { dotColor = 'bg-[#FACC15]'; typeBadge = 'bg-[#FACC15]/15 border-[#FACC15]/40 text-[#FACC15]'; typeName = 'Class'; }
+            else if (type === 'BREAK') { dotColor = 'bg-[#22C55E]'; typeBadge = 'bg-[#22C55E]/15 border-[#22C55E]/40 text-[#22C55E]'; typeName = 'Break'; }
+            else if (type === 'WORK') { dotColor = 'bg-[#38BDF8]'; typeBadge = 'bg-[#38BDF8]/15 border-[#38BDF8]/40 text-[#38BDF8]'; typeName = 'Work'; }
+            if (block.color) dotColor = '';
+
+            const timeDisplay = block.startTimeDisplay || (block.startTime ? new Date(block.startTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : 'Anytime');
+            const endDisplay = block.endTimeDisplay || (block.endTime ? new Date(block.endTime).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '');
+            const timeStr = endDisplay ? `${timeDisplay} – ${endDisplay}` : timeDisplay;
+
+            const statusBadge = isCompleted
+              ? `<span class="px-2 py-0.5 rounded text-[10px] font-semibold border bg-[#22C55E]/15 border-[#22C55E]/40 text-[#22C55E]">Done</span>`
+              : isInProgress
+              ? `<span class="px-2 py-0.5 rounded text-[10px] font-semibold border bg-[#FACC15]/15 border-[#FACC15]/40 text-[#FACC15]">In Progress</span>`
+              : `<span class="px-2 py-0.5 rounded text-[10px] font-semibold border ${typeBadge}">${typeName}</span>`;
+
+            const dotStyle = block.color ? `style="background:${block.color}"` : '';
 
             return `
-            <div class="relative pl-6 flex items-center justify-between group">
-              <span class="absolute left-1 top-2 w-2.5 h-2.5 rounded-full ${typeColor} ring-4 ring-[#0E0E0E]"></span>
-              <div class="flex-1 truncate pr-2">
-                <span class="text-[11px] font-mono text-[#6B7280] block">${timeStr}</span>
-                <h4 class="text-xs font-semibold text-[#FAFAFA] mt-0.5 truncate">${milestoneTitle}</h4>
+            <div class="relative pl-6 flex items-start justify-between gap-2 group ${isCompleted ? 'opacity-60' : ''}">
+              <span class="absolute left-1 top-1.5 w-2.5 h-2.5 rounded-full ${dotColor} ring-4 ring-[#0E0E0E] shrink-0" ${dotStyle}></span>
+              <div class="flex-1 min-w-0">
+                <span class="text-[10px] font-mono text-[#6B7280] block">${timeStr}</span>
+                <h4 class="text-xs font-semibold text-[#FAFAFA] mt-0.5 truncate ${isCompleted ? 'line-through' : ''}">${title}</h4>
+                ${goalTitle ? `<span class="text-[10px] text-[#6B7280] truncate block">${goalTitle}</span>` : ''}
               </div>
-              <span class="px-2.5 py-1 rounded text-[10px] font-semibold border ${typeBadge}">${typeName}</span>
+              <div class="shrink-0 mt-0.5">${statusBadge}</div>
             </div>
             `;
           }).join('');
+          // [TRACE-S4] Verify HTML generation
+          console.log('[TRACE-S4] Generated HTML length:', scheduleList.innerHTML.length);
         }
       }
 
@@ -466,8 +496,8 @@
       if (tasksContainer && window.SF_COMPONENTS) tasksContainer.innerHTML = window.SF_COMPONENTS.renderSkeleton('row', 3);
 
       // Subscribe to goals and planner slices – re-renders whenever they change
-      window.SF_STORE.subscribe('goals', () => renderDashboardTasks());
-      window.SF_STORE.subscribe('planner', () => renderDashboardTasks());
+      window.SF_STORE.subscribe('goals', () => { console.log('[TRACE-SUB] goals subscription fired'); renderDashboardTasks(); });
+      window.SF_STORE.subscribe('planner', () => { console.log('[TRACE-SUB] planner subscription fired'); renderDashboardTasks(); });
 
       // Bootstrap the store
       await window.SF_STORE.bootstrap(['user', 'goals', 'planner']);

@@ -60,6 +60,65 @@ window.plannerService = (function () {
     return scheduledBlocks.slice(0, limit);
   }
 
+  /**
+   * Returns all planner blocks scheduled for today's local date, sorted by start time.
+   * Includes completed blocks so the Dashboard shows a full picture of the day.
+   * Uses local date comparison to avoid UTC/timezone boundary bugs.
+   * @returns {Block[]}
+   */
+  function getTodaySchedule() {
+    if (!window.SF_STORE) return [];
+    const plannerSlice = window.SF_STORE.getSlice('planner');
+    const goalsSlice = window.SF_STORE.getSlice('goals');
+    if (!plannerSlice || !goalsSlice) return [];
+
+    const blocks = plannerSlice.allBlocks || plannerSlice.plannerEvents || plannerSlice.dailyBlocks || [];
+    const goals = goalsSlice.items || [];
+
+    // Build a local YYYY-MM-DD string for today to avoid UTC midnight mismatch
+    const now = new Date();
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+    // [TRACE-S2] Log inputs
+    console.log('[TRACE-S2] getTodaySchedule input allBlocks length:', blocks.length);
+    console.log('[TRACE-S2] getTodaySchedule input allBlocks:', blocks);
+    console.log('[TRACE-S2] todayStr (local):', todayStr);
+    if (blocks.length > 0) {
+      console.log('[TRACE-S2] First block dateStr:', blocks[0].dateStr, '| startTime:', blocks[0].startTime);
+    }
+
+    let todayBlocks = blocks.filter(b => {
+      if (!b.startTime) return false;
+      // Prefer backend-derived dateStr field (avoids parse cost)
+      if (b.dateStr) return b.dateStr === todayStr;
+      // Fallback: parse ISO and compare local date components
+      const dt = new Date(b.startTime);
+      if (isNaN(dt.getTime())) return false;
+      const blockStr = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+      return blockStr === todayStr;
+    });
+
+    // [TRACE-S2] Log filtered result
+    console.log('[TRACE-S2] todayBlocks after filter length:', todayBlocks.length, '| data:', todayBlocks);
+
+    // Sort by start time
+    todayBlocks = todayBlocks.sort((a, b) => new Date(a.startTime) - new Date(b.startTime));
+
+    // Enrich with goal/milestone titles
+    return todayBlocks.map(block => {
+      let milestoneTitle = block.title || 'Task';
+      let goalTitle = '';
+      goals.forEach(g => {
+        if (g.id === block.goalId || g._id === block.goalId) {
+          goalTitle = g.title;
+          const sub = (g.subtasks || []).find(s => s.id === block.milestoneId || s._id === block.milestoneId);
+          if (sub) milestoneTitle = sub.title || sub.text;
+        }
+      });
+      return { ...block, milestoneTitle, goalTitle };
+    });
+  }
+
   async function getDailyBlocks(dateStr) {
     console.log('[AUDIT: plannerService.js] getDailyBlocks called for date:', dateStr);
     
@@ -203,6 +262,7 @@ window.plannerService = (function () {
     updateBlock,
     deleteBlock,
     getBlockForMilestone,
-    getUpcomingScheduledMilestones
+    getUpcomingScheduledMilestones,
+    getTodaySchedule
   };
 })();

@@ -3,6 +3,24 @@
  * Isolated schedule, calendar, and deadline datasets.
  */
 
+// Helper: build a local-date ISO string offset from today by N days (midnight UTC+5:30 approximated via local midnight)
+function _mockDateISO(dayOffset, hours, minutes) {
+  const d = new Date();
+  d.setDate(d.getDate() + dayOffset);
+  d.setHours(hours, minutes, 0, 0);
+  return d.toISOString();
+}
+function _mockDateStr(dayOffset) {
+  const d = new Date();
+  d.setDate(d.getDate() + dayOffset);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function _fmt12(h, m) {
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return `${String(h12).padStart(2,'0')}:${String(m).padStart(2,'0')} ${ampm}`;
+}
+
 export const MOCK_DAILY_BLOCKS = [
   {
     id: 'blk-1',
@@ -10,18 +28,18 @@ export const MOCK_DAILY_BLOCKS = [
     user: 'mock-user-123',
     title: 'Deep Work Session',
     description: 'DBMS Project',
-    startTime: '2026-07-19T09:00:00.000Z',
-    endTime: '2026-07-19T11:00:00.000Z',
-    startTimeDisplay: '09:00 AM',
-    endTimeDisplay: '11:00 AM',
-    dateStr: '2026-07-19',
+    startTime: _mockDateISO(0, 9, 0),
+    endTime: _mockDateISO(0, 11, 0),
+    startTimeDisplay: _fmt12(9, 0),
+    endTimeDisplay: _fmt12(11, 0),
+    dateStr: _mockDateStr(0),
     type: 'STUDY',
     color: '#A855F7',
-    completed: true,
+    completed: false,
     goalId: 'goal-1',
     milestoneId: 'sub-101',
     duration: 120,
-    status: 'completed',
+    status: 'planned',
     isRecurring: false,
     seriesId: null,
     originalSeriesId: null,
@@ -38,11 +56,11 @@ export const MOCK_DAILY_BLOCKS = [
     user: 'mock-user-123',
     title: 'Review Flashcards',
     description: 'OS Lab',
-    startTime: '2026-07-19T11:30:00.000Z',
-    endTime: '2026-07-19T12:00:00.000Z',
-    startTimeDisplay: '11:30 AM',
-    endTimeDisplay: '12:00 PM',
-    dateStr: '2026-07-19',
+    startTime: _mockDateISO(0, 11, 30),
+    endTime: _mockDateISO(0, 12, 0),
+    startTimeDisplay: _fmt12(11, 30),
+    endTimeDisplay: _fmt12(12, 0),
+    dateStr: _mockDateStr(0),
     type: 'CLASS',
     color: '#FACC15',
     completed: false,
@@ -66,11 +84,11 @@ export const MOCK_DAILY_BLOCKS = [
     user: 'mock-user-123',
     title: 'Algorithm Practice',
     description: 'DSA',
-    startTime: '2026-07-20T14:00:00.000Z',
-    endTime: '2026-07-20T16:00:00.000Z',
-    startTimeDisplay: '02:00 PM',
-    endTimeDisplay: '04:00 PM',
-    dateStr: '2026-07-20',
+    startTime: _mockDateISO(1, 14, 0),
+    endTime: _mockDateISO(1, 16, 0),
+    startTimeDisplay: _fmt12(14, 0),
+    endTimeDisplay: _fmt12(16, 0),
+    dateStr: _mockDateStr(1),
     type: 'STUDY',
     color: '#22C55E',
     completed: false,
@@ -94,11 +112,11 @@ export const MOCK_DAILY_BLOCKS = [
     user: 'mock-user-123',
     title: 'Lecture Notes Review',
     description: 'Computer Networks',
-    startTime: '2026-07-21T17:00:00.000Z',
-    endTime: '2026-07-21T18:00:00.000Z',
-    startTimeDisplay: '05:00 PM',
-    endTimeDisplay: '06:00 PM',
-    dateStr: '2026-07-21',
+    startTime: _mockDateISO(2, 17, 0),
+    endTime: _mockDateISO(2, 18, 0),
+    startTimeDisplay: _fmt12(17, 0),
+    endTimeDisplay: _fmt12(18, 0),
+    dateStr: _mockDateStr(2),
     type: 'STUDY',
     color: '#38BDF8',
     completed: false,
