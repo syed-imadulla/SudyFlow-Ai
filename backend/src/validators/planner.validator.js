@@ -47,7 +47,7 @@ const normalizePlannerPayload = (body) => {
 
 export const validateCreatePlannerEvent = (req, res, next) => {
   normalizePlannerPayload(req.body);
-  const { title, startTime, endTime, type, goalId } = req.body || {};
+  const { title, startTime, endTime, type, goalId, milestoneId } = req.body || {};
 
   if (!title || typeof title !== 'string' || title.trim().length === 0) {
     return next(new AppError('Event title is required', HTTP_STATUS.BAD_REQUEST));
@@ -73,6 +73,10 @@ export const validateCreatePlannerEvent = (req, res, next) => {
     return next(new AppError('Invalid Goal ID reference format', HTTP_STATUS.BAD_REQUEST));
   }
 
+  if (milestoneId && !mongoose.Types.ObjectId.isValid(milestoneId)) {
+    return next(new AppError('Invalid Milestone ID reference format', HTTP_STATUS.BAD_REQUEST));
+  }
+
   next();
 };
 
@@ -83,7 +87,7 @@ export const validateUpdatePlannerEvent = (req, res, next) => {
   }
 
   normalizePlannerPayload(req.body);
-  const { title, startTime, endTime, type, goalId } = req.body || {};
+  const { title, startTime, endTime, type, goalId, milestoneId } = req.body || {};
 
   if (title !== undefined && (typeof title !== 'string' || title.trim().length === 0)) {
     return next(new AppError('Event title cannot be empty', HTTP_STATUS.BAD_REQUEST));
@@ -109,6 +113,10 @@ export const validateUpdatePlannerEvent = (req, res, next) => {
 
   if (goalId !== undefined && goalId !== null && !mongoose.Types.ObjectId.isValid(goalId)) {
     return next(new AppError('Invalid Goal ID reference format', HTTP_STATUS.BAD_REQUEST));
+  }
+
+  if (milestoneId !== undefined && milestoneId !== null && !mongoose.Types.ObjectId.isValid(milestoneId)) {
+    return next(new AppError('Invalid Milestone ID reference format', HTTP_STATUS.BAD_REQUEST));
   }
 
   next();
