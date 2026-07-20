@@ -5508,33 +5508,7 @@
       });
     }
 
-    function _getEventDateStr(ev, fallbackDateStr) {
-      if (!ev) return fallbackDateStr || '';
-      if (ev.date && typeof ev.date === 'string' && ev.date.includes('-')) return ev.date.split('T')[0];
-      if (ev.startTime) {
-        if (ev.startTime instanceof Date && !isNaN(ev.startTime.getTime())) {
-          return typeof _toLocalDateStr === 'function' ? _toLocalDateStr(ev.startTime) : ev.startTime.toISOString().split('T')[0];
-        }
-        if (typeof ev.startTime === 'string') {
-          if (ev.startTime.includes('T') || (ev.startTime.includes('-') && ev.startTime.length >= 10)) {
-            const dt = new Date(ev.startTime);
-            if (!isNaN(dt.getTime())) {
-              return typeof _toLocalDateStr === 'function' ? _toLocalDateStr(dt) : dt.toISOString().split('T')[0];
-            }
-            return ev.startTime.split('T')[0];
-          }
-        }
-      }
-      if (ev.start) {
-        if (ev.start instanceof Date && !isNaN(ev.start.getTime())) {
-          return typeof _toLocalDateStr === 'function' ? _toLocalDateStr(ev.start) : ev.start.toISOString().split('T')[0];
-        }
-        if (typeof ev.start === 'string' && (ev.start.includes('T') || ev.start.includes('-'))) {
-          return ev.start.split('T')[0];
-        }
-      }
-      return fallbackDateStr || '';
-    }
+    // _getEventDateStr has been replaced by window.getPlannerBlockDate
 
     function expandWeeklyRecurrences(allEvents, startOfMon, endOfSun, fallbackDateStr) {
       const expanded = [];
@@ -5545,9 +5519,12 @@
         const id = String(ev.id || ev._id || '');
         if (id.includes('::')) {
           exceptionDates.add(id);
-        } else if (ev.date && (ev.isRecurring === false || ev.seriesId)) {
-          const sId = ev.seriesId || id;
-          exceptionDates.add(`${sId}::${ev.date}`);
+        } else {
+          const dtStr = window.getPlannerBlockDate(ev);
+          if (dtStr && (ev.isRecurring === false || ev.seriesId)) {
+            const sId = ev.seriesId || id;
+            exceptionDates.add(`${sId}::${dtStr}`);
+          }
         }
       });
 
@@ -5559,7 +5536,7 @@
         const isRec = ev.isRecurring === true || hasValidFreq || (ev.seriesId && ev.isRecurring !== false && !ev.isRecurringInstance) || id.includes('::');
 
         if (!isRec || id.includes('::') || ev.isRecurringInstance) {
-          const dtStr = _getEventDateStr(ev, fallbackDateStr);
+          const dtStr = window.getPlannerBlockDate(ev);
           if (dtStr) {
             const parts = dtStr.split('-').map(Number);
             if (parts.length === 3) {
@@ -5573,7 +5550,7 @@
           return;
         }
 
-        const seriesStartStr = _getEventDateStr(ev, fallbackDateStr);
+        const seriesStartStr = window.getPlannerBlockDate(ev);
         const seriesParts = seriesStartStr ? seriesStartStr.split('-').map(Number) : null;
         const seriesStartDate = (seriesParts && seriesParts.length === 3) ? new Date(seriesParts[0], seriesParts[1] - 1, seriesParts[2], 0, 0, 0) : new Date(0);
 
@@ -5776,7 +5753,7 @@
 
       weekEvents.forEach(ev => {
         if (!ev) return;
-        const dtStr = ev.date || (typeof _getEventDateStr === 'function' ? _getEventDateStr(ev, fallbackDateStr) : fallbackDateStr);
+        const dtStr = window.getPlannerBlockDate(ev);
         if (!dtStr) return;
         const parts = dtStr.split('-').map(Number);
         if (parts.length !== 3) return;
@@ -5846,7 +5823,7 @@
           for (const item of cluster) {
             const t = item.ev.title || item.ev.subject || 'Untitled';
             debugOutput += `- ${t}\n`;
-            const dStr = item.ev.date || (typeof _getEventDateStr === 'function' ? _getEventDateStr(item.ev, '') : '');
+            const dStr = window.getPlannerBlockDate(item.ev);
             if (dStr) datesInCluster.add(dStr);
           }
           if (datesInCluster.size > 1) {
@@ -6042,7 +6019,7 @@
       const seriesId = event.seriesId || event.originalSeriesId || '';
       const plannerState = window.SF_STORE && window.SF_STORE.getSlice('planner');
       const fallbackDateStr = (plannerState && plannerState.selectedDate) || (typeof _toLocalDateStr === 'function' ? _toLocalDateStr() : new Date().toLocaleDateString('en-CA'));
-      const dateStr = typeof _getEventDateStr === 'function' ? _getEventDateStr(event, fallbackDateStr) : (event.date || event.startTime?.split('T')[0] || fallbackDateStr);
+      const dateStr = window.getPlannerBlockDate(event);
       const startStr = event.startTimeDisplay || event.startTime || '';
       const endStr = event.endTimeDisplay || event.endTime || '';
 
@@ -6565,7 +6542,7 @@
         const isWeekend = (cellDate.getDay() === 0 || cellDate.getDay() === 6);
 
         const dayEvents = allEvents.filter(ev => {
-          const dtStr = typeof _getEventDateStr === 'function' ? _getEventDateStr(ev, fallbackDateStr) : (ev.date || ev.startTime?.split('T')[0] || fallbackDateStr);
+          const dtStr = window.getPlannerBlockDate(ev);
           return dtStr === dateStr;
         }).sort((a, b) => {
           const sA = typeof _timeStrToMinutes === 'function' ? _timeStrToMinutes(a.startTimeDisplay || a.startTime || '09:00 AM') : 0;
@@ -6895,7 +6872,7 @@
       const origStartMin = parseInt(cardElem.getAttribute('data-start-min'), 10) || 0;
       const origEndMin = parseInt(cardElem.getAttribute('data-end-min'), 10) || 60;
       const duration = Math.max(15, origEndMin - origStartMin);
-      const origDateStr = cardElem.getAttribute('data-date') || _getEventDateStr(evData, _weeklyStartDate.toLocaleDateString('en-CA'));
+      const origDateStr = cardElem.getAttribute('data-date') || window.getPlannerBlockDate(evData);
 
       const ghostElem = document.createElement('div');
       ghostElem.id = 'sf-weekly-drag-ghost';
@@ -6949,7 +6926,7 @@
       const origStartMin = parseInt(cardElem.getAttribute('data-start-min'), 10) || 0;
       const origEndMin = parseInt(cardElem.getAttribute('data-end-min'), 10) || 60;
       const duration = Math.max(15, origEndMin - origStartMin);
-      const origDateStr = cardElem.getAttribute('data-date') || _getEventDateStr(evData, _weeklyStartDate.toLocaleDateString('en-CA'));
+      const origDateStr = cardElem.getAttribute('data-date') || window.getPlannerBlockDate(evData);
 
       const ghostElem = document.createElement('div');
       ghostElem.id = 'sf-weekly-resize-ghost';
@@ -7813,7 +7790,7 @@
       
       allRaw.forEach(ev => {
         if (!ev) return;
-        const dateStr = ev.date || (ev.startTime && typeof ev.startTime === 'string' && ev.startTime.split('T')[0]);
+        const dateStr = window.getPlannerBlockDate(ev);
         if (dateStr) dateSet.add(dateStr);
       });
       

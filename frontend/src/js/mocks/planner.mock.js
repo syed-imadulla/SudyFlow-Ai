@@ -4,10 +4,10 @@
  */
 
 export const MOCK_DAILY_BLOCKS = [
-  { id: 'blk-1', startTime: '09:00 AM', endTime: '11:00 AM', title: 'Deep Work Session',     subject: 'DBMS Project',    category: 'focus',  color: '#A855F7' },
-  { id: 'blk-2', startTime: '11:30 AM', endTime: '12:00 PM', title: 'Review Flashcards',      subject: 'OS Lab',           category: 'review', color: '#FACC15' },
-  { id: 'blk-3', startTime: '02:00 PM', endTime: '04:00 PM', title: 'Algorithm Practice',     subject: 'DSA',              category: 'deep',   color: '#22C55E' },
-  { id: 'blk-4', startTime: '05:00 PM', endTime: '06:00 PM', title: 'Lecture Notes Review',   subject: 'Computer Networks', category: 'review', color: '#38BDF8' }
+  { id: 'blk-1', startTime: '2026-07-20T09:00:00.000Z', endTime: '2026-07-20T11:00:00.000Z', dateStr: '2026-07-20', startTimeDisplay: '09:00 AM', endTimeDisplay: '11:00 AM', title: 'Deep Work Session',     subject: 'DBMS Project',    category: 'focus',  color: '#A855F7' },
+  { id: 'blk-2', startTime: '2026-07-20T11:30:00.000Z', endTime: '2026-07-20T12:00:00.000Z', dateStr: '2026-07-20', startTimeDisplay: '11:30 AM', endTimeDisplay: '12:00 PM', title: 'Review Flashcards',      subject: 'OS Lab',           category: 'review', color: '#FACC15' },
+  { id: 'blk-3', startTime: '2026-07-20T14:00:00.000Z', endTime: '2026-07-20T16:00:00.000Z', dateStr: '2026-07-20', startTimeDisplay: '02:00 PM', endTimeDisplay: '04:00 PM', title: 'Algorithm Practice',     subject: 'DSA',              category: 'deep',   color: '#22C55E' },
+  { id: 'blk-4', startTime: '2026-07-20T17:00:00.000Z', endTime: '2026-07-20T18:00:00.000Z', dateStr: '2026-07-20', startTimeDisplay: '05:00 PM', endTimeDisplay: '06:00 PM', title: 'Lecture Notes Review',   subject: 'Computer Networks', category: 'review', color: '#38BDF8' }
 ];
 
 export const MOCK_UPCOMING_DEADLINES = [

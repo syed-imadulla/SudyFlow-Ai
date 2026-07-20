@@ -52,6 +52,22 @@
  *  Keys used: studyflow_goals, studyflow_settings, studyflow_focus_sessions
  */
 
+/**
+ * Canonical Planner Date Resolver
+ * Ensures Month, Week, and Daily views all extract the block date identically.
+ */
+window.getPlannerBlockDate = function(block) {
+  if (!block) return null;
+  if (block.date) return block.date;
+  if (block.dateStr) return block.dateStr;
+  
+  if (block.startTime && typeof block.startTime === 'string' && block.startTime.includes('T')) {
+    return block.startTime.split('T')[0];
+  }
+  
+  return null;
+};
+
 window.SF_STORE = (function () {
 
   // ─── Internal State ─────────────────────────────────────────────────────────
@@ -198,10 +214,8 @@ window.SF_STORE = (function () {
     if (!events || !Array.isArray(events)) return [];
     if (_state.planner.selectedView === 'day') return events;
     return events.filter(e => {
-      if (!e.startTime) return true;
-      const eDate = new Date(e.startTime).toLocaleDateString('en-CA');
-      const utcDate = new Date(e.startTime).toISOString().split('T')[0];
-      return eDate === dateStr || utcDate === dateStr;
+      const eDate = window.getPlannerBlockDate(e);
+      return eDate === dateStr;
     });
   }
 
