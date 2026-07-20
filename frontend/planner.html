@@ -1372,6 +1372,7 @@
 
     function initPlannerBlockDrag(e, blockId) {
       if (_plannerDragState && _plannerDragState.active) return;
+      if (!e.target || typeof e.target.closest !== 'function') return;
       if (e.target.closest('button') || e.target.closest('.sf-planner-dropdown') || e.target.closest('.sf-resize-handle')) return;
       if (e.button !== undefined && e.button !== 0 && e.pointerType === 'mouse') return;
       if (window._destroySfTooltip) window._destroySfTooltip('drag start');
@@ -3298,7 +3299,7 @@
       popup.classList.remove('hidden');
 
       function _closeHandler(ev) {
-        if (!ev.target.closest('#sf-repeat-until-date-trigger') && !ev.target.closest('#sf-custom-datepicker-popup')) {
+        if (!ev.target || typeof ev.target.closest !== 'function' || (!ev.target.closest('#sf-repeat-until-date-trigger') && !ev.target.closest('#sf-custom-datepicker-popup'))) {
           popup.classList.add('hidden');
           document.removeEventListener('click', _closeHandler);
         }
@@ -4005,7 +4006,7 @@
     window.selectCustomOption = selectCustomOption;
 
     document.addEventListener('click', (e) => {
-      if (!e.target.closest('.sf-custom-select-container')) {
+      if (!e.target || typeof e.target.closest !== 'function' || !e.target.closest('.sf-custom-select-container')) {
         ['type', 'goal', 'start', 'end'].forEach(k => {
           const m = document.getElementById(`sf-menu-${k}`);
           if (m) m.classList.add('hidden');
@@ -4025,7 +4026,7 @@
       if (modal && !modal.classList.contains('hidden') && e.target === modal) {
         closeAddBlockModal();
       }
-      if (!e.target.closest('.sf-planner-dropdown') && !e.target.closest('button[onclick*="togglePlannerCardMenu"]')) {
+      if (!e.target || typeof e.target.closest !== 'function' || (!e.target.closest('.sf-planner-dropdown') && !e.target.closest('button[onclick*="togglePlannerCardMenu"]'))) {
         if (typeof closeAllPlannerCardMenus === 'function') closeAllPlannerCardMenus(); else document.querySelectorAll('.sf-planner-dropdown').forEach(d => d.classList.add('hidden'));
       }
     });
@@ -6277,7 +6278,7 @@
       }
       event.preventDefault();
       if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
-      const cellEl = event.currentTarget || (event.target && event.target.closest('[data-monthly-cell-date]'));
+      const cellEl = event.currentTarget || (event.target && typeof event.target.closest === 'function' && event.target.closest('[data-monthly-cell-date]'));
       if (cellEl && !cellEl.classList.contains('sf-monthly-drop-target')) {
         cellEl.classList.add('sf-monthly-drop-target');
       }
@@ -6285,7 +6286,7 @@
     window.onMonthlyCellDragOver = onMonthlyCellDragOver;
 
     function onMonthlyCellDragLeave(event, targetDateStr) {
-      const cellEl = event.currentTarget || (event.target && event.target.closest('[data-monthly-cell-date]'));
+      const cellEl = event.currentTarget || (event.target && typeof event.target.closest === 'function' && event.target.closest('[data-monthly-cell-date]'));
       if (cellEl && (!event.relatedTarget || !cellEl.contains(event.relatedTarget))) {
         cellEl.classList.remove('sf-monthly-drop-target');
       }
@@ -6320,7 +6321,7 @@
 
       const todayStr = typeof _toLocalDateStr === 'function' ? _toLocalDateStr() : new Date().toLocaleDateString('en-CA');
       if (targetDateStr < todayStr && sourceDateStr >= todayStr) {
-        const cellEl = event.currentTarget || (event.target && event.target.closest('[data-monthly-cell-date]'));
+        const cellEl = event.currentTarget || (event.target && typeof event.target.closest === 'function' && event.target.closest('[data-monthly-cell-date]'));
         if (cellEl) {
           cellEl.classList.add('sf-monthly-shake');
           setTimeout(() => cellEl.classList.remove('sf-monthly-shake'), 450);
@@ -6606,7 +6607,7 @@
       }
 
       cellsGrid.innerHTML = html;
-      cellsGrid.oncontextmenu = (e) => { e.preventDefault(); if (!e.target.closest('[data-monthly-cell-date]')) return false; };
+      cellsGrid.oncontextmenu = (e) => { e.preventDefault(); if (!e.target || typeof e.target.closest !== 'function' || !e.target.closest('[data-monthly-cell-date]')) return false; };
       cellsGrid.style.gridTemplateRows = `repeat(${numWeeks}, minmax(220px, auto))`;
       if (typeof _calculatePlannerCalendarHeights === 'function') {
         _calculatePlannerCalendarHeights();
@@ -6864,6 +6865,7 @@
 
     function _initWeeklyCardDrag(e, cardElem, blockId, evData) {
       if (_weeklyDragResizeState && _weeklyDragResizeState.active) return;
+      if (!e.target || typeof e.target.closest !== 'function') return;
       if (e.target.closest('button') || e.target.closest('.sf-resize-handle')) return;
       if (e.button !== undefined && e.button !== 0 && e.pointerType === 'mouse') return;
       if (window._destroySfTooltip) window._destroySfTooltip('drag start');
@@ -7263,6 +7265,7 @@
         cardEl.addEventListener('click', (e) => {
           e.stopPropagation();
           if (window._sfWeeklyIsDragging || window._sfIsDraggingOrResizing) return;
+          if (!e.target || typeof e.target.closest !== 'function') return;
           if (e.target.closest('button') || e.target.closest('.sf-planner-dropdown') || e.target.closest('.sf-resize-handle')) return;
           _handleWeeklyInteraction('select', id, { cardEl, elevate: false });
         });
@@ -7270,6 +7273,7 @@
         cardEl.addEventListener('dblclick', (e) => {
           e.stopPropagation();
           if (window._sfWeeklyIsDragging || window._sfIsDraggingOrResizing) return;
+          if (!e.target || typeof e.target.closest !== 'function') return;
           if (e.target.closest('button') || e.target.closest('.sf-planner-dropdown') || e.target.closest('.sf-resize-handle')) return;
           _handleWeeklyInteraction('select', id, { cardEl, elevate: true });
           _handleWeeklyInteraction('edit', id);
@@ -7279,6 +7283,7 @@
           e.preventDefault();
           e.stopPropagation();
           if (window._sfWeeklyIsDragging || window._sfIsDraggingOrResizing) return;
+          if (!e.target || typeof e.target.closest !== 'function') return;
           if (e.target.closest('button') || e.target.closest('.sf-planner-dropdown') || e.target.closest('.sf-resize-handle')) return;
           _handleWeeklyInteraction('select', id, { cardEl, elevate: true });
           _handleWeeklyInteraction('contextmenu', id, { x: e.clientX, y: e.clientY });
@@ -7289,6 +7294,7 @@
 
         if (cardEl.classList.contains('weekly-event-card')) {
           cardEl.addEventListener('pointerdown', (e) => {
+            if (!e.target || typeof e.target.closest !== 'function') return;
             if (e.target.closest('.sf-resize-handle') || e.target.closest('button')) return;
             if (e.button !== undefined && e.button !== 0 && e.pointerType === 'mouse') return;
             _initWeeklyCardDrag(e, cardEl, id, cardEl._sfEventData || ev);
@@ -7310,14 +7316,15 @@
 
     // Clear selection when clicking grid background
     document.addEventListener('click', (e) => {
-      if (!e.target.closest('.weekly-event-card') &&
+      if (!e.target || typeof e.target.closest !== 'function' ||
+         (!e.target.closest('.weekly-event-card') &&
           !e.target.closest('.sf-planner-card') &&
           !e.target.closest('#sf-weekly-context-menu') &&
           !e.target.closest('#sf-add-block-modal') &&
           !e.target.closest('#weeklyFullscreenBtn') &&
           !e.target.closest('#monthlyFullscreenBtn') &&
           !e.target.closest('[onclick*="togglePlannerFullscreen"]') &&
-          !e.target.closest('.sf-fullscreen-btn')) {
+          !e.target.closest('.sf-fullscreen-btn'))) {
         _weeklyDeselectAll();
         _dailyFlexibleDeselectAll();
         _closeWeeklyContextMenu();

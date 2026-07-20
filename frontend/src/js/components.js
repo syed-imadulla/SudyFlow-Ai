@@ -84,7 +84,7 @@
   };
 
   document.addEventListener('click', function (e) {
-    if (!e.target.closest('.goal-action-menu-container')) {
+    if (!e.target || typeof e.target.closest !== 'function' || !e.target.closest('.goal-action-menu-container')) {
       window.closeGoalActionMenus();
     }
   });

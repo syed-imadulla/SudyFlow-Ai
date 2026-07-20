@@ -624,7 +624,7 @@ window.selectCustomDropdownItem = function (menuId, arrowId, textId, displayValu
 };
 
 document.addEventListener('click', function (e) {
-  if (!e.target.closest('.custom-dropdown-container')) {
+  if (!e.target || typeof e.target.closest !== 'function' || !e.target.closest('.custom-dropdown-container')) {
     document.querySelectorAll('.custom-dropdown-menu').forEach(m => m.classList.add('hidden'));
     document.querySelectorAll('.custom-dropdown-arrow').forEach(a => a.style.transform = 'rotate(0deg)');
   }
@@ -931,6 +931,7 @@ function initializeStudyFlowRouter() {
     ['mouseover', 'mouseenter', 'pointerenter'].forEach(evt => {
       document.addEventListener(evt, (e) => {
         if (e.buttons !== 0 || window._sfIsDraggingOrResizing) return;
+        if (!e.target || typeof e.target.closest !== 'function') return;
         const target = e.target.closest('[title], [data-tooltip]');
         if (target) {
           const text = target.getAttribute('title') || target.getAttribute('data-tooltip');
