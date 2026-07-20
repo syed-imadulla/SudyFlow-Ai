@@ -238,6 +238,45 @@ export class PlannerService {
   }
 
   /**
+   * Schedule a Milestone (Domain Orchestrator logic)
+   */
+  static async scheduleMilestone(userId, payload) {
+    const { goalId, milestoneId, startTime, endTime } = payload;
+    
+    // 1 & 2 & 3. Validate goal and milestone
+    const goal = await Goal.findOne({ _id: goalId, user: userId });
+    if (!goal) {
+      throw new AppError('Goal not found', HTTP_STATUS.NOT_FOUND);
+    }
+    
+    const milestone = goal.subtasks.id(milestoneId);
+    if (!milestone) {
+      throw new AppError('Milestone not found within the specified goal', HTTP_STATUS.NOT_FOUND);
+    }
+    
+    // 4. Enforce One Milestone <-> One Planner Block
+    const existingBlock = await Planner.findOne({ user: userId, milestoneId });
+    if (existingBlock) {
+      throw new AppError('This milestone is already scheduled', HTTP_STATUS.BAD_REQUEST);
+    }
+    
+    // 5. Derive planner display data
+    const title = `${goal.title}: ${milestone.title}`;
+    
+    // 6. Create the Planner Block
+    const plannerPayload = {
+      title,
+      startTime,
+      endTime,
+      type: PLANNER_EVENT_TYPE.STUDY, // Default type for milestone blocks
+      goalId,
+      milestoneId
+    };
+    
+    return await this.createEvent(userId, plannerPayload);
+  }
+
+  /**
    * Update planner event
    */
   static async updateEvent(userId, eventId, patch) {

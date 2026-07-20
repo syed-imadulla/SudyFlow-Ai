@@ -30,6 +30,15 @@ export class PlannerController {
     });
   });
 
+  static scheduleMilestone = catchAsync(async (req, res) => {
+    const event = await PlannerService.scheduleMilestone(req.user._id, req.body);
+    res.status(HTTP_STATUS.CREATED).json({
+      status: 'success',
+      statusCode: HTTP_STATUS.CREATED,
+      data: event
+    });
+  });
+
   static updateEvent = catchAsync(async (req, res) => {
     const event = await PlannerService.updateEvent(req.user._id, req.params.id, req.body);
     res.status(HTTP_STATUS.OK).json({

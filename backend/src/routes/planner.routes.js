@@ -1,7 +1,7 @@
 import express from 'express';
 import { PlannerController } from '../controllers/planner.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
-import { validateCreatePlannerEvent, validateUpdatePlannerEvent } from '../validators/planner.validator.js';
+import { validateCreatePlannerEvent, validateUpdatePlannerEvent, validateScheduleMilestone } from '../validators/planner.validator.js';
 
 const router = express.Router();
 
@@ -23,6 +23,8 @@ router.get('/events', PlannerController.getEventsByRange);
 router.route('/')
   .get(PlannerController.getEvents)
   .post(validateCreatePlannerEvent, PlannerController.createEvent);
+
+router.post('/schedule', validateScheduleMilestone, PlannerController.scheduleMilestone);
 
 router.route('/:id')
   .get(validateUpdatePlannerEvent, PlannerController.getEventById)

@@ -121,3 +121,29 @@ export const validateUpdatePlannerEvent = (req, res, next) => {
 
   next();
 };
+
+export const validateScheduleMilestone = (req, res, next) => {
+  const { goalId, milestoneId, startTime, endTime } = req.body || {};
+
+  if (!goalId || !mongoose.Types.ObjectId.isValid(goalId)) {
+    return next(new AppError('Valid Goal ID is required', HTTP_STATUS.BAD_REQUEST));
+  }
+
+  if (!milestoneId || !mongoose.Types.ObjectId.isValid(milestoneId)) {
+    return next(new AppError('Valid Milestone ID is required', HTTP_STATUS.BAD_REQUEST));
+  }
+
+  if (!startTime || isNaN(new Date(startTime).getTime())) {
+    return next(new AppError('Valid startTime date string is required', HTTP_STATUS.BAD_REQUEST));
+  }
+
+  if (!endTime || isNaN(new Date(endTime).getTime())) {
+    return next(new AppError('Valid endTime date string is required', HTTP_STATUS.BAD_REQUEST));
+  }
+
+  if (new Date(startTime).getTime() >= new Date(endTime).getTime()) {
+    return next(new AppError('startTime must be strictly earlier than endTime', HTTP_STATUS.BAD_REQUEST));
+  }
+
+  next();
+};
