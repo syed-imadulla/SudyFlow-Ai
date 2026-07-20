@@ -316,6 +316,9 @@
             </div>
             <div class="flex items-center space-x-2.5 shrink-0">
               <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${badgeColor}">${sub.priority || 'High'}</span>
+              <button onclick="window.openScheduleMilestoneModal('${goalId}', '${sub.id}')" class="p-1.5 rounded-lg bg-[#151515] hover:bg-[#38BDF8]/20 text-[#38BDF8] transition" title="Schedule Milestone">
+                <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7v-5z"/></svg>
+              </button>
               <button onclick="window.location.href='focus.html'" class="p-1.5 rounded-lg bg-[#151515] hover:bg-[#A855F7]/20 text-[#A855F7] transition" title="Start Focus Block">
                 <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
               </button>
@@ -341,6 +344,9 @@
               <div class="flex items-center bg-[#151520] rounded-lg border border-[#252535] p-0.5 space-x-0.5">
                 <button onclick="window.openSubtaskIdeaLab('${goalId}', '${sub.id}')" class="p-1.5 rounded-md hover:bg-[#A855F7]/20 text-[#A855F7] transition flex items-center justify-center" title="Open IdeaLab Guide">
                   <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M12 0L14.59 9.41L24 12L14.59 14.59L12 24L9.41 14.59L0 12L9.41 9.41L12 0Z"/></svg>
+                </button>
+                <button onclick="window.openScheduleMilestoneModal('${goalId}', '${sub.id}')" class="p-1.5 rounded-md hover:bg-[#38BDF8]/20 text-[#38BDF8] transition flex items-center justify-center" title="Schedule Milestone">
+                  <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7v-5z"/></svg>
                 </button>
                 <button onclick="window.location.href='focus.html'" class="p-1.5 rounded-md hover:bg-[#FACC15]/20 text-[#FACC15] transition flex items-center justify-center" title="Start Focus Timer">
                   <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
