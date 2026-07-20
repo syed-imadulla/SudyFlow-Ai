@@ -450,6 +450,39 @@ window.SF_STORE = (function () {
       }
     },
 
+    async 'planner/SCHEDULE_MILESTONE'(payload) {
+      try {
+        const result = await window.plannerService.scheduleMilestone(payload);
+        
+        const activeView = _state.planner.selectedView || (typeof document !== 'undefined' && document.getElementById('weeklyView') && !document.getElementById('weeklyView').classList.contains('hidden') ? 'weekly' : 'day');
+        if (activeView === 'weekly' || activeView === 'monthly' || (_state.planner.selectedRange?.start && _state.planner.selectedRange?.end)) {
+          let start = _state.planner.selectedRange?.start;
+          let end = _state.planner.selectedRange?.end;
+          if (!start || !end) {
+            const baseDate = new Date(_state.planner.selectedDate || new Date());
+            const dayNum = baseDate.getDay();
+            const diffToMon = dayNum === 0 ? -6 : 1 - dayNum;
+            const mon = new Date(baseDate);
+            mon.setDate(baseDate.getDate() + diffToMon);
+            const sun = new Date(mon.getTime() + 6 * 86400000);
+            start = mon.toISOString().split('T')[0];
+            end = sun.toISOString().split('T')[0];
+          }
+          await dispatch('planner/LOAD_RANGE', { start, end, view: activeView });
+        } else {
+          await dispatch('planner/LOAD', { date: _state.planner.selectedDate });
+        }
+
+        // Refresh Goals to reflect updated milestone states
+        await dispatch('goals/LOAD');
+
+        return result;
+      } catch (e) {
+        console.error('[SF_STORE] planner/SCHEDULE_MILESTONE failed:', e);
+        throw e;
+      }
+    },
+
     async 'planner/CREATE'(payload) {
       try {
         const newBlock = await window.plannerService.createBlock(payload);

@@ -718,3 +718,132 @@
 
   window.calculateGoalProgress = window.SF_COMPONENTS.calculateGoalProgress;
 })();
+
+// Global Schedule Milestone Modal Handler (Commit 3 UI & Commit 4 Integration)
+window.openScheduleMilestoneModal = function(goalId, milestoneId) {
+  let modalEl = document.getElementById('globalScheduleModal');
+  if (!modalEl) {
+    modalEl = document.createElement('div');
+    modalEl.id = 'globalScheduleModal';
+    modalEl.className = 'fixed inset-0 z-[100000] flex items-center justify-center bg-black/80 backdrop-blur-sm animate-fadeIn p-4';
+    
+    modalEl.innerHTML = `
+      <div class="bg-[#0D0D0D] border border-[#2A2A2A] p-6 rounded-[20px] w-full max-w-md shadow-saas space-y-5 relative">
+        <div class="flex items-center justify-between pb-3 border-b border-[#1C1C1C]">
+          <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 rounded-xl bg-[#A855F7]/20 border border-[#A855F7]/40 flex items-center justify-center text-[#A855F7] text-sm shrink-0">🗓️</div>
+            <h3 class="text-base font-bold text-[#FAFAFA]">Schedule Milestone</h3>
+          </div>
+          <button onclick="document.getElementById('globalScheduleModal').style.display='none'" class="text-[#6B7280] hover:text-[#FAFAFA]">✕</button>
+        </div>
+        <form id="scheduleMilestoneForm" class="space-y-4" onsubmit="event.preventDefault(); window.submitScheduleMilestone();">
+          <input type="hidden" id="scheduleGoalId" />
+          <input type="hidden" id="scheduleMilestoneId" />
+          
+          <div>
+            <label class="block text-xs font-semibold text-[#A1A1AA] uppercase mb-1.5">Date</label>
+            <input id="scheduleDate" type="date" class="input py-2.5 text-xs bg-[#0A0A0A] border-[#2A2A2A] text-white w-full rounded-lg px-3" required />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-[#A1A1AA] uppercase mb-1.5">Start Time</label>
+              <input id="scheduleStartTime" type="time" class="input py-2.5 text-xs bg-[#0A0A0A] border-[#2A2A2A] text-white w-full rounded-lg px-3" required />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-[#A1A1AA] uppercase mb-1.5">End Time</label>
+              <input id="scheduleEndTime" type="time" class="input py-2.5 text-xs bg-[#0A0A0A] border-[#2A2A2A] text-white w-full rounded-lg px-3" required />
+            </div>
+          </div>
+          
+          <div class="flex items-center justify-end space-x-3 pt-2 border-t border-[#1C1C1C]">
+            <button type="button" onclick="document.getElementById('globalScheduleModal').style.display='none'" class="btn btn-ghost px-4 py-2 text-xs text-[#A1A1AA] hover:text-white transition">Cancel</button>
+            <button type="submit" id="scheduleSubmitBtn" class="btn btn-primary px-5 py-2 text-xs font-bold shadow-[0_0_20px_rgba(168,85,247,0.25)] flex items-center space-x-2 bg-[#A855F7] hover:bg-[#9333EA] text-white rounded-lg transition">
+              <span id="scheduleSubmitText">Confirm</span>
+              <svg id="scheduleSubmitSpinner" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+    document.body.appendChild(modalEl);
+  }
+
+  const now = new Date();
+  const d = now.toISOString().split('T')[0];
+  const startH = String(now.getHours() + 1).padStart(2, '0');
+  const endH = String(now.getHours() + 2).padStart(2, '0');
+  
+  document.getElementById('scheduleGoalId').value = goalId;
+  document.getElementById('scheduleMilestoneId').value = milestoneId;
+  document.getElementById('scheduleDate').value = d;
+  document.getElementById('scheduleStartTime').value = `${startH}:00`;
+  document.getElementById('scheduleEndTime').value = `${endH}:00`;
+  
+  const btn = document.getElementById('scheduleSubmitBtn');
+  btn.disabled = false;
+  btn.style.opacity = '1';
+  document.getElementById('scheduleSubmitText').textContent = 'Confirm';
+  document.getElementById('scheduleSubmitSpinner').classList.add('hidden');
+
+  modalEl.style.display = 'flex';
+};
+
+window.submitScheduleMilestone = async function() {
+  const goalId = document.getElementById('scheduleGoalId').value;
+  const milestoneId = document.getElementById('scheduleMilestoneId').value;
+  const date = document.getElementById('scheduleDate').value;
+  const startTime = document.getElementById('scheduleStartTime').value;
+  const endTime = document.getElementById('scheduleEndTime').value;
+
+  if (!date || !startTime || !endTime) {
+    if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+      window.SF_COMPONENTS.showToast('Please fill all date and time fields.', 'error');
+    }
+    return;
+  }
+
+  const start = new Date(`${date}T${startTime}`);
+  const end = new Date(`${date}T${endTime}`);
+  
+  if (end <= start) {
+    if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+      window.SF_COMPONENTS.showToast('End time must be after start time.', 'error');
+    }
+    return;
+  }
+
+  const btn = document.getElementById('scheduleSubmitBtn');
+  btn.disabled = true;
+  btn.style.opacity = '0.5';
+  document.getElementById('scheduleSubmitText').textContent = 'Scheduling...';
+  document.getElementById('scheduleSubmitSpinner').classList.remove('hidden');
+
+  try {
+    const payload = {
+      goalId,
+      milestoneId,
+      startTime: start.toISOString(),
+      endTime: end.toISOString()
+    };
+    
+    // Dispatch to SF_STORE for Commit 4 (Store Integration)
+    await window.SF_STORE.dispatch('planner/SCHEDULE_MILESTONE', payload);
+    
+    document.getElementById('globalScheduleModal').style.display = 'none';
+    if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+      window.SF_COMPONENTS.showToast('Milestone scheduled successfully!', 'success');
+    }
+  } catch (error) {
+    if (window.SF_COMPONENTS && window.SF_COMPONENTS.showToast) {
+      window.SF_COMPONENTS.showToast(error.message || 'Failed to schedule milestone.', 'error');
+    }
+  } finally {
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    document.getElementById('scheduleSubmitText').textContent = 'Confirm';
+    document.getElementById('scheduleSubmitSpinner').classList.add('hidden');
+  }
+};

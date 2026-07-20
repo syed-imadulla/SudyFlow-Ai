@@ -56,6 +56,33 @@ window.plannerService = (function () {
     return window.SF_HTTP.request('/planner/monthly', MOCK_MONTHLY_CALENDAR);
   }
 
+  async function scheduleMilestone(payload) {
+    if (window.SF_CONFIG?.USE_MOCK_API) {
+      const genId = 'blk-' + Date.now();
+      const newBlock = {
+        id: genId,
+        _id: genId,
+        title: 'Mock Scheduled Milestone',
+        ...payload,
+        type: 'MILESTONE',
+        color: '#A855F7'
+      };
+      const mocks = await _getMocks();
+      if (mocks.MOCK_DAILY_BLOCKS) {
+        mocks.MOCK_DAILY_BLOCKS.push(newBlock);
+      }
+      return window.SF_HTTP.request('/planner/schedule', newBlock, {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      });
+    }
+
+    return window.SF_HTTP.request('/planner/schedule', null, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+  }
+
   async function createBlock(payload) {
     const genId = payload?.id || payload?._id || ('blk-' + Date.now() + '-' + Math.floor(Math.random()*1000));
     const newBlock = {
@@ -140,6 +167,7 @@ window.plannerService = (function () {
     getUpcomingDeadlines,
     getWeeklyStats,
     getMonthlyCalendar,
+    scheduleMilestone,
     createBlock,
     updateBlock,
     deleteBlock
