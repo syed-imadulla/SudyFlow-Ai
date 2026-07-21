@@ -304,9 +304,8 @@
       let scheduleBtnHtml = '';
       if (mode === 'workspace') {
         scheduleBtnHtml = isScheduled ? `
-          <button onclick="window.location.href='planner.html'" class="h-7 px-2.5 rounded-lg bg-[#A855F7]/10 text-[#A855F7]/90 hover:text-[#A855F7] transition-all duration-200 ease-out flex items-center justify-center space-x-1.5 hover:shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:-translate-y-0.5 active:translate-y-0" title="View in Planner">
-            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-            <span class="text-[10px] font-bold uppercase tracking-wider">View in Planner</span>
+          <button onclick="window.location.href='planner.html'" class="w-7 h-7 rounded-lg hover:bg-[#A855F7]/10 text-[#A855F7]/80 hover:text-[#A855F7] transition-all duration-200 ease-out flex items-center justify-center hover:shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:-translate-y-0.5 active:translate-y-0" title="View in Planner">
+            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
           </button>
         ` : `
           <button onclick="window.openScheduleMilestoneModal('${goalId}', '${sub.id}')" class="w-7 h-7 rounded-lg hover:bg-[#A855F7]/10 text-[#A855F7]/80 hover:text-[#A855F7] transition-all duration-200 ease-out flex items-center justify-center hover:shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:-translate-y-0.5 active:translate-y-0" title="Schedule to Planner">
@@ -316,9 +315,8 @@
       } else {
         if (isScheduled) {
           scheduleBtnHtml = `
-            <button onclick="window.location.href='planner.html'" class="h-7 px-2.5 rounded-lg bg-[#A855F7]/10 text-[#A855F7]/90 hover:text-[#A855F7] transition-all duration-200 ease-out flex items-center justify-center space-x-1.5 hover:shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:-translate-y-0.5 active:translate-y-0" title="View in Planner">
-              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
-              <span class="text-[10px] font-bold uppercase tracking-wider">View in Planner</span>
+            <button onclick="window.location.href='planner.html'" class="w-7 h-7 rounded-lg hover:bg-[#A855F7]/10 text-[#A855F7]/80 hover:text-[#A855F7] transition-all duration-200 ease-out flex items-center justify-center hover:shadow-[0_0_15px_rgba(168,85,247,0.2)] hover:-translate-y-0.5 active:translate-y-0" title="View in Planner">
+              <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
             </button>
           `;
         }

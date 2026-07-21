@@ -1273,7 +1273,7 @@
     function _renderPlannerCards(sortedBlocks, goals) {
       return sortedBlocks.map(block => {
         const id = block.id || block._id || '';
-        const title = block.title || 'Untitled Block';
+        let title = block.title || 'Untitled Block';
         const desc = block.description || block.subject || '';
         const startTime = _formatTimeDisplay(block.startTimeDisplay || block.startTime || '09:00 AM');
         const endTime = _formatTimeDisplay(block.endTimeDisplay || block.endTime || '');
@@ -1295,6 +1295,16 @@
         if (block.goalId) {
           const linkedGoal = goals.find(g => g.id === block.goalId || g._id === block.goalId);
           const goalTitle = linkedGoal ? (linkedGoal.title || 'Linked Goal') : (block.goalTitle || 'Linked Goal');
+          
+          if (title.startsWith(goalTitle + ':')) {
+            title = title.substring(goalTitle.length + 1).trim();
+          } else if (title.includes(':')) {
+            const parts = title.split(':');
+            if (parts[0].trim() === goalTitle.trim()) {
+              title = parts.slice(1).join(':').trim();
+            }
+          }
+
           goalHtml = `<div class="mt-1.5"><span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#A855F7]/10 border border-[#A855F7]/30 text-[10px] text-[#D8B4FE] font-medium">🎯 ${goalTitle}</span></div>`;
         }
 
