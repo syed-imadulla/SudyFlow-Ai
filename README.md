@@ -74,7 +74,7 @@ StudyFlow-AI/
 ├── README.md               # This file
 │
 ├── docs/                   # Project documentation
-│   ├── Architecture.md     # System design & data-flow diagrams
+│   ├── ARCHITECTURE.md     # System design & data-flow diagrams
 │   ├── API.md              # Full REST API reference
 │   └── Sprint-Notes.md     # Development sprint log
 │
@@ -202,28 +202,27 @@ Expected response:
 
 ---
 
-## 🗺️ Future Roadmap
+## 🗺️ Project Status & Roadmap
 
-### v1.1 — AI Integration
-- [ ] Connect IdeaLab to OpenAI / Gemini API for real AI responses
-- [ ] AI-generated daily study schedule based on user goals
-- [ ] Smart task prioritization using ML
+### Completed
+- **Phase 2.1**: Base architecture, core data models, user authentication.
+- **Phase 2.2**: Goal ↔ Planner Synchronization, scheduling workflows, API error standardization, structured logging, frontend UI consistency.
 
-### v1.2 — Collaboration
-- [ ] Multi-user study rooms
-- [ ] Shared Kanban boards for group projects
-- [ ] Real-time presence indicators
+### Current
+**v2.1.0** — Goal ↔ Planner Sync Foundation Complete
 
-### v1.3 — Mobile
-- [ ] Progressive Web App (PWA) support
-- [ ] Native mobile app (React Native or Flutter)
-- [ ] Offline focus sessions with sync
+### Next (Phase 2.3)
+- Focus Mode
+- Dashboard Intelligence
+- Planner UX
+- AI Productivity
 
-### v2.0 — Platform
-- [ ] Browser extension for distraction blocking
-- [ ] Calendar integrations (Google, Outlook)
-- [ ] Spaced repetition flashcard system
-- [ ] Plugin/extension marketplace
+### Future Horizons
+- AI-generated daily study schedule based on user goals
+- Multi-user study rooms & Shared Kanban boards
+- Progressive Web App (PWA) / Mobile Apps
+- Browser extension for distraction blocking
+- Spaced repetition flashcard system
 
 ---
 
