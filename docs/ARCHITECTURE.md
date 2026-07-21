@@ -14,20 +14,20 @@ StudyFlow operates on a standard client-server model, optimized for a single-pag
 
 ```mermaid
 flowchart TD
-    subgraph Frontend [Frontend SPA (Vanilla JS)]
+    subgraph Frontend ["Frontend SPA (Vanilla JS)"]
         UI[HTML & Components]
         Store[Global Store]
         Services[Service Layer]
         HTTP[HTTP Client]
     end
 
-    subgraph Backend [Backend API (Node.js/Express)]
+    subgraph Backend ["Backend API (Node.js/Express)"]
         Controllers[Controllers]
         BackendServices[Business Services]
         Models[Mongoose Models]
     end
 
-    subgraph Database [Database]
+    subgraph Database ["Database"]
         MongoDB[(MongoDB Atlas)]
     end
 
