@@ -104,7 +104,8 @@ window.goalsService = (function () {
         estimate: `Sprint ${idx + 1} • 1.5h`,
         priority: priorities[idx % priorities.length],
         deadlineDisplay: stepDays === 1 ? 'Tomorrow' : `In ${stepDays} days`,
-        completed: false
+        completed: false,
+        status: 'TODO'
       };
     });
 

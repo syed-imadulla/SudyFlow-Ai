@@ -1,5 +1,5 @@
 import { AppError } from '../utils/AppError.js';
-import { HTTP_STATUS, TASK_PRIORITY, TASK_STATUS } from '../constants/index.js';
+import { HTTP_STATUS, TASK_PRIORITY, TASK_STATUS, ERROR_CODES } from '../constants/index.js';
 import mongoose from 'mongoose';
 
 /**
@@ -39,7 +39,7 @@ export const validateCreateTask = (req, res, next) => {
   const { title, priority, status, goalId } = req.body || {};
 
   if (!title || typeof title !== 'string' || title.trim().length === 0) {
-    return next(new AppError('Task title is required and must be a non-empty string', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Task title is required and must be a non-empty string', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   if (priority !== undefined && !Object.values(TASK_PRIORITY).includes(priority)) {
@@ -51,7 +51,7 @@ export const validateCreateTask = (req, res, next) => {
   }
 
   if (goalId && !mongoose.Types.ObjectId.isValid(goalId)) {
-    return next(new AppError('Invalid Goal ID reference format', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Invalid Goal ID reference format', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   next();
@@ -60,14 +60,14 @@ export const validateCreateTask = (req, res, next) => {
 export const validateUpdateTask = (req, res, next) => {
   const { id } = req.params || {};
   if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-    return next(new AppError('Invalid Task ID format', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Invalid Task ID format', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   normalizePayload(req.body);
   const { title, priority, status, goalId } = req.body || {};
 
   if (title !== undefined && (typeof title !== 'string' || title.trim().length === 0)) {
-    return next(new AppError('Task title cannot be empty', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Task title cannot be empty', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   if (priority !== undefined && !Object.values(TASK_PRIORITY).includes(priority)) {
@@ -79,7 +79,7 @@ export const validateUpdateTask = (req, res, next) => {
   }
 
   if (goalId !== undefined && goalId !== null && !mongoose.Types.ObjectId.isValid(goalId)) {
-    return next(new AppError('Invalid Goal ID reference format', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Invalid Goal ID reference format', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   next();

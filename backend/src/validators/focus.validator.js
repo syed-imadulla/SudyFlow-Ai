@@ -1,5 +1,5 @@
 import { AppError } from '../utils/AppError.js';
-import { HTTP_STATUS, FOCUS_SESSION_TYPE, FOCUS_SESSION_STATUS } from '../constants/index.js';
+import { HTTP_STATUS, FOCUS_SESSION_TYPE, FOCUS_SESSION_STATUS, ERROR_CODES } from '../constants/index.js';
 import mongoose from 'mongoose';
 
 const ALLOWED_FIELDS = [
@@ -55,36 +55,36 @@ const validateFocusPayload = (req, next) => {
 
   // Validate dates
   if (body.startTime !== undefined && isNaN(new Date(body.startTime).getTime())) {
-    return next(new AppError('Valid startTime date string is required', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Valid startTime date string is required', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
   if (body.endTime !== undefined && isNaN(new Date(body.endTime).getTime())) {
-    return next(new AppError('Valid endTime date string is required', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Valid endTime date string is required', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
   if (body.startTime !== undefined && body.endTime !== undefined) {
     if (new Date(body.startTime).getTime() >= new Date(body.endTime).getTime()) {
-      return next(new AppError('startTime must be strictly earlier than endTime', HTTP_STATUS.BAD_REQUEST));
+      return next(new AppError('startTime must be strictly earlier than endTime', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
     }
   }
 
   // Validate duration
   if (body.duration !== undefined && (isNaN(body.duration) || body.duration <= 0)) {
-    return next(new AppError('Duration must be greater than 0', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Duration must be greater than 0', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   // Validate ObjectIds
   if (body.goalId !== undefined && body.goalId !== null && !mongoose.Types.ObjectId.isValid(body.goalId)) {
-    return next(new AppError('Invalid Goal ID reference format', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Invalid Goal ID reference format', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
   if (body.taskId !== undefined && body.taskId !== null && !mongoose.Types.ObjectId.isValid(body.taskId)) {
-    return next(new AppError('Invalid Task ID reference format', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Invalid Task ID reference format', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   // Validate numerical counts
   if (body.interruptions !== undefined && (isNaN(body.interruptions) || body.interruptions < 0)) {
-    return next(new AppError('Interruptions must be a non-negative number', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Interruptions must be a non-negative number', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
   if (body.pauseCount !== undefined && (isNaN(body.pauseCount) || body.pauseCount < 0)) {
-    return next(new AppError('Pause count must be a non-negative number', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Pause count must be a non-negative number', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   next();
@@ -97,7 +97,7 @@ export const validateCreateFocusSession = (req, res, next) => {
 export const validateUpdateFocusSession = (req, res, next) => {
   const { id } = req.params || {};
   if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-    return next(new AppError('Invalid Focus Session ID format', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Invalid Focus Session ID format', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
   validateFocusPayload(req, next);
 };

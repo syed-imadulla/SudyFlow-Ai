@@ -68,6 +68,21 @@ window.getPlannerBlockDate = function(block) {
   return null;
 };
 
+/**
+ * Universal helper to check if a milestone is scheduled
+ * Uses the subtask status as the single source of truth.
+ */
+window.isMilestoneScheduled = function(goalId, milestoneId) {
+  const goalsSlice = window.SF_STORE?.getSlice('goals');
+  if (!goalsSlice || !goalsSlice.items) return false;
+  
+  const goal = goalsSlice.items.find(g => g.id === goalId);
+  if (!goal) return false;
+  
+  const sub = goal.subtasks.find(s => s.id === milestoneId);
+  return sub ? sub.status === 'SCHEDULED' : false;
+};
+
 window.SF_STORE = (function () {
 
   // ─── Internal State ─────────────────────────────────────────────────────────
@@ -473,8 +488,18 @@ window.SF_STORE = (function () {
           await dispatch('planner/LOAD', { date: _state.planner.selectedDate });
         }
 
-        // Refresh Goals to reflect updated milestone states
-        await dispatch('goals/LOAD');
+        // Update local goal state without a full reload
+        const goalsSlice = SF_STORE.getSlice('goals');
+        if (goalsSlice && goalsSlice.items) {
+          const goal = goalsSlice.items.find(g => g.id === payload.goalId);
+          if (goal) {
+            const sub = goal.subtasks.find(s => s.id === payload.milestoneId);
+            if (sub) {
+              sub.status = 'SCHEDULED';
+              _patch('goals', { items: goalsSlice.items });
+            }
+          }
+        }
 
         return result;
       } catch (e) {
@@ -552,6 +577,13 @@ window.SF_STORE = (function () {
         } else {
           await dispatch('planner/LOAD', { date: _state.planner.selectedDate });
         }
+        
+        // Refresh Goals and Analytics if the block completion changed
+        if (patch.completed !== undefined) {
+          await dispatch('goals/LOAD');
+          await dispatch('analytics/LOAD');
+        }
+        
         return updatedBlock;
       } catch (e) {
         console.error('[SF_STORE] planner/UPDATE failed:', e);
@@ -582,6 +614,11 @@ window.SF_STORE = (function () {
         } else {
           await dispatch('planner/LOAD', { date: _state.planner.selectedDate });
         }
+        
+        // Refresh Goals and Analytics to reflect milestone unscheduling
+        await dispatch('goals/LOAD');
+        await dispatch('analytics/LOAD');
+        
         return true;
       } catch (e) {
         console.error('[SF_STORE] planner/DELETE failed:', e);

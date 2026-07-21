@@ -1,6 +1,8 @@
 import { Goal } from '../models/Goal.js';
 import { AppError } from '../utils/AppError.js';
-import { HTTP_STATUS, GOAL_STATUS } from '../constants/index.js';
+import { HTTP_STATUS, GOAL_STATUS, ERROR_CODES } from '../constants/index.js';
+import { logger } from '../utils/logger.js';
+import { PlannerService } from './planner.service.js';
 
 /**
  * Helper to compute dynamic progress from subtasks
@@ -46,7 +48,7 @@ export class GoalService {
   static async getGoalById(userId, goalId) {
     const goal = await Goal.findOne({ _id: goalId, user: userId });
     if (!goal) {
-      throw new AppError('Goal not found', HTTP_STATUS.NOT_FOUND);
+      throw new AppError('Goal not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.GOAL_NOT_FOUND);
     }
     return attachDynamicProgress(goal);
   }
@@ -96,7 +98,7 @@ export class GoalService {
       { new: true, runValidators: true }
     );
     if (!goal) {
-      throw new AppError('Goal not found', HTTP_STATUS.NOT_FOUND);
+      throw new AppError('Goal not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.GOAL_NOT_FOUND);
     }
     return attachDynamicProgress(goal);
   }
@@ -105,9 +107,28 @@ export class GoalService {
    * Delete goal
    */
   static async deleteGoal(userId, goalId) {
-    const result = await Goal.findOneAndDelete({ _id: goalId, user: userId });
-    if (!result) {
-      throw new AppError('Goal not found', HTTP_STATUS.NOT_FOUND);
+    const goal = await Goal.findOne({ _id: goalId, user: userId });
+    if (!goal) {
+      throw new AppError('Goal not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.GOAL_NOT_FOUND);
+    }
+
+    let deletedBlocks = [];
+    try {
+      // Clean up associated Planner blocks first
+      deletedBlocks = await PlannerService.deleteEventsByGoalId(userId, goalId);
+
+      // Delete the Goal itself
+      await Goal.deleteOne({ _id: goalId, user: userId });
+    } catch (error) {
+      // If anything fails, rollback any deleted planner blocks
+      if (deletedBlocks && deletedBlocks.length > 0) {
+        try {
+          await PlannerService.restoreEvents(deletedBlocks);
+        } catch (rollbackError) {
+          logger.error(rollbackError, '[GoalService] Rollback of planner blocks failed');
+        }
+      }
+      throw error;
     }
   }
 
@@ -117,12 +138,12 @@ export class GoalService {
   static async toggleSubtask(userId, goalId, subtaskId, completedStatus) {
     const goal = await Goal.findOne({ _id: goalId, user: userId });
     if (!goal) {
-      throw new AppError('Goal not found', HTTP_STATUS.NOT_FOUND);
+      throw new AppError('Goal not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.GOAL_NOT_FOUND);
     }
 
     const subtask = goal.subtasks.id(subtaskId);
     if (!subtask) {
-      throw new AppError('Subtask not found', HTTP_STATUS.NOT_FOUND);
+      throw new AppError('Subtask not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.MILESTONE_NOT_FOUND);
     }
 
     subtask.completed = completedStatus !== undefined ? completedStatus : !subtask.completed;
@@ -144,7 +165,7 @@ export class GoalService {
    */
   static async bulkSaveGoals(userId, goalsArray) {
     if (!Array.isArray(goalsArray)) {
-      throw new AppError('Payload must be an array of goals', HTTP_STATUS.BAD_REQUEST);
+      throw new AppError('Payload must be an array of goals', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.BAD_REQUEST);
     }
 
     // Delete existing and replace with new array while maintaining ownership

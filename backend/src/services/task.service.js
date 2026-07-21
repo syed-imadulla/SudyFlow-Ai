@@ -1,6 +1,6 @@
 import { Task } from '../models/Task.js';
 import { AppError } from '../utils/AppError.js';
-import { HTTP_STATUS, TASK_PRIORITY, TASK_STATUS } from '../constants/index.js';
+import { HTTP_STATUS, TASK_PRIORITY, TASK_STATUS, ERROR_CODES } from '../constants/index.js';
 
 export class TaskService {
   /**
@@ -52,7 +52,7 @@ export class TaskService {
   static async getTaskById(userId, taskId) {
     const task = await Task.findOne({ _id: taskId, user: userId });
     if (!task) {
-      throw new AppError('Task not found', HTTP_STATUS.NOT_FOUND);
+      throw new AppError('Task not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.TASK_NOT_FOUND);
     }
     return task;
   }
@@ -77,7 +77,7 @@ export class TaskService {
       { new: true, runValidators: true }
     );
     if (!task) {
-      throw new AppError('Task not found', HTTP_STATUS.NOT_FOUND);
+      throw new AppError('Task not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.TASK_NOT_FOUND);
     }
     return task;
   }
@@ -88,7 +88,7 @@ export class TaskService {
   static async deleteTask(userId, taskId) {
     const result = await Task.findOneAndDelete({ _id: taskId, user: userId });
     if (!result) {
-      throw new AppError('Task not found', HTTP_STATUS.NOT_FOUND);
+      throw new AppError('Task not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.TASK_NOT_FOUND);
     }
   }
 }

@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import { User } from '../models/User.js';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
 import { AppError } from '../utils/AppError.js';
-import { HTTP_STATUS } from '../constants/index.js';
+import { HTTP_STATUS, ERROR_CODES } from '../constants/index.js';
 
 /**
  * Helper to securely hash refresh tokens with SHA-256 before database storage or lookup
@@ -16,7 +16,7 @@ export class AuthService {
   static async register({ name, email, password }) {
     const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
     if (existingUser) {
-      throw new AppError('An account with this email address already exists', HTTP_STATUS.CONFLICT);
+      throw new AppError('An account with this email address already exists', HTTP_STATUS.CONFLICT, ERROR_CODES.CONFLICT);
     }
 
     const user = await User.create({
@@ -45,12 +45,12 @@ export class AuthService {
   static async login({ email, password }) {
     const user = await User.findOne({ email: email.toLowerCase().trim() }).select('+password');
     if (!user) {
-      throw new AppError('Invalid email or password credentials', HTTP_STATUS.UNAUTHORIZED);
+      throw new AppError('Invalid email or password credentials', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
     }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      throw new AppError('Invalid email or password credentials', HTTP_STATUS.UNAUTHORIZED);
+      throw new AppError('Invalid email or password credentials', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
     }
 
     const tokenVer = user.tokenVersion || 0;
@@ -79,7 +79,7 @@ export class AuthService {
    */
   static async refresh({ refreshToken }) {
     if (!refreshToken) {
-      throw new AppError('Refresh token is required', HTTP_STATUS.BAD_REQUEST);
+      throw new AppError('Refresh token is required', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.BAD_REQUEST);
     }
 
     const decoded = verifyRefreshToken(refreshToken);
@@ -87,7 +87,7 @@ export class AuthService {
     const user = await User.findById(decoded.id).select('+refreshToken');
 
     if (!user || user.refreshToken !== hashedIncoming || (decoded.tokenVersion !== undefined && decoded.tokenVersion !== user.tokenVersion)) {
-      throw new AppError('Invalid or expired refresh token session', HTTP_STATUS.UNAUTHORIZED);
+      throw new AppError('Invalid or expired refresh token session', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
     }
 
     const tokenVer = user.tokenVersion || 0;
@@ -109,7 +109,7 @@ export class AuthService {
   static async getProfile(userId) {
     const user = await User.findById(userId);
     if (!user) {
-      throw new AppError('User account not found', HTTP_STATUS.NOT_FOUND);
+      throw new AppError('User account not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
     }
     return user;
   }
@@ -128,7 +128,7 @@ export class AuthService {
     });
 
     if (!updatedUser) {
-      throw new AppError('User account not found', HTTP_STATUS.NOT_FOUND);
+      throw new AppError('User account not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.NOT_FOUND);
     }
 
     return updatedUser;

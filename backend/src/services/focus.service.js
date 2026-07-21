@@ -1,7 +1,7 @@
 import { FocusSession } from '../models/FocusSession.js';
 import { Goal } from '../models/Goal.js';
 import { AppError } from '../utils/AppError.js';
-import { HTTP_STATUS, FOCUS_SESSION_TYPE, FOCUS_SESSION_STATUS } from '../constants/index.js';
+import { HTTP_STATUS, FOCUS_SESSION_TYPE, FOCUS_SESSION_STATUS, ERROR_CODES } from '../constants/index.js';
 
 export class FocusService {
   /**
@@ -63,7 +63,7 @@ export class FocusService {
   static async getSessionById(userId, sessionId) {
     const session = await FocusSession.findOne({ _id: sessionId, user: userId });
     if (!session) {
-      throw new AppError('Focus session not found', HTTP_STATUS.NOT_FOUND);
+      throw new AppError('Focus session not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.FOCUS_SESSION_NOT_FOUND);
     }
     return session;
   }
@@ -78,7 +78,7 @@ export class FocusService {
       { new: true, runValidators: true }
     );
     if (!session) {
-      throw new AppError('Focus session not found', HTTP_STATUS.NOT_FOUND);
+      throw new AppError('Focus session not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.FOCUS_SESSION_NOT_FOUND);
     }
     return session;
   }
@@ -89,7 +89,7 @@ export class FocusService {
   static async deleteSession(userId, sessionId) {
     const result = await FocusSession.findOneAndDelete({ _id: sessionId, user: userId });
     if (!result) {
-      throw new AppError('Focus session not found', HTTP_STATUS.NOT_FOUND);
+      throw new AppError('Focus session not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.FOCUS_SESSION_NOT_FOUND);
     }
   }
 
@@ -101,7 +101,7 @@ export class FocusService {
   static async endSession(userId, sessionId, patch = {}) {
     const session = await FocusSession.findOne({ _id: sessionId, user: userId });
     if (!session) {
-      throw new AppError('Focus session not found', HTTP_STATUS.NOT_FOUND);
+      throw new AppError('Focus session not found', HTTP_STATUS.NOT_FOUND, ERROR_CODES.FOCUS_SESSION_NOT_FOUND);
     }
 
     session.endTime = new Date();

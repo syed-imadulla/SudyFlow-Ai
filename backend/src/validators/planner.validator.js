@@ -1,5 +1,5 @@
 import { AppError } from '../utils/AppError.js';
-import { HTTP_STATUS, PLANNER_EVENT_TYPE } from '../constants/index.js';
+import { HTTP_STATUS, PLANNER_EVENT_TYPE, ERROR_CODES } from '../constants/index.js';
 import mongoose from 'mongoose';
 
 /**
@@ -50,19 +50,19 @@ export const validateCreatePlannerEvent = (req, res, next) => {
   const { title, startTime, endTime, type, goalId, milestoneId } = req.body || {};
 
   if (!title || typeof title !== 'string' || title.trim().length === 0) {
-    return next(new AppError('Event title is required', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Event title is required', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   if (!startTime || isNaN(new Date(startTime).getTime())) {
-    return next(new AppError('Valid startTime date string is required', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Valid startTime date string is required', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   if (!endTime || isNaN(new Date(endTime).getTime())) {
-    return next(new AppError('Valid endTime date string is required', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Valid endTime date string is required', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   if (new Date(startTime).getTime() >= new Date(endTime).getTime()) {
-    return next(new AppError('startTime must be strictly earlier than endTime', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('startTime must be strictly earlier than endTime', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   if (type !== undefined && !Object.values(PLANNER_EVENT_TYPE).includes(type)) {
@@ -70,11 +70,11 @@ export const validateCreatePlannerEvent = (req, res, next) => {
   }
 
   if (goalId && !mongoose.Types.ObjectId.isValid(goalId)) {
-    return next(new AppError('Invalid Goal ID reference format', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Invalid Goal ID reference format', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   if (milestoneId && !mongoose.Types.ObjectId.isValid(milestoneId)) {
-    return next(new AppError('Invalid Milestone ID reference format', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Invalid Milestone ID reference format', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   next();
@@ -83,27 +83,27 @@ export const validateCreatePlannerEvent = (req, res, next) => {
 export const validateUpdatePlannerEvent = (req, res, next) => {
   const { id } = req.params || {};
   if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-    return next(new AppError('Invalid Planner Event ID format', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Invalid Planner Event ID format', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   normalizePlannerPayload(req.body);
   const { title, startTime, endTime, type, goalId, milestoneId } = req.body || {};
 
   if (title !== undefined && (typeof title !== 'string' || title.trim().length === 0)) {
-    return next(new AppError('Event title cannot be empty', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Event title cannot be empty', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   if (startTime !== undefined && isNaN(new Date(startTime).getTime())) {
-    return next(new AppError('Valid startTime date string is required', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Valid startTime date string is required', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   if (endTime !== undefined && isNaN(new Date(endTime).getTime())) {
-    return next(new AppError('Valid endTime date string is required', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Valid endTime date string is required', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   if (startTime !== undefined && endTime !== undefined) {
     if (new Date(startTime).getTime() >= new Date(endTime).getTime()) {
-      return next(new AppError('startTime must be strictly earlier than endTime', HTTP_STATUS.BAD_REQUEST));
+      return next(new AppError('startTime must be strictly earlier than endTime', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
     }
   }
 
@@ -112,11 +112,11 @@ export const validateUpdatePlannerEvent = (req, res, next) => {
   }
 
   if (goalId !== undefined && goalId !== null && !mongoose.Types.ObjectId.isValid(goalId)) {
-    return next(new AppError('Invalid Goal ID reference format', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Invalid Goal ID reference format', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   if (milestoneId !== undefined && milestoneId !== null && !mongoose.Types.ObjectId.isValid(milestoneId)) {
-    return next(new AppError('Invalid Milestone ID reference format', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Invalid Milestone ID reference format', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   next();
@@ -126,23 +126,23 @@ export const validateScheduleMilestone = (req, res, next) => {
   const { goalId, milestoneId, startTime, endTime } = req.body || {};
 
   if (!goalId || !mongoose.Types.ObjectId.isValid(goalId)) {
-    return next(new AppError('Valid Goal ID is required', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Valid Goal ID is required', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   if (!milestoneId || !mongoose.Types.ObjectId.isValid(milestoneId)) {
-    return next(new AppError('Valid Milestone ID is required', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Valid Milestone ID is required', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   if (!startTime || isNaN(new Date(startTime).getTime())) {
-    return next(new AppError('Valid startTime date string is required', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Valid startTime date string is required', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   if (!endTime || isNaN(new Date(endTime).getTime())) {
-    return next(new AppError('Valid endTime date string is required', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('Valid endTime date string is required', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   if (new Date(startTime).getTime() >= new Date(endTime).getTime()) {
-    return next(new AppError('startTime must be strictly earlier than endTime', HTTP_STATUS.BAD_REQUEST));
+    return next(new AppError('startTime must be strictly earlier than endTime', HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION));
   }
 
   next();

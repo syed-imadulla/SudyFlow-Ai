@@ -1,6 +1,7 @@
 import { config } from '../config/index.js';
-import { HTTP_STATUS } from '../constants/index.js';
+import { HTTP_STATUS, ERROR_CODES } from '../constants/index.js';
 import { AppError } from '../utils/AppError.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Handle MongoDB duplicate key index violation errors (e.g. race condition on email registration)
@@ -10,7 +11,7 @@ const handleDuplicateKeyError = (err) => {
   const message = field === 'email' 
     ? 'An account with this email address already exists' 
     : `Duplicate value entered for ${field} field`;
-  return new AppError(message, HTTP_STATUS.CONFLICT);
+  return new AppError(message, HTTP_STATUS.CONFLICT, ERROR_CODES.CONFLICT);
 };
 
 /**
@@ -19,7 +20,7 @@ const handleDuplicateKeyError = (err) => {
 const handleValidationError = (err) => {
   const errors = Object.values(err.errors || {}).map((el) => el.message);
   const message = errors.join('. ');
-  return new AppError(message, HTTP_STATUS.BAD_REQUEST);
+  return new AppError(message, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION);
 };
 
 /**
@@ -27,14 +28,14 @@ const handleValidationError = (err) => {
  */
 const handleCastError = (err) => {
   const message = `Invalid format for ${err.path}: ${err.value}`;
-  return new AppError(message, HTTP_STATUS.BAD_REQUEST);
+  return new AppError(message, HTTP_STATUS.BAD_REQUEST, ERROR_CODES.VALIDATION);
 };
 
 /**
  * Handle JWT authentication errors
  */
-const handleJWTError = () => new AppError('Invalid authentication token. Please log in again.', HTTP_STATUS.UNAUTHORIZED);
-const handleJWTExpiredError = () => new AppError('Your token has expired. Please log in again.', HTTP_STATUS.UNAUTHORIZED);
+const handleJWTError = () => new AppError('Invalid authentication token. Please log in again.', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
+const handleJWTExpiredError = () => new AppError('Your token has expired. Please log in again.', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
 
 /**
  * Global Centralized Error Handling Middleware
@@ -51,28 +52,39 @@ export const errorHandler = (err, req, res, next) => {
   if (err.name === 'TokenExpiredError') error = handleJWTExpiredError();
 
   const statusCode = error.statusCode || HTTP_STATUS.INTERNAL_SERVER_ERROR;
-  const status = error.status || (statusCode >= 400 && statusCode < 500 ? 'fail' : 'error');
 
   // Log full error details and stack trace to server console
   if (config.env === 'development') {
-    console.error(`[DEV ERROR LOG] Request ID ${req.id || 'N/A'}:`, err);
+    logger.error({ err, reqId: req.id, userId: req.user?.id }, `[DEV ERROR LOG] Request ID ${req.id || 'N/A'}`);
   } else if (!error.isOperational) {
-    console.error(`[PROD CRITICAL ERROR] Request ID ${req.id || 'N/A'}:`, err);
+    logger.error({ err, reqId: req.id, userId: req.user?.id }, `[PROD CRITICAL ERROR] Request ID ${req.id || 'N/A'}`);
+  } else {
+    logger.error({ err: { message: error.message, stack: error.stack }, reqId: req.id, userId: req.user?.id }, `[OPERATIONAL ERROR] Request ID ${req.id || 'N/A'}`);
   }
 
   // Operational errors: return safe human-readable message without stack traces
   if (error.isOperational) {
-    return res.status(statusCode).json({
-      status,
-      statusCode,
-      message: error.message || err.message
-    });
+    const responsePayload = {
+      success: false,
+      error: {
+        code: error.errorCode || ERROR_CODES.INTERNAL_SERVER,
+        message: error.message || err.message
+      }
+    };
+
+    if (error.metadata && Object.keys(error.metadata).length > 0) {
+      responsePayload.error.metadata = error.metadata;
+    }
+
+    return res.status(statusCode).json(responsePayload);
   }
 
   // Unknown / Programming errors: return standardized Internal Server Error
   return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-    status: 'error',
-    statusCode: HTTP_STATUS.INTERNAL_SERVER_ERROR,
-    message: 'Internal Server Error'
+    success: false,
+    error: {
+      code: ERROR_CODES.INTERNAL_SERVER,
+      message: 'An unexpected error occurred.'
+    }
   });
 };

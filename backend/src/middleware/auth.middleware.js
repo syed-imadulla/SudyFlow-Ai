@@ -1,7 +1,7 @@
 import { verifyAccessToken } from '../utils/jwt.js';
 import { User } from '../models/User.js';
 import { AppError } from '../utils/AppError.js';
-import { HTTP_STATUS } from '../constants/index.js';
+import { HTTP_STATUS, ERROR_CODES } from '../constants/index.js';
 
 /**
  * Extract access token from Authorization header or HttpOnly cookie
@@ -28,18 +28,18 @@ export const authenticate = async (req, res, next) => {
   try {
     const token = extractToken(req);
     if (!token) {
-      throw new AppError('Authentication required. Please provide a valid Bearer token or cookie.', HTTP_STATUS.UNAUTHORIZED);
+      throw new AppError('Authentication required. Please provide a valid Bearer token or cookie.', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
     }
 
     const decoded = verifyAccessToken(token);
     const user = await User.findById(decoded.id);
 
     if (!user) {
-      throw new AppError('The user belonging to this token no longer exists.', HTTP_STATUS.UNAUTHORIZED);
+      throw new AppError('The user belonging to this token no longer exists.', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
     }
 
     if (decoded.tokenVersion !== undefined && decoded.tokenVersion !== (user.tokenVersion || 0)) {
-      throw new AppError('The user session has been invalidated or revoked.', HTTP_STATUS.UNAUTHORIZED);
+      throw new AppError('The user session has been invalidated or revoked.', HTTP_STATUS.UNAUTHORIZED, ERROR_CODES.UNAUTHORIZED);
     }
 
     req.user = user;
@@ -56,7 +56,7 @@ export const authenticate = async (req, res, next) => {
 export const authorize = (...allowedRoles) => {
   return (req, res, next) => {
     if (!req.user || !allowedRoles.includes(req.user.role)) {
-      return next(new AppError('You do not have permission to perform this action.', HTTP_STATUS.FORBIDDEN));
+      return next(new AppError('You do not have permission to perform this action.', HTTP_STATUS.FORBIDDEN, ERROR_CODES.FORBIDDEN));
     }
     next();
   };

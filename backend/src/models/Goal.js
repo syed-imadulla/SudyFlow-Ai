@@ -23,6 +23,11 @@ const subtaskSchema = new mongoose.Schema({
   completed: {
     type: Boolean,
     default: false
+  },
+  status: {
+    type: String,
+    enum: ['TODO', 'SCHEDULED', 'COMPLETED'],
+    default: 'TODO'
   }
 }, {
   toJSON: {

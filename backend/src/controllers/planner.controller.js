@@ -1,6 +1,7 @@
 import { catchAsync } from '../utils/asyncWrapper.js';
 import { PlannerService } from '../services/planner.service.js';
 import { HTTP_STATUS } from '../constants/index.js';
+import { logger } from '../utils/logger.js';
 
 export class PlannerController {
   static getEvents = catchAsync(async (req, res) => {
@@ -99,11 +100,11 @@ export class PlannerController {
 
   // UI compatibility endpoints
   static getDailyBlocks = catchAsync(async (req, res) => {
-    console.log('[AUDIT: Controller] GET /planner/daily called with query date:', req.query.date);
+    logger.debug({ date: req.query.date, reqId: req.id, userId: req.user?._id }, '[AUDIT: Controller] GET /planner/daily called with query date');
     const events = req.query.date
       ? await PlannerService.getEventsForDate(req.user._id, req.query.date)
       : await PlannerService.getTodayEvents(req.user._id);
-    console.log('[AUDIT: Controller] GET /planner/daily returning events count:', events ? events.length : 0);
+    logger.debug({ eventsCount: events ? events.length : 0, reqId: req.id, userId: req.user?._id }, '[AUDIT: Controller] GET /planner/daily returning events count');
     res.status(HTTP_STATUS.OK).json({
       status: 'success',
       statusCode: HTTP_STATUS.OK,

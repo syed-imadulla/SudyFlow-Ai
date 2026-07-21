@@ -3,7 +3,8 @@ import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
-import morgan from 'morgan';
+import pinoHttp from 'pino-http';
+import { logger } from './utils/logger.js';
 import { config } from './config/index.js';
 import { API_PREFIX } from './constants/index.js';
 import { requestId } from './middleware/requestId.js';
@@ -43,11 +44,31 @@ app.use(cors({
 app.use(API_PREFIX, apiLimiter);
 
 // 5. HTTP Request Logging
-if (config.env === 'development') {
-  app.use(morgan(':method :url :status :res[content-length] - :response-time ms [req-id: :req[x-request-id]]'));
-} else {
-  app.use(morgan('combined'));
-}
+app.use(pinoHttp({
+  logger,
+  customProps: (req, res) => ({
+    reqId: req.id,
+    userId: req.user?.id || req.user?._id || undefined,
+    clientIp: req.ip || req.headers['x-forwarded-for'] || req.socket?.remoteAddress,
+  }),
+  serializers: {
+    req: (req) => {
+      const sanitizedHeaders = { ...req.headers };
+      delete sanitizedHeaders['authorization'];
+      delete sanitizedHeaders['cookie']; // cookies can hold JWTs
+      return {
+        id: req.id,
+        method: req.method,
+        url: req.url,
+        remoteAddress: req.remoteAddress,
+        headers: sanitizedHeaders,
+      };
+    },
+    res: (res) => ({
+      statusCode: res.statusCode,
+    }),
+  },
+}));
 
 // 6. Request Payload Parsing, Cookie Parsing & Compression
 app.use(express.json({ limit: '10mb' }));
